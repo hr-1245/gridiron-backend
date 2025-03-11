@@ -15,7 +15,7 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   });
   const config = new DocumentBuilder()
-    .setTitle('DonorPortal')
+    .setTitle('Gridiron-backend')
     .setDescription('Gridiron-backend API description')
     .setVersion('1.0')
     .addBearerAuth(
