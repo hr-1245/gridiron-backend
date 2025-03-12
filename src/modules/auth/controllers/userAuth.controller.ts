@@ -1,19 +1,19 @@
 import { Body, Controller, HttpStatus, Post } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { playerAuthService } from "../services/playerAuth.service";
+import { userAuthService } from "../services/userAuth.service";
 import { signupDto } from "../dto/signup.dto";
 import { loginDto } from "../dto/login.dto";
 
 
-@ApiTags('player/auth')
-@Controller('auth/player')
+@ApiTags('user/auth')
+@Controller('auth/user')
 export class playerauthController {
-  constructor(private authService: playerAuthService) { }
+  constructor(private authService: userAuthService) { }
 
-  @ApiOperation({ summary: 'Player new user' })
+  @ApiOperation({ summary: 'Generated new user' })
   @ApiResponse({
     status: HttpStatus.CREATED,
-    description: 'Player created successfully',
+    description: 'User created successfully',
   })
   @ApiResponse({
     status: HttpStatus.CONFLICT,
@@ -25,17 +25,17 @@ export class playerauthController {
   })
   @Post('signup')
   async signup(@Body() body: signupDto) {
-    return await this.authService.registerPlayer(body)
+    return await this.authService.registeruser(body)
   }
 
-  @ApiOperation({ summary: 'Player Signin Route' })
+  @ApiOperation({ summary: 'User Signin Route' })
   @ApiResponse({
     status: HttpStatus.CREATED,
-    description: 'Player logged In Successfully',
+    description: 'User logged In Successfully',
   })
   @ApiResponse({
     status: HttpStatus.CONFLICT,
-    description: 'Player already Logged In',
+    description: 'User already Logged In',
   })
   @ApiResponse({
     status: HttpStatus.INTERNAL_SERVER_ERROR,

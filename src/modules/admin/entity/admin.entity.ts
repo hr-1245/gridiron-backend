@@ -3,7 +3,7 @@ import { baseEntity } from "src/entities/base.entity";
 import { rolesEnum } from "src/utils/roles";
 import { Column, Entity } from "typeorm";
 
-@Entity({ name: 'adminAuth' })
+@Entity({ name: 'admin' })
 export class adminauthEntity extends baseEntity {
 
   @ApiProperty()

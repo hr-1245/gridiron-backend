@@ -1,19 +1,65 @@
-import { baseEntity } from "src/entities/base.entity";
-import { rolesEnum } from "src/utils/roles";
-import { Column, Entity } from "typeorm";
+import { baseEntity } from 'src/entities/base.entity';
+import { userEntity } from 'src/modules/user/entity/user.entity';
+import { approvalStatusEnum, generalAttributesEnum, positionsEnum } from 'src/utils/roles';
+import { Column, OneToMany, ManyToOne, Entity } from 'typeorm';
 
 @Entity({ name: 'playerAuth' })
-export class playerauthEntity extends baseEntity {
-
-  @Column({ unique: true })
-  email: string
+export class playerEntity extends baseEntity {
 
   @Column()
-  password: string
+  name: string
 
-  @Column({ type: 'enum', enum: rolesEnum, default: rolesEnum.player })
-  role: rolesEnum
+  @ManyToOne(() => userEntity, (user) => user.player)
+  user: userEntity
+
+  @ManyToOne(() => playerPositionsEntity, (position) => position.player)
+  position: playerPositionsEntity
+
+  @OneToMany(() => playerImageEntity, (image) => image.player, { cascade: true })
+  images: playerImageEntity[]
+
+  @OneToMany(() => playerAttributesEntity, (attribute) => attribute.player, { cascade: true })
+  attributes: playerAttributesEntity[]
+
+  @Column({ type: 'enum', enum: approvalStatusEnum, default: approvalStatusEnum.pending })
+  approvalStatus: approvalStatusEnum
+
+}
+@Entity({ name: 'playerPosition' })
+export class playerPositionsEntity extends baseEntity {
+
+  @Column({ type: 'enum', enum: positionsEnum, unique: true })
+  name: positionsEnum
+
+  @OneToMany(() => playerEntity, (player) => player.position)
+  player: playerEntity[]
+
+  @OneToMany(() => playerEntity, (attribute) => attribute.position, { cascade: true })
+  attributes: playerAttributesEntity[];
 
 
+}
 
+@Entity({ name: 'playerAttributes' })
+export class playerAttributesEntity extends baseEntity {
+
+  @Column({ type: 'enum', enum: generalAttributesEnum, unique: true })
+  name: generalAttributesEnum
+
+  @Column('decimal')
+  value: number
+
+  @ManyToOne(() => playerEntity, (player) => player.attributes)
+  player: playerEntity
+}
+
+
+@Entity({ name: 'playerImage' })
+export class playerImageEntity extends baseEntity {
+
+  @Column()
+  url: string
+
+  @ManyToOne(() => playerEntity, (player) => player.images)
+  player: playerEntity
 }

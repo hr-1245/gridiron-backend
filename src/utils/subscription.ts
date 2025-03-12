@@ -1,5 +1,7 @@
 export enum subscriptionEnum {
   active = 'ACTIVE',
-  expired = 'EXPIRED'
+  expired = 'EXPIRED',
+  trial = 'TRIAL',
+  pending = 'PENDING',
+  cancelled = 'CANCELLED'
 }
-

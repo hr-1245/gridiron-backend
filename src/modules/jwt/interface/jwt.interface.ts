@@ -1,4 +1,4 @@
-export interface playerjwtInterface {
+export interface userjwtInterface {
   id: number
   email: string;
 }

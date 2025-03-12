@@ -1,38 +1,38 @@
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { playerauthEntity } from "src/modules/player/entity/player.entity";
 import { BadRequestException, HttpException, HttpStatus, NotFoundException } from "@nestjs/common";
 import { comparePassword, hashPassword } from "src/utils/bcrypt";
 import { signupDto } from "../dto/signup.dto";
-import { playerjwtService } from "src/modules/jwt/services/player-jwt.service";
+import { userjwtService } from "src/modules/jwt/services/player-jwt.service";
 import { loginDto } from "../dto/login.dto";
+import { userEntity } from "src/modules/user/entity/user.entity";
 
-export class playerAuthService {
+export class userAuthService {
   constructor(
-    @InjectRepository(playerauthEntity)
-    private repo: Repository<playerauthEntity>,
-    private jwtService: playerjwtService
+    @InjectRepository(userEntity)
+    private repo: Repository<userEntity>,
+    private jwtService: userjwtService
   ) { }
 
-  async registerPlayer(data: signupDto) {
+  async registeruser(data: signupDto) {
     try {
-      const player = await this.find(data.email);
-      if (player.length) {
+      const result = await this.find(data.email);
+      if (result.length) {
         throw new BadRequestException('Email Already in use');
       }
       const hashedPassword = hashPassword(data.password);
-      const user = await this.createplayerInstance(data, hashedPassword);
+      const user = await this.createuserInstance(data, hashedPassword);
 
       const accessToken = this.jwtService.generateAuthToken({
         email: user.email,
         id: user.id,
       });
 
-      const { password, ...playerWithoutPassword } = user
+      const { password, ...userWithoutPassword } = user
 
       return {
-        message: 'Player Created',
-        playerWithoutPassword,
+        message: 'user Created',
+        userWithoutPassword,
         accessToken,
       };
     } catch (error) {
@@ -40,14 +40,14 @@ export class playerAuthService {
     }
   }
 
-  async createplayerInstance(data: signupDto, encryptedPassword: string) {
+  async createuserInstance(data: signupDto, encryptedPassword: string) {
     try {
-      const player = this.repo.create({
+      const user = this.repo.create({
         ...data,
         email: data.email.toLowerCase(),
         password: encryptedPassword,
       });
-      return await this.repo.save(player);
+      return await this.repo.save(user);
     } catch (error) {
       throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST);
     }
@@ -63,25 +63,25 @@ export class playerAuthService {
 
   async login(data: loginDto) {
     try {
-      const [admin] = await this.find(data.email);
-      if (!admin) {
-        throw new NotFoundException('Player not Found');
+      const [user] = await this.find(data.email);
+      if (!user) {
+        throw new NotFoundException('User not Found');
       }
-      const isPasswordMatched = comparePassword(data.password, admin.password);
+      const isPasswordMatched = comparePassword(data.password, user.password);
       if (!isPasswordMatched) {
         throw new HttpException('Invalid Credentials', HttpStatus.UNAUTHORIZED);
       }
 
-      const { password, ...playerWithoutPassword } = admin;
+      const { password, ...userWithoutPassword } = user;
 
       const accessToken = this.jwtService.generateAuthToken({
-        email: admin.email,
-        id: admin.id,
+        email: user.email,
+        id: user.id,
       });
 
       return {
-        message: 'Player Logged In Successfully',
-        admin: playerWithoutPassword,
+        message: 'User Logged In Successfully',
+        user: userWithoutPassword,
         accessToken,
       };
     } catch (error) {

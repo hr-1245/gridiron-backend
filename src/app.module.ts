@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { forDatabasePostgresAsyncConfig } from './config/database';
 import { adminjwtStrategy } from './providers/strategy/admin.strategy';
-import { playerjwtStrategy } from './providers/strategy/player.strategy';
+import { userjwtStrategy } from './providers/strategy/user.strategy';
 import { authModule } from './modules/auth/auth.module';
 import { jwtModule } from './modules/jwt/jwt.module';
 
@@ -13,6 +13,6 @@ import { jwtModule } from './modules/jwt/jwt.module';
     authModule,
     jwtModule,
   ],
-  providers: [adminjwtStrategy, playerjwtStrategy],
+  providers: [adminjwtStrategy, userjwtStrategy],
 })
 export class AppModule { }

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { JwtModule as NestJwtModule } from '@nestjs/jwt';
 import { adminjwtService } from './services/admin-jwt.service';
-import { playerjwtService } from './services/player-jwt.service';
+import { userjwtService } from './services/player-jwt.service';
 
 @Module({
   imports: [
@@ -14,7 +14,7 @@ import { playerjwtService } from './services/player-jwt.service';
       signOptions: { expiresIn: process.env.EXPIRES_IN },
     }),
   ],
-  providers: [adminjwtService, playerjwtService],
-  exports: [adminjwtService, playerjwtService],
+  providers: [adminjwtService, userjwtService],
+  exports: [adminjwtService, userjwtService],
 })
 export class jwtModule { }
