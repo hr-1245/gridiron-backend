@@ -1,18 +1,27 @@
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { BadRequestException, HttpException, HttpStatus, NotFoundException } from "@nestjs/common";
-import { comparePassword, hashPassword } from "src/utils/bcrypt";
 import { signupDto } from "../dto/signup.dto";
 import { userjwtService } from "src/modules/jwt/services/player-jwt.service";
 import { loginDto } from "../dto/login.dto";
 import { userEntity } from "src/modules/user/entity/user.entity";
+import { comparePassword, hashPassword } from "src/types/enums/bcrypt";
+import Stripe from "stripe";
+import { ConfigService } from "@nestjs/config";
 
 export class userAuthService {
+  stripe: Stripe;
   constructor(
     @InjectRepository(userEntity)
     private repo: Repository<userEntity>,
-    private jwtService: userjwtService
-  ) { }
+    private jwtService: userjwtService,
+    private readonly configService: ConfigService
+  ) {
+    this.stripe = new Stripe(
+      this.configService.get<string>('STRIPE_SECRET_KEY') || '',
+      { apiVersion: '2025-02-24.acacia' },
+    );
+  }
 
   async registeruser(data: signupDto) {
     try {
@@ -23,6 +32,13 @@ export class userAuthService {
       const hashedPassword = hashPassword(data.password);
       const user = await this.createuserInstance(data, hashedPassword);
 
+      const stripeCustomer = this.stripe.customers.create({
+        email: user.email
+      })
+
+      user.stripeCustomerId = (await stripeCustomer).id
+      await this.repo.save(user)
+
       const accessToken = this.jwtService.generateAuthToken({
         email: user.email,
         id: user.id,
@@ -31,7 +47,7 @@ export class userAuthService {
       const { password, ...userWithoutPassword } = user
 
       return {
-        message: 'user Created',
+        message: 'User Created',
         userWithoutPassword,
         accessToken,
       };
@@ -77,6 +93,7 @@ export class userAuthService {
       const accessToken = this.jwtService.generateAuthToken({
         email: user.email,
         id: user.id,
+
       });
 
       return {

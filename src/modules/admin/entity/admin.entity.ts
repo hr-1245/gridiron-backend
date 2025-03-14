@@ -14,7 +14,7 @@ export class adminauthEntity extends baseEntity {
   @Column()
   password: string;
 
-  @Column({ type: 'enum', enum: rolesEnum, default: rolesEnum.admin })
+  @Column({ type: 'enum', enum: rolesEnum, default: rolesEnum.ADMIN })
   role: rolesEnum
 
 }

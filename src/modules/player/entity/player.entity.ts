@@ -1,9 +1,9 @@
 import { baseEntity } from 'src/entities/base.entity';
 import { userEntity } from 'src/modules/user/entity/user.entity';
-import { approvalStatusEnum, generalAttributesEnum, positionsEnum } from 'src/utils/roles';
+import { approvalStatusEnum, generalAttributesEnum, positionsEnum } from 'src/types/enums/roles';
 import { Column, OneToMany, ManyToOne, Entity } from 'typeorm';
 
-@Entity({ name: 'playerAuth' })
+@Entity({ name: 'player' })
 export class playerEntity extends baseEntity {
 
   @Column()
@@ -12,8 +12,8 @@ export class playerEntity extends baseEntity {
   @ManyToOne(() => userEntity, (user) => user.player)
   user: userEntity
 
-  @ManyToOne(() => playerPositionsEntity, (position) => position.player)
-  position: playerPositionsEntity
+  @Column({ type: 'enum', enum: positionsEnum })
+  position: positionsEnum
 
   @OneToMany(() => playerImageEntity, (image) => image.player, { cascade: true })
   images: playerImageEntity[]
@@ -21,7 +21,7 @@ export class playerEntity extends baseEntity {
   @OneToMany(() => playerAttributesEntity, (attribute) => attribute.player, { cascade: true })
   attributes: playerAttributesEntity[]
 
-  @Column({ type: 'enum', enum: approvalStatusEnum, default: approvalStatusEnum.pending })
+  @Column({ type: 'enum', enum: approvalStatusEnum, default: approvalStatusEnum.PENDING })
   approvalStatus: approvalStatusEnum
 
 }
