@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { adminjwtInterface } from '../interface/jwt.interface';
-
+import { adminJwtInterface } from '../interface/jwt.interface';
 @Injectable()
 export class adminjwtService {
   constructor(
@@ -10,7 +9,7 @@ export class adminjwtService {
     private configService: ConfigService,
   ) { }
 
-  generateAuthToken(payload: adminjwtInterface) {
+  generateAuthToken(payload: adminJwtInterface) {
     return this.jwtService.sign(payload, {
       secret: this.configService.get('ADMIN_SECRET_KEY'),
       expiresIn: Number(this.configService.get('EXPIRES_IN')),

@@ -1,7 +1,7 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
-import { adminjwtInterface } from 'src/modules/jwt/interface/jwt.interface';
+import { adminJwtInterface } from 'src/modules/jwt/interface/jwt.interface';
 
 
 @Injectable()
@@ -17,7 +17,7 @@ export class adminjwtStrategy extends PassportStrategy(
       secretOrKey: `${process.env.ADMIN_SECRET_KEY}`,
     });
   }
-  async validate(payload: adminjwtInterface) {
+  async validate(payload: adminJwtInterface) {
     return {
       email: payload.email,
       id: payload.id,

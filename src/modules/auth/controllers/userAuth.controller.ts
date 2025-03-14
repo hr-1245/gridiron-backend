@@ -5,9 +5,9 @@ import { signupDto } from "../dto/signup.dto";
 import { loginDto } from "../dto/login.dto";
 
 
-@ApiTags('user/auth')
-@Controller('auth/user')
-export class playerauthController {
+@ApiTags('auth/user')
+@Controller('auth')
+export class userauthController {
   constructor(private authService: userAuthService) { }
 
   @ApiOperation({ summary: 'Generated new user' })

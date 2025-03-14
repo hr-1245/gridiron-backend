@@ -6,12 +6,18 @@ import { adminjwtStrategy } from './providers/strategy/admin.strategy';
 import { userjwtStrategy } from './providers/strategy/user.strategy';
 import { authModule } from './modules/auth/auth.module';
 import { jwtModule } from './modules/jwt/jwt.module';
+import { playerModule } from './modules/player/player.module';
+import { userModule } from './modules/user/user.module';
+import { stripeModule } from './modules/stripe/stripe.module';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true }),
   TypeOrmModule.forRootAsync(forDatabasePostgresAsyncConfig),
     authModule,
     jwtModule,
+    playerModule,
+    userModule,
+    stripeModule
   ],
   providers: [adminjwtStrategy, userjwtStrategy],
 })

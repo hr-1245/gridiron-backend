@@ -3,8 +3,8 @@ import { Repository } from "typeorm";
 import { adminauthEntity } from "src/modules/admin/entity/admin.entity";
 import { HttpException, HttpStatus, NotFoundException } from "@nestjs/common";
 import { loginDto } from "../dto/login.dto";
-import { comparePassword } from "src/utils/bcrypt";
 import { adminjwtService } from "src/modules/jwt/services/admin-jwt.service";
+import { comparePassword } from "src/types/enums/bcrypt";
 
 export class adminauthService {
   constructor(

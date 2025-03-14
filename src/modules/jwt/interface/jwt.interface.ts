@@ -1,14 +1,9 @@
 export interface userjwtInterface {
-  id: number
+  id: number;
   email: string;
 }
 
-export interface adminjwtInterface {
-  id: number
-  email: string;
+export interface adminJwtInterface{
+  id: number;
+  email: string
 }
-
-
-
-
-

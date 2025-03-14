@@ -5,8 +5,8 @@ import { loginDto } from "../dto/login.dto";
 
 
 @Controller()
-@ApiTags('admin/auth')
-@Controller('auth/admin')
+@ApiTags('auth/admin')
+@Controller('auth')
 export class adminauthController {
 
   constructor(private authService: adminauthService) {
@@ -24,7 +24,7 @@ export class adminauthController {
     status: HttpStatus.INTERNAL_SERVER_ERROR,
     description: 'Something went wrong',
   })
-  @Post('auth/login')
+  @Post('login')
   async login(@Body() body: loginDto) {
     return await this.authService.login(body)
   }

@@ -10,7 +10,7 @@ import { userjwtService } from './services/player-jwt.service';
       signOptions: { expiresIn: process.env.EXPIRES_IN },
     }),
     NestJwtModule.register({
-      secret: process.env.PLAYER_SECRET_KEY,
+      secret: process.env.USER_SECRET_KEY,
       signOptions: { expiresIn: process.env.EXPIRES_IN },
     }),
   ],
