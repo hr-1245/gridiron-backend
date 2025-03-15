@@ -13,13 +13,10 @@ export class adminauthService {
     private jwtService: adminjwtService
   ) { }
 
-     //======================================FIND THE ADMIN EMAIL=========================================================
 
   find(email: string) {
     return this.repo.find({ where: { email } });
   }
- 
-      //======================================LOGIN LOGIC=========================================================
 
   async login(data: loginDto) {
     try {
