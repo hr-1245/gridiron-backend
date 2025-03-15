@@ -1,8 +1,8 @@
 import { Entity, Column, OneToOne, OneToMany, JoinColumn } from 'typeorm';
 import { baseEntity } from 'src/entities/base.entity';
 import { rolesEnum } from 'src/types/enums/roles';
-import { userPlanEntity } from 'src/entities/userPlan.entity';
 import { playerEntity } from 'src/modules/player/entity/player.entity';
+import { userPlanEntity } from './userPlan.entity';
 
 @Entity({ name: 'user' })
 export class userEntity extends baseEntity {
@@ -21,6 +21,7 @@ export class userEntity extends baseEntity {
 
   @Column({ nullable: true })
   stripeCustomerId: string;
+
 
   @Column({ nullable: true })
   paymentMethodId: string;

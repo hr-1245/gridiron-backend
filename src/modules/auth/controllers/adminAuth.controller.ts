@@ -11,6 +11,8 @@ export class adminauthController {
 
   constructor(private authService: adminauthService) {
   }
+
+    //======================================SIGN IN ADMIN API=========================================================
   @ApiOperation({ summary: 'Admin Signin Route' })
   @ApiResponse({
     status: HttpStatus.CREATED,

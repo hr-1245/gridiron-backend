@@ -1,9 +1,8 @@
 import { Module } from "@nestjs/common";
 import { StripeService } from "./stripe.service";
-import { userModule } from "../user/user.module";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { userEntity } from "../user/entity/user.entity";
-import { userPlanEntity } from "src/entities/userPlan.entity";
+import { userPlanEntity } from "../user/entity/userPlan.entity";
 
 @Module({
   imports: [TypeOrmModule.forFeature([userEntity, userPlanEntity])],
