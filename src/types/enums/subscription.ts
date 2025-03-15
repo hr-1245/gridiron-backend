@@ -1,17 +1,14 @@
 export enum subscriptionEnum {
-  TRIAL = 'trial',
+  BASIC = 'basic',
   REGULAR = 'regular',
 }
 
-export enum subscriptionStatus {
-  ACTIVE = 'active',
-  TRIALING = 'trialing',
-  PAST_DUE = 'past_due',
+export enum paymentStatus {
+  PENDING = 'pending',
+  SUCCEEDED = 'succeeded',
+  FAILED = 'failed',
   CANCELED = 'canceled',
-  UNPAID = 'unpaid',
+  REQUIRES_ACTION = 'requires_action',
 }
 
-export enum allowedAmounts {
-  Trial = 99,    
-  Regular = 1999 
-}
+

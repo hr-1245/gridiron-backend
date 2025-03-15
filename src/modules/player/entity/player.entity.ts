@@ -37,7 +37,6 @@ export class playerPositionsEntity extends baseEntity {
   @OneToMany(() => playerEntity, (attribute) => attribute.position, { cascade: true })
   attributes: playerAttributesEntity[];
 
-
 }
 
 @Entity({ name: 'playerAttributes' })
@@ -62,4 +61,12 @@ export class playerImageEntity extends baseEntity {
 
   @ManyToOne(() => playerEntity, (player) => player.images)
   player: playerEntity
+}
+
+
+@Entity({ name: 'overAllRating' })
+export class overAllRating extends baseEntity {
+
+  @Column({ type: 'enum', enum: generalAttributesEnum, default: generalAttributesEnum.OVERALL_RATING })
+  overAllRating: generalAttributesEnum
 }

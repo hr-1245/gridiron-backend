@@ -1,8 +1,8 @@
-import { baseEntity } from "src/entities/base.entity";
-import { userPlanEntity } from "src/entities/userPlan.entity";
-import { playerEntity } from "src/modules/player/entity/player.entity";
-import { rolesEnum } from "src/types/enums/roles";
-import { Column, Entity, JoinColumn, OneToMany, OneToOne, } from "typeorm";
+import { Entity, Column, OneToOne, OneToMany, JoinColumn } from 'typeorm';
+import { baseEntity } from 'src/entities/base.entity';
+import { rolesEnum } from 'src/types/enums/roles';
+import { userPlanEntity } from 'src/entities/userPlan.entity';
+import { playerEntity } from 'src/modules/player/entity/player.entity';
 
 @Entity({ name: 'user' })
 export class userEntity extends baseEntity {
@@ -17,12 +17,16 @@ export class userEntity extends baseEntity {
 
   @OneToOne(() => userPlanEntity, (subscription) => subscription.user, { cascade: true })
   @JoinColumn()
-  subscription: userPlanEntity
+  subscription: userPlanEntity;
 
   @Column({ nullable: true })
-  stripeCustomerId: string
+  stripeCustomerId: string;
+
+  @Column({ nullable: true })
+  paymentMethodId: string;
 
   @OneToMany(() => playerEntity, (player) => player.user)
-  player: playerEntity[]
+  player: playerEntity[];
 }
+
 

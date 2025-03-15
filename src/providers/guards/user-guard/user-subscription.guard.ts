@@ -45,7 +45,6 @@ export class userSubscriptionGuard extends AuthGuard('jwt-subscription-user') {
     const { planType } = userWithSubscription.subscription;
 
     if (
-      planType !== subscriptionEnum.TRIAL &&
       planType !== subscriptionEnum.REGULAR
     ) {
       throw new ForbiddenException('You must have a valid subscription.');

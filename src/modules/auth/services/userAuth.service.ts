@@ -32,29 +32,32 @@ export class userAuthService {
       const hashedPassword = hashPassword(data.password);
       const user = await this.createuserInstance(data, hashedPassword);
 
-      const stripeCustomer = this.stripe.customers.create({
+      // Create Stripe Customer
+      const stripeCustomer = await this.stripe.customers.create({
         email: user.email
-      })
+      });
 
-      user.stripeCustomerId = (await stripeCustomer).id
-      await this.repo.save(user)
+      // Store Stripe Customer ID
+      user.stripeCustomerId = stripeCustomer.id;
+      await this.repo.save(user);
 
       const accessToken = this.jwtService.generateAuthToken({
         email: user.email,
         id: user.id,
       });
 
-      const { password, ...userWithoutPassword } = user
+      const { password, ...userWithoutPassword } = user;
 
       return {
         message: 'User Created',
-        userWithoutPassword,
+        user: userWithoutPassword,
         accessToken,
       };
     } catch (error) {
       throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST);
     }
   }
+
 
   async createuserInstance(data: signupDto, encryptedPassword: string) {
     try {
@@ -76,7 +79,6 @@ export class userAuthService {
       throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST);
     }
   }
-
   async login(data: loginDto) {
     try {
       const [user] = await this.find(data.email);
@@ -93,7 +95,6 @@ export class userAuthService {
       const accessToken = this.jwtService.generateAuthToken({
         email: user.email,
         id: user.id,
-
       });
 
       return {
