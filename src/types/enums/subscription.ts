@@ -9,6 +9,7 @@ export enum paymentStatus {
   FAILED = 'failed',
   CANCELED = 'canceled',
   REQUIRES_ACTION = 'requires_action',
+
 }
 
 

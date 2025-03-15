@@ -23,6 +23,7 @@ export class userAuthService {
     );
   }
 
+ //======================================REGISTER USER LOGIC=========================================================
   async registeruser(data: signupDto) {
     try {
       const result = await this.find(data.email);
@@ -59,6 +60,8 @@ export class userAuthService {
   }
 
 
+   //======================================CREATE USER INSTANCE LOGIC=========================================================
+
   async createuserInstance(data: signupDto, encryptedPassword: string) {
     try {
       const user = this.repo.create({
@@ -72,6 +75,9 @@ export class userAuthService {
     }
   }
 
+  
+  //======================================FIND USER MY EMAIL=========================================================
+ 
   async find(email: string) {
     try {
       return await this.repo.find({ where: { email } });
@@ -79,6 +85,9 @@ export class userAuthService {
       throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST);
     }
   }
+ 
+  //======================================LOGIN USER LOGIC=========================================================
+
   async login(data: loginDto) {
     try {
       const [user] = await this.find(data.email);

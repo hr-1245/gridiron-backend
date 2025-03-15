@@ -10,6 +10,8 @@ import { loginDto } from "../dto/login.dto";
 export class userauthController {
   constructor(private authService: userAuthService) { }
 
+  //======================================CREATE NEW USER API=========================================================
+
   @ApiOperation({ summary: 'Generated new user' })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -27,6 +29,8 @@ export class userauthController {
   async signup(@Body() body: signupDto) {
     return await this.authService.registeruser(body)
   }
+
+  //======================================SIGN IN THE USER API=========================================================
 
   @ApiOperation({ summary: 'User Signin Route' })
   @ApiResponse({

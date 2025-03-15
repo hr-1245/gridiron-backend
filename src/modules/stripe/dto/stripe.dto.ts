@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { subscriptionEnum } from 'src/types/enums/subscription';
+import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 export class AttachPaymentMethodDto {
   @ApiProperty({ description: 'The payment method ID to attach', example: 'pm_1GqIC8AbVXYZ' })
@@ -69,9 +69,38 @@ export class StripeCustomerResponseDto {
 
 
 export class SubscriptionResponseDto {
-  @ApiProperty({ description: 'The Stripe subscription ID', example: 'sub_1ABCDEF...' })
   subscriptionId: string;
 
-  @ApiProperty({ description: 'The subscription status', })
   status: string;
 }
+
+
+export class SubscribeDto {
+  @ApiProperty({ description: 'Full name of the user subscribing', example: 'John Doe' })
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+
+  @ApiProperty({ description: 'Phone number of the user subscribing', example: '+1234567890' })
+  @IsString()
+  @IsNotEmpty()
+  phoneNumber: string;
+}
+
+
+
+export class SubscriptionStatusDto {
+  @ApiProperty({ description: 'Message regarding the subscription status', example: 'User is subscribed' })
+  message: string;
+
+
+
+  @ApiProperty({ description: 'Subscription status (e.g., succeeded, pending, canceled, none)', example: 'succeeded' })
+  subscriptionStatus: string;
+
+  @ApiProperty({ description: 'Stripe subscription ID if subscribed', example: 'sub_12345', required: false })
+  subscriptionId?: string;
+}
+
+
+
