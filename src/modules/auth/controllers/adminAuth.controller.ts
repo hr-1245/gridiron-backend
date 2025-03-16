@@ -1,5 +1,5 @@
 import { Body, Controller, HttpStatus, Post, UseGuards } from "@nestjs/common";
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { adminauthService } from "../services/adminAuth.service";
 import { loginDto } from "../dto/login.dto";
 
@@ -12,7 +12,7 @@ export class adminauthController {
   constructor(private authService: adminauthService) {
   }
 
-    //======================================SIGN IN ADMIN API=========================================================
+  //======================================SIGN IN ADMIN API=========================================================
   @ApiOperation({ summary: 'Admin Signin Route' })
   @ApiResponse({
     status: HttpStatus.CREATED,

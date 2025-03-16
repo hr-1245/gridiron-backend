@@ -209,70 +209,49 @@ export class StripeService {
   }
 
   // -------------------- Create Subscription Directly --------------------
-  async createSubscription(userId: number, subscribeDto: SubscribeDto): Promise<SubscriptionResponseDto & { message: string, user: any }> {
-
+  async createSubscription(userId: number, subscribeDto: SubscribeDto): Promise<SubscriptionResponseDto & { message: string }> {
     const user = await this.userRepo.findOne({ where: { id: userId }, relations: ['subscription'] });
-
+  
     if (!user || !user.stripeCustomerId) {
-
       throw new NotFoundException('User not found or missing Stripe customer ID');
     }
-
+  
     if (user.subscription && (user.subscription.subscriptionStatus === paymentStatus.SUCCEEDED || user.subscription.subscriptionStatus === paymentStatus.PENDING)) {
-
       throw new ConflictException('User already subscribed to the Regular plan.');
     }
-
+  
     if (!user.paymentMethodId) {
-
       throw new BadRequestException('No payment method attached. Please attach a valid payment method before subscribing.');
     }
-
+  
     const priceId = this.configService.get<string>('STRIPE_REGULAR_PRICE_ID');
-
     if (!priceId) throw new InternalServerErrorException('Stripe price ID not configured');
-
+  
     try {
-
       const subscription = await this.stripe.subscriptions.create({
-
         customer: user.stripeCustomerId,
-
         items: [{ price: priceId }],
-
         expand: ['latest_invoice.payment_intent'],
       });
-
+  
       const newPlan = this.planRepo.create({
-
         stripeSubscriptionId: subscription.id,
-
         planType: subscriptionEnum.REGULAR,
-
         subscriptionStatus: subscription.status === 'active' ? paymentStatus.SUCCEEDED : paymentStatus.PENDING,
-
         user: user,
-
         name: subscribeDto.name,
-
         phoneNumber: subscribeDto.phoneNumber,
       });
       await this.planRepo.save(newPlan);
-
+  
+      // Return cleaner response without full user object
       return {
-
         message: 'Subscribed to Regular Plan successfully',
-
-        user,
-
         subscriptionId: subscription.id,
-
         status: subscription.status,
       };
     } catch (error: any) {
-
       if (error?.payment_intent?.status) {
-
         this.handlePaymentStatus(error.payment_intent.status);
       }
       throw new InternalServerErrorException('Failed to create subscription: ' + error.message);

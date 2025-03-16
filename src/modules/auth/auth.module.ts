@@ -7,9 +7,11 @@ import { adminauthService } from "./services/adminAuth.service";
 import { userauthController } from "./controllers/userAuth.controller";
 import { adminauthController } from "./controllers/adminAuth.controller";
 import { jwtModule } from "../jwt/jwt.module";
+import { mailModule } from "../mail/mail.module";
+import { OtpModule } from "../otp/otp.module";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([userEntity, adminauthEntity]), jwtModule],
+  imports: [TypeOrmModule.forFeature([userEntity, adminauthEntity]), jwtModule, mailModule, OtpModule],
   controllers: [userauthController, adminauthController],
   providers: [userAuthService, adminauthService],
 })

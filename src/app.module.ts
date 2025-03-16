@@ -9,6 +9,8 @@ import { jwtModule } from './modules/jwt/jwt.module';
 import { playerModule } from './modules/player/player.module';
 import { userModule } from './modules/user/user.module';
 import { stripeModule } from './modules/stripe/stripe.module';
+import { mailModule } from './modules/mail/mail.module';
+import { OtpModule } from './modules/otp/otp.module';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true }),
@@ -17,7 +19,9 @@ import { stripeModule } from './modules/stripe/stripe.module';
     jwtModule,
     playerModule,
     userModule,
-    stripeModule
+    stripeModule,
+    mailModule,
+    OtpModule
   ],
   providers: [adminjwtStrategy, userjwtStrategy],
 })
