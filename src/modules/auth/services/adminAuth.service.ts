@@ -2,9 +2,9 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { adminauthEntity } from "src/modules/admin/entity/admin.entity";
 import { HttpException, HttpStatus, NotFoundException } from "@nestjs/common";
-import { loginDto } from "../dto/login.dto";
 import { adminjwtService } from "src/modules/jwt/services/admin-jwt.service";
 import { comparePassword } from "src/types/enums/bcrypt";
+import { loginDto } from "../dto/login.dto";
 
 export class adminauthService {
   constructor(
@@ -32,7 +32,8 @@ export class adminauthService {
 
       const accessToken = this.jwtService.generateAuthToken({
         email: admin.email,
-        id: admin.id
+        id: admin.id,
+        role: admin.role
       })
       return {
         message: 'User Logged In Successfully',
