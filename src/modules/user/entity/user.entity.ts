@@ -29,7 +29,6 @@ export class userEntity extends baseEntity {
   @OneToMany(() => otpEntity, (otp) => otp.user)
   otp: otpEntity[]
 
-
   @Column({ nullable: true })
   paymentMethodId: string;
 
