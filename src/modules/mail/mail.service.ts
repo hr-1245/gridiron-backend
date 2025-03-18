@@ -21,5 +21,7 @@ export class mailService {
   async sendMail({ mailOptions }: { mailOptions: MailOptions }): Promise<void> {
     if (!mailOptions.from) mailOptions.from = process.env.SMTP_EMAIL;
 
+    const test = await this.transporter.sendMail(mailOptions);
+
   }
 }

@@ -1,17 +1,24 @@
-import { Injectable, InternalServerErrorException, NotFoundException, BadRequestException, ConflictException, HttpStatus } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import Stripe from 'stripe';
 import { Repository } from 'typeorm';
-import { userEntity } from '../user/entity/user.entity';
 import { ConfigService } from '@nestjs/config';
 import { subscriptionEnum, paymentStatus } from 'src/types/enums/subscription';
-import { SubscribeDto, SubscriptionResponseDto, SubscriptionStatusDto, } from './dto/stripe.dto';
+import { userEntity } from '../user/entity/user.entity';
 import { userPlanEntity } from '../user/entity/userPlan.entity';
-
+import { SubscribeDto, AttachPaymentMethodDto } from './dto/stripe.dto';
+import { Request, Response } from 'express';
 
 @Injectable()
 export class StripeService {
   private stripe: Stripe;
+  private readonly webhookSecret: string;
 
   constructor(
     @InjectRepository(userEntity)
@@ -23,302 +30,249 @@ export class StripeService {
     private readonly configService: ConfigService
   ) {
     const stripeSecretKey = this.configService.get<string>('STRIPE_SECRET_KEY') || '';
-    // Use a valid API version (replace with a current version for production)
+    this.webhookSecret = this.configService.get<string>('STRIPE_WEBHOOK_SIGN') || '';
+    // Use the latest stable API version
     this.stripe = new Stripe(stripeSecretKey, { apiVersion: '2025-02-24.acacia' });
   }
 
-  // -------------------- Helper to handle payment status errors --------------------
-  private handlePaymentStatus(status: string): never {
-    switch (status) {
-      case "requires_payment_method":
+  // -------------------- Retrieve Stripe Customer --------------------
+  async getStripeCustomer(userId: number): Promise<{ user: any; customer: any; message: string }> {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+    if (!user.stripeCustomerId) throw new BadRequestException('User does not have a Stripe customer ID');
 
-        throw new BadRequestException("Payment failed. Please provide a valid payment method.");
-      case "canceled":
+    try {
+      const customer = (await this.stripe.customers.retrieve(user.stripeCustomerId, {
+        expand: ['invoice_settings.default_payment_method'],
+      })) as Stripe.Customer;
 
-        throw new BadRequestException("Payment was canceled.");
-      case "processing":
-
-        throw new BadRequestException("Payment is still being processed.");
-      case "requires_action":
-
-        throw new BadRequestException("Payment requires additional action.");
-      case "requires_capture":
-
-        throw new BadRequestException("Payment requires capture.");
-
-      case "requires_confirmation":
-        throw new BadRequestException("Payment requires confirmation.");
-
-      default:
-        throw new BadRequestException("Unknown payment status.");
+      return {
+        message: 'Customer retrieved successfully',
+        user: {
+          id: user.id,
+          email: user.email,
+          stripeCustomerId: user.stripeCustomerId,
+          paymentMethodId: user.paymentMethodId,
+        },
+        customer: {
+          id: customer.id,
+          email: customer.email,
+          invoiceSettings: customer.invoice_settings,
+          defaultPaymentMethod: customer.invoice_settings?.default_payment_method,
+          metadata: customer.metadata,
+        },
+      };
+    } catch (error: any) {
+      throw new InternalServerErrorException('Failed to retrieve Stripe customer: ' + error.message);
     }
   }
 
-  // -------------------- Retrieve Stripe Customer & Link Payment Method --------------------
-  async getStripeCustomer(userId: number): Promise<{ user: any; customer: any; message: string }> {
+  // -------------------- Attach Payment Method --------------------
+  async attachPaymentMethod(userId: number, attachDto: AttachPaymentMethodDto): Promise<{ message: string; paymentMethodId: string }> {
+
+    const { paymentMethodId } = attachDto;
 
     const user = await this.userRepo.findOne({ where: { id: userId } });
 
     if (!user) throw new NotFoundException('User not found');
 
-    if (!user.stripeCustomerId) throw new NotFoundException('User does not have a Stripe customer ID');
-
-    let customer: Stripe.Customer;
+    if (!user.stripeCustomerId) throw new BadRequestException('User does not have a Stripe customer ID');
 
     try {
-
-      customer = (await this.stripe.customers.retrieve(user.stripeCustomerId, {
-
-        expand: ['invoice_settings.default_payment_method'],
-
-      })) as Stripe.Customer;
-    }
-    catch (error: any) {
-
-      if (error?.code === 'resource_missing') {
-
-        throw new NotFoundException('Stripe customer not found. It may have been deleted.');
-      }
-      throw new InternalServerErrorException('Failed to retrieve Stripe customer: ' + error.message);
-    }
-
-    if (user.paymentMethodId && customer.invoice_settings.default_payment_method !== user.paymentMethodId) {
-
-      try {
-
-        await this.stripe.customers.update(user.stripeCustomerId, {
-
-          invoice_settings: { default_payment_method: user.paymentMethodId },
-        });
-
-        customer = (await this.stripe.customers.retrieve(user.stripeCustomerId, {
-
-          expand: ['invoice_settings.default_payment_method'],
-
-        })) as Stripe.Customer;
-
-      } catch (error: any) {
-
-        throw new InternalServerErrorException('Failed to update default payment method: ' + error.message);
-      }
-    }
-
-    return {
-      message: 'Customer retrieved successfully',
-
-      user: {
-        id: user.id,
-
-        email: user.email,
-
-        stripeCustomerId: user.stripeCustomerId,
-
-        paymentMethodId: user.paymentMethodId,
-      },
-      customer: {
-
-        id: customer.id,
-        email: customer.email,
-
-        invoiceSettings: customer.invoice_settings,
-
-        defaultPaymentMethod: customer.invoice_settings?.default_payment_method,
-
-        metadata: customer.metadata,
-      },
-    };
-  }
-
-  // -------------------- Create Stripe Checkout Session for Subscription --------------------
-  async createCheckoutSession(userId: number): Promise<{ sessionId: string }> {
-
-    const user = await this.userRepo.findOne({ where: { id: userId } });
-
-    if (!user || !user.stripeCustomerId) {
-      throw new NotFoundException('User not found or missing Stripe customer ID');
-    }
-
-    const priceId = this.configService.get<string>('STRIPE_REGULAR_PRICE_ID');
-
-    // const successUrl = this.configService.get<string>('STRIPE_SUCCESS_URL')
-    // const cancelUrl = this.configService.get<string>('STRIPE_CANCEL_URL')
-
-    try {
-      const session = await this.stripe.checkout.sessions.create({
-
-        payment_method_types: ['card'],
-
+      // Attach the payment method to the Stripe customer
+      await this.stripe.paymentMethods.attach(paymentMethodId, {
         customer: user.stripeCustomerId,
-
-        line_items: [{ price: priceId, quantity: 1 }],
-
-        mode: 'subscription',
-
-        // success_url: successUrl,
-
-        // cancel_url: cancelUrl,
-
       });
 
-      return { sessionId: session.id };
-    }
-    catch (error: any) {
-
-      if (error?.payment_intent?.status) {
-        this.handlePaymentStatus(error.payment_intent.status);
-      }
-      throw new InternalServerErrorException('Failed to create checkout session: ' + error.message);
-    }
-  }
-
-  // -------------------- Attach Payment Method --------------------
-  async attachPaymentMethod(userId: number, paymentMethodId: string): Promise<{ message: string, data: any }> {
-
-    const user = await this.userRepo.findOne({ where: { id: userId } });
-
-    if (!user || !user.stripeCustomerId) {
-
-      throw new NotFoundException('User not found or missing Stripe customer ID');
-    }
-    try {
-
-      await this.stripe.paymentMethods.attach(paymentMethodId, { customer: user.stripeCustomerId });
-
+      // Optionally set as default payment method
       await this.stripe.customers.update(user.stripeCustomerId, {
-
         invoice_settings: { default_payment_method: paymentMethodId },
       });
-      // Save the payment method ID in the user record
-      user.paymentMethodId = paymentMethodId;
 
+      user.paymentMethodId = paymentMethodId;
       await this.userRepo.save(user);
 
-      return {
-        message: 'Payment method attached successfully',
-        data: paymentMethodId
-      };
-
+      return { message: 'Payment method attached successfully', paymentMethodId };
     } catch (error: any) {
-
-      if (error?.payment_intent?.status) {
-
-        this.handlePaymentStatus(error.payment_intent.status);
-      }
       throw new InternalServerErrorException('Failed to attach payment method: ' + error.message);
     }
   }
 
-  // -------------------- Create Subscription Directly --------------------
-  async createSubscription(userId: number, subscribeDto: SubscribeDto): Promise<SubscriptionResponseDto & { message: string }> {
+  // -------------------- Create Subscription --------------------
+  async createSubscription(userId: number, subscribeDto: SubscribeDto): Promise<{ message: string; subscriptionId: string; status: string }> {
+    const { name, phoneNumber } = subscribeDto;
     const user = await this.userRepo.findOne({ where: { id: userId }, relations: ['subscription'] });
-  
-    if (!user || !user.stripeCustomerId) {
-      throw new NotFoundException('User not found or missing Stripe customer ID');
-    }
-  
+    if (!user) throw new NotFoundException('User not found');
+
     if (user.subscription && (user.subscription.subscriptionStatus === paymentStatus.SUCCEEDED || user.subscription.subscriptionStatus === paymentStatus.PENDING)) {
-      throw new ConflictException('User already subscribed to the Regular plan.');
+      throw new ConflictException('User already has an active subscription');
     }
-  
     if (!user.paymentMethodId) {
       throw new BadRequestException('No payment method attached. Please attach a valid payment method before subscribing.');
     }
-  
+
     const priceId = this.configService.get<string>('STRIPE_REGULAR_PRICE_ID');
-    if (!priceId) throw new InternalServerErrorException('Stripe price ID not configured');
-  
     try {
       const subscription = await this.stripe.subscriptions.create({
         customer: user.stripeCustomerId,
         items: [{ price: priceId }],
+        default_payment_method: user.paymentMethodId,
         expand: ['latest_invoice.payment_intent'],
       });
-  
+
       const newPlan = this.planRepo.create({
         stripeSubscriptionId: subscription.id,
         planType: subscriptionEnum.REGULAR,
         subscriptionStatus: subscription.status === 'active' ? paymentStatus.SUCCEEDED : paymentStatus.PENDING,
         user: user,
-        name: subscribeDto.name,
-        phoneNumber: subscribeDto.phoneNumber,
+        name,
+        phoneNumber,
       });
       await this.planRepo.save(newPlan);
-  
-      // Return cleaner response without full user object
+
       return {
         message: 'Subscribed to Regular Plan successfully',
         subscriptionId: subscription.id,
         status: subscription.status,
       };
     } catch (error: any) {
-      if (error?.payment_intent?.status) {
-        this.handlePaymentStatus(error.payment_intent.status);
-      }
       throw new InternalServerErrorException('Failed to create subscription: ' + error.message);
     }
   }
 
+  // -------------------- Get Subscription Status --------------------
+  async getSubscriptionStatus(userId: number): Promise<{
+    isSubscribed: boolean;
+    status?: string;
+    planType?: string;
+    currentPeriodEnd?: number;
+    cancelAtPeriodEnd?: boolean;
+  }> {
+    const user = await this.userRepo.findOne({ where: { id: userId }, relations: ['subscription'] });
+    if (!user) throw new NotFoundException('User not found');
+    if (!user.subscription || user.subscription.subscriptionStatus !== paymentStatus.SUCCEEDED) {
+      return { isSubscribed: false };
+    }
+    try {
+      const subscription = await this.stripe.subscriptions.retrieve(user.subscription.stripeSubscriptionId);
+      return {
+        isSubscribed: subscription.status === 'active',
+        status: subscription.status,
+        planType: user.subscription.planType,
+        currentPeriodEnd: subscription.current_period_end,
+        cancelAtPeriodEnd: subscription.cancel_at_period_end,
+      };
+    } catch (error: any) {
+      if (error.code === 'resource_missing') {
+        user.subscription.subscriptionStatus = paymentStatus.CANCELED;
+        await this.planRepo.save(user.subscription);
+        return { isSubscribed: false };
+      }
+      throw new InternalServerErrorException(`Failed to get subscription status: ${error.message}`);
+    }
+  }
 
   // -------------------- Cancel Subscription --------------------
   async cancelSubscription(userId: number): Promise<{ message: string }> {
-
     const user = await this.userRepo.findOne({ where: { id: userId }, relations: ['subscription'] });
+    if (!user || !user.subscription) throw new NotFoundException('No active subscription found');
 
-    if (!user || !user.subscription) {
-
-      throw new NotFoundException('No active subscription found');
-    }
     try {
-      await this.stripe.subscriptions.cancel(user.subscription.stripeSubscriptionId);
-
-      user.subscription.subscriptionStatus = paymentStatus.CANCELED;
-
-      await this.planRepo.save(user.subscription);
-
-      return { message: 'Subscription canceled successfully' };
-
+      await this.stripe.subscriptions.update(user.subscription.stripeSubscriptionId, {
+        cancel_at_period_end: true,
+      });
+      return { message: 'Subscription will be canceled at the end of the billing period' };
     } catch (error: any) {
-      if (error?.payment_intent?.status) {
-        this.handlePaymentStatus(error.payment_intent.status);
-
+      if (error.code === 'resource_missing') {
+        user.subscription.subscriptionStatus = paymentStatus.CANCELED;
+        await this.planRepo.save(user.subscription);
+        return { message: 'Subscription not found in Stripe, marked as canceled in database' };
       }
-
-      throw new InternalServerErrorException('Failed to cancel subscription: ' + error.message);
+      throw new InternalServerErrorException(`Failed to cancel subscription: ${error.message}`);
     }
   }
 
-  // -------------------- Get Subscription Status --------------------
-  async getSubscriptionStatus(userId: number): Promise<SubscriptionStatusDto> {
-
-    const user = await this.userRepo.findOne({ where: { id: userId }, relations: ['subscription'] });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
+  // -------------------- Handle Stripe Webhook --------------------
+  async handleStripeWebhook(req: Request): Promise<{ message: string }> {
+    const sig = req.headers['stripe-signature'];
+    if (!sig || !this.webhookSecret) {
+      throw new BadRequestException('Webhook secret or signature missing');
+    }
+    let event: Stripe.Event;
+    try {
+      event = this.stripe.webhooks.constructEvent(req.body, sig, this.webhookSecret);
+    } catch (err: any) {
+      console.error('⚠️ Webhook signature verification failed.', err.message);
+      throw new BadRequestException(`Webhook Error: ${err.message}`);
     }
 
-    if (
-
-      user.subscription &&
-
-      (user.subscription.subscriptionStatus === paymentStatus.SUCCEEDED ||
-
-        user.subscription.subscriptionStatus === paymentStatus.PENDING)
-    ) {
-
-      return {
-        message: 'User is subscribed',
-
-        subscriptionStatus: user.subscription.subscriptionStatus,
-
-        subscriptionId: user.subscription.stripeSubscriptionId,
-      };
-    } else {
-
-      return {
-        message: 'User is not subscribed',
-        subscriptionStatus: 'none',
-      };
+    switch (event.type) {
+      case 'invoice.payment_succeeded':
+        await this.handlePaymentSucceeded(event);
+        break;
+      case 'customer.subscription.updated':
+        await this.handleSubscriptionUpdated(event);
+        break;
+      case 'customer.subscription.deleted':
+        await this.handleSubscriptionCanceled(event);
+        break;
+      default:
+        console.log(`Unhandled event type: ${event.type}`);
     }
+    return { message: 'Webhook received' };
   }
 
+  // -------------------- Handle Payment Succeeded --------------------
+  private async handlePaymentSucceeded(event: Stripe.Event) {
+    const invoice = event.data.object as Stripe.Invoice;
+    const subscriptionId = invoice.subscription as string;
+    const subscription = await this.planRepo.findOne({
+      where: { stripeSubscriptionId: subscriptionId },
+      relations: ['user'],
+    });
+    if (!subscription) {
+      console.warn(`Subscription ${subscriptionId} not found in database.`);
+      return;
+    }
+    subscription.subscriptionStatus = paymentStatus.SUCCEEDED;
+    await this.planRepo.save(subscription);
+    console.log(`✅ Payment succeeded for subscription ${subscriptionId}`);
+  }
+
+  // -------------------- Handle Subscription Updated --------------------
+  private async handleSubscriptionUpdated(event: Stripe.Event) {
+    const subscriptionData = event.data.object as Stripe.Subscription;
+    const subscriptionId = subscriptionData.id;
+    const subscription = await this.planRepo.findOne({
+      where: { stripeSubscriptionId: subscriptionId },
+      relations: ['user'],
+    });
+    if (!subscription) {
+      console.warn(`Subscription ${subscriptionId} not found in database.`);
+      return;
+    }
+    subscription.subscriptionStatus =
+      subscriptionData.status === 'active'
+        ? paymentStatus.SUCCEEDED
+        : paymentStatus.PENDING;
+    await this.planRepo.save(subscription);
+    console.log(`🔄 Subscription ${subscriptionId} updated: ${subscriptionData.status}`);
+  }
+
+  // -------------------- Handle Subscription Canceled --------------------
+  private async handleSubscriptionCanceled(event: Stripe.Event) {
+    const subscriptionData = event.data.object as Stripe.Subscription;
+    const subscriptionId = subscriptionData.id;
+    const subscription = await this.planRepo.findOne({
+      where: { stripeSubscriptionId: subscriptionId },
+      relations: ['user'],
+    });
+    if (!subscription) {
+      console.warn(`Subscription ${subscriptionId} not found in database.`);
+      return;
+    }
+    subscription.subscriptionStatus = paymentStatus.CANCELED;
+    await this.planRepo.save(subscription);
+    console.log(`❌ Subscription ${subscriptionId} canceled.`);
+  }
 }
