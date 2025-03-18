@@ -1,76 +1,65 @@
-import { Controller, Get, Post, Delete, Body, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Controller, Post, Get, Body, Req, Res, UseGuards } from '@nestjs/common';
+import { Request, Response } from 'express';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { userjwtGuard } from 'src/providers/guards/user-guard/user.guard';
-import { User } from 'src/utils/user.decorator';
 import { StripeService } from '../stripe/stripe.service';
+import { User } from 'src/utils/user.decorator';
 import { userjwtInterface } from '../jwt/interface/jwt.interface';
-import { AttachPaymentMethodDto, CheckoutSessionResponseDto, CommonResponseDto, StripeCustomerResponseDto, SubscribeDto, SubscriptionResponseDto, SubscriptionStatusDto } from '../stripe/dto/stripe.dto';
+import { AttachPaymentMethodDto, SubscribeDto } from '../stripe/dto/stripe.dto';
 
-@ApiTags('Stripe')
 @ApiBearerAuth('jwt')
+@ApiTags('Stripe')
 @Controller('stripe')
 @UseGuards(userjwtGuard)
 export class userController {
   constructor(private readonly stripeService: StripeService) { }
 
+  @Post('attach-payment-method')
+  @ApiOperation({ summary: 'Attach a payment method to a Stripe customer' })
+  @ApiResponse({ status: 200, description: 'Payment method attached successfully' })
+  async attachPaymentMethod(
+    @User() user: userjwtInterface,
+    @Body() attachDto: AttachPaymentMethodDto,
+  ) {
+    return this.stripeService.attachPaymentMethod(user.id, attachDto);
+  }
 
-  //======================================GET CUSTOMER DETAIL API=========================================================
-
-  @ApiOperation({ summary: 'Retrieve Stripe customer details' })
-  @ApiResponse({ status: 200, description: 'Stripe customer retrieved successfully', type: StripeCustomerResponseDto })
   @Get('customer')
-  async retrieveCustomer(@User() user: userjwtInterface): Promise<StripeCustomerResponseDto> {
+  @ApiOperation({ summary: 'Retrieve a Stripe customer' })
+  @ApiResponse({ status: 200, description: 'Customer retrieved successfully' })
+  async getStripeCustomer(@User() user: userjwtInterface) {
     return this.stripeService.getStripeCustomer(user.id);
   }
 
-  @ApiOperation({ summary: 'Create a Stripe Checkout Session for subscription' })
-  @ApiResponse({ status: 200, description: 'Checkout session created successfully', type: CheckoutSessionResponseDto })
-  @Post('checkout')
-  async createCheckout(@User() user: userjwtInterface): Promise<CheckoutSessionResponseDto> {
-    return this.stripeService.createCheckoutSession(user.id);
-  }
-
-
-  // ======================================ATTACH PAYMENT-METHODAPI========================================================= 
-
-
-  @ApiOperation({ summary: 'Attach a payment method to the user’s Stripe account' })
-  @ApiResponse({ status: 200, description: 'Payment method attached successfully', type: CommonResponseDto })
-  @Post('attach-payment-method')
-  async attachPaymentMethod(
-    @User() user: userjwtInterface,
-    @Body() attachPaymentMethodDto: AttachPaymentMethodDto,
-  ): Promise<CommonResponseDto> {
-    return this.stripeService.attachPaymentMethod(user.id, attachPaymentMethodDto.paymentMethodId);
-  }
-
-  @ApiOperation({ summary: 'Create a subscription directly for the Regular Plan' })
-  @ApiResponse({ status: 200, description: 'Subscription created successfully', type: SubscriptionResponseDto })
   @Post('subscribe')
-  async subscribe(
+  @ApiOperation({ summary: 'Create a subscription for the user' })
+  @ApiResponse({ status: 201, description: 'Subscription created successfully' })
+  async createSubscription(
     @User() user: userjwtInterface,
     @Body() subscribeDto: SubscribeDto,
-  ): Promise<SubscriptionResponseDto & { message: string }> {
+  ) {
     return this.stripeService.createSubscription(user.id, subscribeDto);
   }
 
-  //======================================SUBSCRIPTION STATUS API=========================================================
-
-
-  @ApiOperation({ summary: 'Get the subscription status for the authenticated user' })
-  @ApiResponse({ status: 200, description: 'Subscription status retrieved successfully', type: SubscriptionStatusDto })
   @Get('subscription-status')
-  async getSubscriptionStatus(@User() user: userjwtInterface): Promise<SubscriptionStatusDto> {
+  @ApiOperation({ summary: 'Get the subscription status of the user' })
+  @ApiResponse({ status: 200, description: 'Subscription status retrieved' })
+  async getSubscriptionStatus(@User() user: userjwtInterface) {
     return this.stripeService.getSubscriptionStatus(user.id);
   }
 
-
-  //======================================UNSUBSCRIBE API=========================================================
-
+  @Post('cancel-subscription')
   @ApiOperation({ summary: 'Cancel the user’s subscription' })
-  @ApiResponse({ status: 200, description: 'Subscription canceled successfully', type: CommonResponseDto })
-  @Delete('unsubscribe')
-  async cancelSubscription(@User() user: userjwtInterface): Promise<CommonResponseDto> {
+  @ApiResponse({ status: 200, description: 'Subscription canceled' })
+  async cancelSubscription(@User() user: userjwtInterface) {
     return this.stripeService.cancelSubscription(user.id);
+  }
+
+  // The webhook endpoint remains public since Stripe calls it without authentication.
+  @Post('webhook')
+  @ApiOperation({ summary: 'Stripe webhook endpoint' })
+  @ApiResponse({ status: 200, description: 'Webhook received' })
+  async stripeWebhook(@Req() req: Request) {
+    await this.stripeService.handleStripeWebhook(req);
   }
 }

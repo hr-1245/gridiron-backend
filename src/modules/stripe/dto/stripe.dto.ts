@@ -1,24 +1,27 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
+//#region attachPaymentMethodDto
+
 export class AttachPaymentMethodDto {
   @ApiProperty({ description: 'The payment method ID to attach', example: 'pm_1GqIC8AbVXYZ' })
   paymentMethodId: string;
 }
 
-
+//#region checkoutSessionResponseDto
 export class CheckoutSessionResponseDto {
   @ApiProperty({ description: 'The Stripe Checkout session ID', example: 'cs_test_a1b2c3d4e5' })
   sessionId: string;
 }
 
-
+//#region commonResponseDto
 export class CommonResponseDto {
   @ApiProperty({ description: 'Response message', example: 'Payment method attached successfully' })
   message: string;
 }
 
 
+//#region userStripeInfoDto
 
 export class UserStripeInfoDto {
   @ApiProperty({ example: 1 })
@@ -35,6 +38,7 @@ export class UserStripeInfoDto {
 }
 
 
+//#region stripeCustomerInfoDto
 
 export class StripeCustomerInfoDto {
   @ApiProperty({ example: 'cus_ABC123' })
@@ -55,6 +59,7 @@ export class StripeCustomerInfoDto {
 
 
 
+//#region stripeCustomerResponseDto
 
 export class StripeCustomerResponseDto {
   @ApiProperty({ example: 'Customer retrieved successfully' })
@@ -67,13 +72,14 @@ export class StripeCustomerResponseDto {
   customer: StripeCustomerInfoDto;
 }
 
-
+//#region subscriptionResponseDto
 export class SubscriptionResponseDto {
   subscriptionId: string;
 
   status: string;
 }
 
+//#region subscribeDto
 
 export class SubscribeDto {
   @ApiProperty({ description: 'Full name of the user subscribing', example: 'John Doe' })
@@ -88,11 +94,11 @@ export class SubscribeDto {
 }
 
 
+//#region subscriptionStatusDto
 
 export class SubscriptionStatusDto {
   @ApiProperty({ description: 'Message regarding the subscription status', example: 'User is subscribed' })
   message: string;
-
 
 
   @ApiProperty({ description: 'Subscription status (e.g., succeeded, pending, canceled, none)', example: 'succeeded' })
