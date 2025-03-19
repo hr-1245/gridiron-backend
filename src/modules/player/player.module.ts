@@ -1,9 +1,10 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { playerAttributesEntity, playerEntity, playerImageEntity, playerPositionsEntity } from "./entity/player.entity";
+import { PlayerAttributesEntity, PlayerEntity, PlayerImageEntity, PositionAttributeMappingEntity, } from "./entity/players.entity";
+import { PlayerPositionEntity } from "./entity/player-position.entity";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([playerEntity, playerPositionsEntity, playerAttributesEntity, playerImageEntity])],
+  imports: [TypeOrmModule.forFeature([PlayerEntity, PlayerPositionEntity, PlayerAttributesEntity, PlayerImageEntity, PositionAttributeMappingEntity])],
   controllers: [],
   providers: [],
   exports: []
