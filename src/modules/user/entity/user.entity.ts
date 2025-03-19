@@ -1,9 +1,9 @@
 import { Entity, Column, OneToOne, OneToMany, JoinColumn } from 'typeorm';
 import { baseEntity } from 'src/entities/base.entity';
 import { rolesEnum } from 'src/types/enums/roles';
-import { playerEntity } from 'src/modules/player/entity/player.entity';
 import { userPlanEntity } from './userPlan.entity';
 import { otpEntity } from 'src/modules/otp/entity/otp.entity';
+import { PlayerEntity } from 'src/modules/player/entity/players.entity';
 
 @Entity({ name: 'user' })
 export class userEntity extends baseEntity {
@@ -17,7 +17,7 @@ export class userEntity extends baseEntity {
   role: rolesEnum;
 
   @Column({ default: false })
-  isVerified: boolean; 
+  isVerified: boolean;
 
   @OneToOne(() => userPlanEntity, (subscription) => subscription.user, { cascade: true })
   @JoinColumn()
@@ -32,8 +32,8 @@ export class userEntity extends baseEntity {
   @Column({ nullable: true })
   paymentMethodId: string;
 
-  @OneToMany(() => playerEntity, (player) => player.user)
-  player: playerEntity[];
+  @OneToMany(() => PlayerEntity, (player) => player.user)
+  player: PlayerEntity[];
 }
 
 
