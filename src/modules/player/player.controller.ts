@@ -4,11 +4,10 @@ import { playerService } from "./player.service";
 import { userSubscriptionGuard } from "src/providers/guards/user-guard/user-subscription.guard";
 import { subscriptionEnum } from "src/types/enums/subscription";
 import { ConversionDto } from "./dto/convert-manually.dto";
-import { combineLatestWith } from "rxjs";
 
 @ApiTags("Player Positions")
-// @ApiBearerAuth('jwt')
-// @UseGuards(userSubscriptionGuard)
+@ApiBearerAuth('jwt')
+@UseGuards(userSubscriptionGuard)
 @SetMetadata('requiredPlans', [subscriptionEnum.REGULAR, subscriptionEnum.REGULAR])
 @Controller("positions")
 
@@ -46,8 +45,9 @@ export class PlayerController {
     status: 200,
     description: "Player attributes converted successfully",
   })
-  async convertPlayerAttributes(@Body() conversionDto: ConversionDto) {
+  async convertPlayerAttributes(@Body() conversionDto: ConversionDto, ) {
     console.log(conversionDto);
+    // user id token say nikaly ge
     return this.playerService.conversionLogic(conversionDto);
   }
 }

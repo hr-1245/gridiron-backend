@@ -28,7 +28,7 @@ export class PlayerEntity extends baseEntity {
 
 @Entity({ name: 'player_attributes' })
 export class PlayerAttributesEntity extends baseEntity {
-    @Column()
+    @Column({ nullable: true })
     overallRating: number;
 
     @Column({ nullable: true })
@@ -194,13 +194,13 @@ export class PlayerAttributesEntity extends baseEntity {
     @Column({ nullable: true })
     press: number; // 'PRS'
 
-    @Column('decimal')
+    @Column('decimal', { nullable: true })
     value: number;
 
     @Column({ nullable: true })
     draft_round: number
 
-    @ManyToOne(() => PlayerEntity, player => player.attributes)
+    @ManyToOne(() => PlayerEntity, player => player.attributes, { nullable: true })
     player: PlayerEntity;
 }
 

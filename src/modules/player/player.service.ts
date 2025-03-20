@@ -71,20 +71,29 @@ export class playerService {
 
 
 
-  async conversionLogic(obj: ConversionDto): Promise<any | number> {
+  async conversionLogic(obj: ConversionDto): Promise<any> {
     //----------CONVERSION LOGIC --------------------------------
     try {
-      const { playerName, positionId, positionCode, data: rawData } = obj
+      console.log(obj)
+      const { playerName, positionId, positionCode, data: rawData, draft_round } = obj
 
       const fetchData = await this.playerPositionRepo.findOne({
-        where: {
-          code: positionCode,
-          id: positionId
-        },
+        where: { id: positionId, code: positionCode },
       })
       if (!fetchData) {
         throw new NotFoundException('Invalid Posiiton | Position Code')
       }
+      let player: PlayerEntity | null
+      player = await this.playerRepo.findOne({ where: { name: playerName } })
+      if (!player) {
+
+        const newPlayer = this.playerRepo.create({
+          name: playerName,
+
+        })
+        player = await this.playerRepo.save(newPlayer)
+      }
+      console.log(player)
 
       let dataobj: ConverstionDataDto
 
@@ -101,33 +110,33 @@ export class playerService {
             agility: dataobj.agility + 1,
             changeOfDirecton: dataobj.change_of_direction + 3,
             strength: dataobj.strength - 3,
-            awareness: dataobj.awareness,
-            breakTackle: dataobj.break_tackle - 2 - dataobj.draft_round,
-            catchInTraffic: dataobj.catch_in_traffic - 1 - dataobj.draft_round,
-            spectacularCatch: dataobj.spectacular_catch - 0 - dataobj.draft_round,
-            release: dataobj.release + 2 - dataobj.draft_round,
-            passBlock: dataobj.pass_block - 14 - dataobj.pass_block,
-            passBlockPower: dataobj.pass_block_power - 14 - dataobj.draft_round,
-            passBlockFinesse: dataobj.pass_block_finesse - 10 - dataobj.draft_round,
-            runBlock: dataobj.run_block - 11 - dataobj.draft_round,
-            runBlockPower: dataobj.run_block_power - 12 - dataobj.draft_round,
-            leadBlocking: dataobj.lead_blocking - 4 - dataobj.draft_round,
+            awareness: dataobj.awareness - 4,
+            breakTackle: dataobj.break_tackle - 2 - (draft_round),
+            catchInTraffic: dataobj.catch_in_traffic - 1 - (draft_round),
+            spectacularCatch: dataobj.spectacular_catch + 0 - (draft_round),
+            release: dataobj.release + 2 - (draft_round),
+            passBlock: dataobj.pass_block - 14 - (draft_round),
+            passBlockPower: dataobj.pass_block_power - 14 - (draft_round),
+            passBlockFinesse: dataobj.pass_block_finesse - 10 - (draft_round),
+            runBlock: dataobj.run_block - 11 - (draft_round),
+            runBlockPower: dataobj.run_block_power - 12 - (draft_round),
+            leadBlocking: dataobj.lead_blocking - 4 - (draft_round),
             jumping: dataobj.jumping + 3,
-            carrying: dataobj.carrying - 1 - dataobj.draft_round,
-            trucking: dataobj.trucking + 0 - dataobj.draft_round,
-            catching: dataobj.catching + 0 - dataobj.draft_round,
-            stiffArm: dataobj.stiff_arm + 0 - dataobj.draft_round,
-            spinMove: dataobj.spin_move - 1 - dataobj.draft_round,
-            jukeMove: dataobj.juke_move - 1 - dataobj.draft_round,
-            shortRouteRunning: dataobj.short_route_running - 12 - dataobj.draft_round,
-            mediumRouteRunning: dataobj.medium_route_running - 13 - dataobj.draft_round,
-            deepRouteRunning: dataobj.deep_route_running - 6 - dataobj.draft_round,
+            carrying: dataobj.carrying - 1 - (draft_round),
+            trucking: dataobj.trucking + 0 - (draft_round),
+            catching: dataobj.catching + 0 - (draft_round),
+            stiffArm: dataobj.stiff_arm + 0 - (draft_round),
+            spinMove: dataobj.spin_move - 1 - (draft_round),
+            jukeMove: dataobj.juke_move - 1 - (draft_round),
+            shortRouteRunning: dataobj.short_route_running - 12 - (draft_round),
+            mediumRouteRunning: dataobj.medium_route_running - 13 - (draft_round),
+            deepRouteRunning: dataobj.deep_route_running - 6 - (draft_round),
             jumping1: dataobj.jumping + 2,
             stamina: dataobj.stamina - 1,
             injury: dataobj.injury - 1
           }
           const result = this.playerAttrRepo.create({
-            player: (await this.playerRepo.findOne({ where: { name: playerName } })) || undefined,
+            player: { id: player.id },
             speed: convertedData.speed,
             acceleration: convertedData.acceleration,
             agility: convertedData.agility,
@@ -175,7 +184,7 @@ export class playerService {
 
 
     catch (error) {
-      throw new Error('fuck behnsun')
+      throw new Error(error.message)
     }
   }
 }

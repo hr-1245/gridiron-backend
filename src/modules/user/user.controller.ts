@@ -44,7 +44,7 @@ export class userController {
   @Get('subscription-status')
   @ApiOperation({ summary: 'Get the subscription status of the user' })
   @ApiResponse({ status: 200, description: 'Subscription status retrieved' })
-  async getSubscriptionStatus(@User() user: userjwtInterface) {
+  async getSubscriptionStatus(@User() user: userjwtInterface) { 
     return this.stripeService.getSubscriptionStatus(user.id);
   }
 

@@ -1,5 +1,4 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Type } from "class-transformer";
 import { IsNotEmpty, IsNumber, IsString, ValidateNested } from "class-validator";
 
 export class ConversionDto {
@@ -19,6 +18,10 @@ export class ConversionDto {
   playerName: string;
 
   data: ConverstionDataDto;
+
+  @ApiProperty() @IsNumber() 
+  draft_round: number;
+
 }
 
 export class TightEndDto {
@@ -53,7 +56,6 @@ export class TightEndDto {
   @ApiProperty() @IsNumber() deep_route_running: number;
   @ApiProperty() @IsNumber() stamina: number;
   @ApiProperty() @IsNumber() injury: number;
-  @ApiProperty() @IsNumber() draft_round: number;
 
 }
 
