@@ -10,19 +10,17 @@ export enum approvalStatusEnum {
 }
 
 
-export enum positionCodeEnum {
-
-  tight_end = "TE",
-  quarter_back = "QB",
-  running_back = "RB",
-  wide_recevier = "WR",
-  offensive_line = "OL",
-  defensive_end = "DI",
-  line_backer = "LB",
-  corner_back = "CB",
-  safety = "S",
-  interior_offensive_lineman = "IOL",
-  offensive_tackle = "OT",
-  edge = "EDGE"
-
+export enum POSTION_CODE {
+  TightEnd = 'TE',
+  QuarterBack = 'QB',
+  RunningBack = 'RB',
+  WiderReceiver = 'WR',
+  OffensiveLine = 'OL',
+  DefensiveEnd = 'DI',
+  LineBacker = 'LB',
+  CornerBack = 'CB',
+  Safety = 'S',
+  InteriorOffensiveLineman = 'IOL',
+  OffensiveTackle = 'OT',
+  EdgeRusher = 'EDGE'
 }

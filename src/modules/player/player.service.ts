@@ -3,6 +3,8 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { PlayerAttributesEntity, PlayerEntity, PositionAttributeMappingEntity } from "./entity/players.entity";
 import { Repository } from "typeorm";
 import { PlayerPositionEntity } from "./entity/player-position.entity";
+import { ConversionDto, ConverstionDataDto, TightEndDto } from "./dto/convert-manually.dto";
+import { POSTION_CODE } from "src/types/enums/roles";
 
 @Injectable()
 export class playerService {
@@ -64,13 +66,50 @@ export class playerService {
   //   };
   // }
 
-  async conversionLogic() {
+
+  //----------CONVERSION LOGIC --------------------------------
+
+
+
+  async conversionLogic(obj: ConversionDto): Promise<any | number> {
+    //----------CONVERSION LOGIC --------------------------------
+    try {
+      const { playerName, positionId, positionCode, data: d } = obj
+
+      const fetchData = await this.playerPositionRepo.findOne({
+        where: {
+          code: positionCode,
+          id: positionId
+        },
+      })
+      if (!fetchData) {
+        throw new NotFoundException('Invalid Posiiton | Position Code')
+      }
+
+      let dataobj: ConverstionDataDto
+
+      switch (obj.positionCode) {
+
+        case POSTION_CODE.TightEnd:
+
+          dataobj = d as TightEndDto;
 
 
 
 
 
+          break;
+
+        default:
+          break;
+      }
+
+    }
+
+
+    catch (error) {
+
+    }
   }
-
-
 }
+

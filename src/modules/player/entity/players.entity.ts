@@ -228,7 +228,6 @@ export class PositionAttributeMappingEntity extends baseEntity {
     @Column({ nullable: true })
     displayOrder?: number;
 
-
     @ManyToOne(() => PlayerPositionEntity, position => position.attributeMappings)
     position: PlayerPositionEntity;
 }
