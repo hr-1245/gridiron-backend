@@ -24,3 +24,10 @@ export enum POSTION_CODE {
   OffensiveTackle = 'OT',
   EdgeRusher = 'EDGE'
 }
+
+
+export enum COLLAGE_AGE_ENUM {
+  
+  SO
+
+}

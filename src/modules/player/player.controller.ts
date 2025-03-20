@@ -1,8 +1,9 @@
-import { Controller, Get, Param, SetMetadata, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, SetMetadata, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { playerService } from "./player.service";
 import { userSubscriptionGuard } from "src/providers/guards/user-guard/user-subscription.guard";
 import { subscriptionEnum } from "src/types/enums/subscription";
+import { ConversionDto } from "./dto/convert-manually.dto";
 
 @ApiTags("Player Positions")
 @ApiBearerAuth('jwt')
@@ -36,5 +37,17 @@ export class PlayerController {
   })
   async getPositionDropDown() {
     return this.playerService.getAllPositionDropDown();
+  }
+
+  @Post("convert")
+  @ApiOperation({ summary: "Convert player attributes based on position" })
+  @ApiResponse({
+    status: 200,
+    description: "Player attributes converted successfully",
+  })
+  async convertPlayerAttributes(@Body() conversionDto: ConversionDto, ) {
+    console.log(conversionDto);
+    // user id token say nikaly ge
+    return this.playerService.conversionLogic(conversionDto);
   }
 }

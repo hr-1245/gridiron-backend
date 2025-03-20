@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { IsNotEmpty, IsNumber, IsString, ValidateNested } from "class-validator";
 
 export class ConversionDto {
   @ApiProperty()
@@ -17,12 +17,14 @@ export class ConversionDto {
   @IsNotEmpty()
   playerName: string;
 
-  @ApiProperty()
-  @IsNumber()
-  data: ConverstionDataDto
+  data: ConverstionDataDto;
+
+  @ApiProperty() @IsNumber() 
+  draft_round: number;
+
 }
 
-export class TightEndDto extends ConversionDto {
+export class TightEndDto {
   @ApiProperty() @IsNumber() age: number;
   @ApiProperty() @IsNumber() speed: number;
   @ApiProperty() @IsNumber() acceleration: number;
@@ -54,9 +56,10 @@ export class TightEndDto extends ConversionDto {
   @ApiProperty() @IsNumber() deep_route_running: number;
   @ApiProperty() @IsNumber() stamina: number;
   @ApiProperty() @IsNumber() injury: number;
+
 }
 
-export class QuarterBackDto extends ConversionDto {
+export class QuarterBackDto {
   @ApiProperty() @IsNumber() age: number;
   @ApiProperty() @IsNumber() speed: number;
   @ApiProperty() @IsNumber() acceleration: number;
@@ -80,7 +83,7 @@ export class QuarterBackDto extends ConversionDto {
   @ApiProperty() @IsNumber() injury: number;
 }
 
-export class RunningBackDto extends ConversionDto {
+export class RunningBackDto {
   @ApiProperty() @IsNumber() age: number;
   @ApiProperty() @IsNumber() speed: number;
   @ApiProperty() @IsNumber() acceleration: number;
@@ -106,7 +109,7 @@ export class RunningBackDto extends ConversionDto {
   @ApiProperty() @IsNumber() injury: number;
 }
 
-export class WideReceiverDto extends ConversionDto {
+export class WideReceiverDto {
   @ApiProperty() @IsNumber() age: number;
   @ApiProperty() @IsNumber() speed: number;
   @ApiProperty() @IsNumber() acceleration: number;
@@ -133,7 +136,7 @@ export class WideReceiverDto extends ConversionDto {
   @ApiProperty() @IsNumber() injury: number;
 }
 
-export class OffensiveLineDto extends ConversionDto {
+export class OffensiveLineDto {
   @ApiProperty() @IsNumber() age: number;
   @ApiProperty() @IsNumber() speed: number;
   @ApiProperty() @IsNumber() acceleration: number;
@@ -152,7 +155,7 @@ export class OffensiveLineDto extends ConversionDto {
   @ApiProperty() @IsNumber() injury: number;
 }
 
-export class DefensiveEndDto extends ConversionDto {
+export class DefensiveEndDto {
   @ApiProperty() @IsNumber() age: number;
   @ApiProperty() @IsNumber() speed: number;
   @ApiProperty() @IsNumber() acceleration: number;
@@ -170,7 +173,7 @@ export class DefensiveEndDto extends ConversionDto {
   @ApiProperty() @IsNumber() injury: number;
 }
 
-export class LineBeckerDto extends ConversionDto {
+export class LineBeckerDto {
   @ApiProperty() @IsNumber() age: number;
   @ApiProperty() @IsNumber() speed: number;
   @ApiProperty() @IsNumber() acceleration: number;
@@ -193,7 +196,7 @@ export class LineBeckerDto extends ConversionDto {
 
 
 }
-export class CornerBackDto extends ConversionDto {
+export class CornerBackDto {
   @ApiProperty() @IsNumber() age: number;
   @ApiProperty() @IsNumber() speed: number;
   @ApiProperty() @IsNumber() acceleration: number;
@@ -213,7 +216,7 @@ export class CornerBackDto extends ConversionDto {
   @ApiProperty() @IsNumber() stamina: number;
   @ApiProperty() @IsNumber() injury: number;
 }
-export class SafetyDto extends ConversionDto {
+export class SafetyDto {
   @ApiProperty() @IsNumber() age: number;
   @ApiProperty() @IsNumber() speed: number;
   @ApiProperty() @IsNumber() acceleration: number;
@@ -232,7 +235,7 @@ export class SafetyDto extends ConversionDto {
   @ApiProperty() @IsNumber() stamina: number;
   @ApiProperty() @IsNumber() injury: number;
 }
-export class InteriorOffensiveLinemanDto extends ConversionDto {
+export class InteriorOffensiveLinemanDto {
   @ApiProperty() @IsNumber() age: number;
   @ApiProperty() @IsNumber() speed: number;
   @ApiProperty() @IsNumber() acceleration: number;
@@ -248,7 +251,7 @@ export class InteriorOffensiveLinemanDto extends ConversionDto {
   @ApiProperty() @IsNumber() stamina: number;
   @ApiProperty() @IsNumber() injury: number;
 }
-export class OffensiveTackleDto extends ConversionDto {
+export class OffensiveTackleDto {
   @ApiProperty() @IsNumber() age: number;
   @ApiProperty() @IsNumber() speed: number;
   @ApiProperty() @IsNumber() acceleration: number;
@@ -266,7 +269,7 @@ export class OffensiveTackleDto extends ConversionDto {
   @ApiProperty() @IsNumber() stamina: number;
   @ApiProperty() @IsNumber() injury: number;
 }
-export class EdgeRusherDto extends ConversionDto {
+export class EdgeRusherDto {
   @ApiProperty() @IsNumber() age: number;
   @ApiProperty() @IsNumber() speed: number;
   @ApiProperty() @IsNumber() acceleration: number;
