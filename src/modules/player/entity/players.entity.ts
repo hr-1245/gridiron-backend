@@ -6,7 +6,7 @@ import { userEntity } from 'src/modules/user/entity/user.entity';
 
 @Entity({ name: 'player' })
 export class PlayerEntity extends baseEntity {
-    @Column()
+    @Column({ nullable: false })
     name: string;
 
     @ManyToOne(() => userEntity, user => user.player)
@@ -196,6 +196,9 @@ export class PlayerAttributesEntity extends baseEntity {
 
     @Column('decimal')
     value: number;
+
+    @Column({ nullable: true })
+    draft_round: string
 
     @ManyToOne(() => PlayerEntity, player => player.attributes)
     player: PlayerEntity;
