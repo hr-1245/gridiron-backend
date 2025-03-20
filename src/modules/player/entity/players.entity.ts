@@ -29,176 +29,176 @@ export class PlayerEntity extends baseEntity {
 @Entity({ name: 'player_attributes' })
 export class PlayerAttributesEntity extends baseEntity {
     @Column()
-    overallRating: string;
+    overallRating: number;
 
     @Column({ nullable: true })
-    speed: string; // 'SPD'
+    speed: number; // 'SPD'
 
     @Column({ nullable: true })
-    strength: string; // 'STR'
+    strength: number; // 'STR'
 
     @Column({ nullable: true })
-    agility: string; // 'AGI'
+    agility: number; // 'AGI'
 
     @Column({ nullable: true })
-    acceleration: string; // 'ACC'
+    acceleration: number; // 'ACC'
 
     @Column({ nullable: true })
-    awareness: string; // 'AWR'
+    awareness: number; // 'AWR'
 
     @Column({ nullable: true })
-    stamina: string; // 'STA'
+    stamina: number; // 'STA'
 
     @Column({ nullable: true })
-    injury: string; // 'INJ'
+    injury: number; // 'INJ'
 
     @Column({ nullable: true })
-    toughness: string; // 'TGH'
+    toughness: number; // 'TGH'
 
     // Additional position-specific attributes:
     @Column({ nullable: true })
-    throw_power: string; // 'THP'
+    throw_power: number; // 'THP'
 
     @Column({ nullable: true })
-    short_accuracy: string; // 'SAC'
+    short_accuracy: number; // 'SAC'
 
     @Column({ nullable: true })
-    medium_accuracy: string; // 'MAC'
+    medium_accuracy: number; // 'MAC'
 
     @Column({ nullable: true })
-    deep_accuracy: string; // 'DAC'
+    deep_accuracy: number; // 'DAC'
 
     @Column({ nullable: true })
-    throw_on_the_run: string; // 'RUN'
+    throw_on_the_run: number; // 'RUN'
 
     @Column({ nullable: true })
-    throw_under_pressure: string; // 'TUP'
+    throw_under_pressure: number; // 'TUP'
 
     @Column({ nullable: true })
-    break_sack: string; // 'BSK'
+    break_sack: number; // 'BSK'
 
     @Column({ nullable: true })
-    play_action: string; // 'PAC'
+    play_action: number; // 'PAC'
 
     @Column({ nullable: true })
-    break_tackle: string; // 'BTK'
+    break_tackle: number; // 'BTK'
 
     @Column({ nullable: true })
-    trucking: string; // 'TRK'
+    trucking: number; // 'TRK'
 
     @Column({ nullable: true })
-    change_of_direction: string; // 'COD'
+    change_of_direction: number; // 'COD'
 
     @Column({ nullable: true })
-    ball_carrier_vision: string; // 'BCV'
+    ball_carrier_vision: number; // 'BCV'
 
     @Column({ nullable: true })
-    stiff_arm: string; // 'SFA'
+    stiff_arm: number; // 'SFA'
 
     @Column({ nullable: true })
-    spin_move: string; // 'SPM'
+    spin_move: number; // 'SPM'
 
     @Column({ nullable: true })
-    juke_move: string; // 'JKM'
+    juke_move: number; // 'JKM'
 
     @Column({ nullable: true })
-    carrying: string; // 'CAR'
+    carrying: number; // 'CAR'
 
     @Column({ nullable: true })
-    catching: string; // 'CTH'
+    catching: number; // 'CTH'
 
     @Column({ nullable: true })
-    short_route_running: string; // 'SRR'
+    short_route_running: number; // 'SRR'
 
     @Column({ nullable: true })
-    short_throw_acceleration: string
+    short_throw_acceleration: number
 
     @Column({ nullable: true })
-    medium_throw_acceleration: string
+    medium_throw_acceleration: number
 
     @Column({ nullable: true })
-    deep_throw_acceleration: string
+    deep_throw_acceleration: number
 
     @Column({ nullable: true })
-    medium_route_running: string; // 'MRR'
+    medium_route_running: number; // 'MRR'
 
     @Column({ nullable: true })
-    deep_route_running: string; // 'DRR'
+    deep_route_running: number; // 'DRR'
 
     @Column({ nullable: true })
-    catch_in_traffic: string; // 'CIT'
+    catch_in_traffic: number; // 'CIT'
 
     @Column({ nullable: true })
-    spectacular_catch: string; // 'SPC'
+    spectacular_catch: number; // 'SPC'
 
     @Column({ nullable: true })
-    release: string; // 'RLS'
+    release: number; // 'RLS'
 
     @Column({ nullable: true })
-    jumping: string; // 'JMP'
+    jumping: number; // 'JMP'
 
     @Column({ nullable: true })
-    return: string; // 'RET'
+    return: number; // 'RET'
 
     @Column({ nullable: true })
-    pass_block: string; // 'PBK'
+    pass_block: number; // 'PBK'
 
     @Column({ nullable: true })
-    pass_block_power: string; // 'PBP'
+    pass_block_power: number; // 'PBP'
 
     @Column({ nullable: true })
-    pass_block_finesse: string; // 'PBF'
+    pass_block_finesse: number; // 'PBF'
 
     @Column({ nullable: true })
-    run_block: string; // 'RBK'
+    run_block: number; // 'RBK'
 
     @Column({ nullable: true })
-    run_block_power: string; // 'RBP'
+    run_block_power: number; // 'RBP'
 
     @Column({ nullable: true })
-    run_block_finesse: string; // 'RBF'
+    run_block_finesse: number; // 'RBF'
 
     @Column({ nullable: true })
-    lead_block: string; // 'LBK'
+    lead_block: number; // 'LBK'
 
     @Column({ nullable: true })
-    impact_block: string; // 'IBL'
+    impact_block: number; // 'IBL'
 
     @Column({ nullable: true })
-    tackling: string; // 'TAK'
+    tackling: number; // 'TAK'
 
     @Column({ nullable: true })
-    hit_power: string; // 'POW'
+    hit_power: number; // 'POW'
 
     @Column({ nullable: true })
-    power_moves: string; // 'PMV'
+    power_moves: number; // 'PMV'
 
     @Column({ nullable: true })
-    finesse_moves: string; // 'FMV'
+    finesse_moves: number; // 'FMV'
 
     @Column({ nullable: true })
-    block_shedding: string; // 'BSH'
+    block_shedding: number; // 'BSH'
 
     @Column({ nullable: true })
-    pursuit: string; // 'PUR'
+    pursuit: number; // 'PUR'
 
     @Column({ nullable: true })
-    play_recognition: string; // 'PRC'
+    play_recognition: number; // 'PRC'
 
     @Column({ nullable: true })
-    man_coverage: string; // 'MCV'
+    man_coverage: number; // 'MCV'
 
     @Column({ nullable: true })
-    zone_coverage: string; // 'ZCV'
+    zone_coverage: number; // 'ZCV'
 
     @Column({ nullable: true })
-    press: string; // 'PRS'
+    press: number; // 'PRS'
 
     @Column('decimal')
     value: number;
 
     @Column({ nullable: true })
-    draft_round: string
+    draft_round: number
 
     @ManyToOne(() => PlayerEntity, player => player.attributes)
     player: PlayerEntity;
@@ -227,6 +227,7 @@ export class PositionAttributeMappingEntity extends baseEntity {
 
     @Column({ nullable: true })
     displayOrder?: number;
+
 
     @ManyToOne(() => PlayerPositionEntity, position => position.attributeMappings)
     position: PlayerPositionEntity;
