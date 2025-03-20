@@ -23,11 +23,11 @@ export class userEntity extends baseEntity {
   @JoinColumn()
   subscription: userPlanEntity;
 
-  @Column({ nullable: true })
+  @Column({ nullable: false })
   stripeCustomerId: string;
 
   @OneToMany(() => otpEntity, (otp) => otp.user)
-  otp: otpEntity[]
+  otp: otpEntity[];
 
   @Column({ nullable: true })
   paymentMethodId: string;

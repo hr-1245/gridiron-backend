@@ -13,4 +13,5 @@ export class baseEntity {
   @ApiProperty()
   @UpdateDateColumn()
   updatedAt: Date;
+  
 }
