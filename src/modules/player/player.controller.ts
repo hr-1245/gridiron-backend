@@ -4,6 +4,8 @@ import { playerService } from "./player.service";
 import { userSubscriptionGuard } from "src/providers/guards/user-guard/user-subscription.guard";
 import { subscriptionEnum } from "src/types/enums/subscription";
 import { ConversionDto } from "./dto/convert-manually.dto";
+import { User } from "src/utils/user.decorator";
+import { userjwtInterface } from "../jwt/interface/jwt.interface";
 
 @ApiTags("Player Positions")
 @ApiBearerAuth('jwt')
@@ -45,9 +47,7 @@ export class PlayerController {
     status: 200,
     description: "Player attributes converted successfully",
   })
-  async convertPlayerAttributes(@Body() conversionDto: ConversionDto, ) {
-    console.log(conversionDto);
-    // user id token say nikaly ge
-    return this.playerService.conversionLogic(conversionDto);
+  async convertPlayerAttributes(@Body() conversionDto: ConversionDto, @User() user: userjwtInterface) {
+    return this.playerService.conversionLogic(conversionDto, user.id);
   }
 }

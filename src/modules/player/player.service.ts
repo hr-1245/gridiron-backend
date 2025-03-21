@@ -71,10 +71,9 @@ export class playerService {
 
 
 
-  async conversionLogic(obj: ConversionDto): Promise<any> {
+  async conversionLogic(obj: ConversionDto, userId: number): Promise<any> {
     //----------CONVERSION LOGIC --------------------------------
     try {
-      console.log(obj)
       const { playerName, positionId, positionCode, data: rawData, draft_round } = obj
 
       const fetchData = await this.playerPositionRepo.findOne({
@@ -89,11 +88,11 @@ export class playerService {
 
         const newPlayer = this.playerRepo.create({
           name: playerName,
-
-        })
+          user: { id: userId },
+          position: { id: positionId },
+        });
         player = await this.playerRepo.save(newPlayer)
       }
-      console.log(player)
 
       let dataobj: ConverstionDataDto
 
@@ -120,7 +119,9 @@ export class playerService {
             passBlockFinesse: dataobj.pass_block_finesse - 10 - (draft_round),
             runBlock: dataobj.run_block - 11 - (draft_round),
             runBlockPower: dataobj.run_block_power - 12 - (draft_round),
+            runBlockfinesse: dataobj.run_block_finesse - 16 - (draft_round),
             leadBlocking: dataobj.lead_blocking - 4 - (draft_round),
+            impactBlocking: dataobj.impact_blocking + 7 - (draft_round),
             jumping: dataobj.jumping + 3,
             carrying: dataobj.carrying - 1 - (draft_round),
             trucking: dataobj.trucking + 0 - (draft_round),
@@ -152,7 +153,9 @@ export class playerService {
             pass_block_finesse: convertedData.passBlockFinesse,
             run_block: convertedData.runBlock,
             run_block_power: convertedData.runBlockPower,
+            run_block_finesse: convertedData.runBlockfinesse,
             lead_block: convertedData.leadBlocking,
+            impact_block: convertedData.impactBlocking,
             jumping: convertedData.jumping,
             carrying: convertedData.carrying,
             trucking: convertedData.trucking,
@@ -170,7 +173,8 @@ export class playerService {
 
           return {
             message: "Conversion Sucessfull",
-            result
+            result,
+          
           }
 
         default:

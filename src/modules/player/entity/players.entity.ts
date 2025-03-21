@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, OneToMany } from 'typeorm';
+import { Entity, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { PlayerPositionEntity } from './player-position.entity';
 import { approvalStatusEnum } from 'src/types/enums/roles';
 import { baseEntity } from 'src/entities/base.entity';
@@ -9,10 +9,12 @@ export class PlayerEntity extends baseEntity {
     @Column({ nullable: false })
     name: string;
 
-    @ManyToOne(() => userEntity, user => user.player)
+    @ManyToOne(() => userEntity, user => user.player, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn()
     user: userEntity;
 
-    @ManyToOne(() => PlayerPositionEntity, position => position.players, { nullable: true })
+    @ManyToOne(() => PlayerPositionEntity, position => position.players, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn()
     position: PlayerPositionEntity;
 
     @OneToMany(() => PlayerImageEntity, image => image.player, { cascade: true })
