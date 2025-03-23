@@ -30,8 +30,11 @@ export class PlayerEntity extends baseEntity {
 
 @Entity({ name: 'player_attributes' })
 export class PlayerAttributesEntity extends baseEntity {
+    // @Column({ nullable: true })
+    // overallRating: number;
+
     @Column({ nullable: true })
-    overallRating: number;
+    age: number
 
     @Column({ nullable: true })
     speed: number; // 'SPD'
@@ -60,6 +63,16 @@ export class PlayerAttributesEntity extends baseEntity {
     // Additional position-specific attributes:
     @Column({ nullable: true })
     throw_power: number; // 'THP'
+
+    @Column({ nullable: true })
+    throw_accuracy_short: number; // 'THP'
+
+    @Column({ nullable: true })
+    throw_accuracy_mid: number; // 'THP'
+
+    @Column({ nullable: true })
+    throw_accuracy_deep: number; // 'THP'
+
 
     @Column({ nullable: true })
     short_accuracy: number; // 'SAC'
@@ -196,8 +209,8 @@ export class PlayerAttributesEntity extends baseEntity {
     @Column({ nullable: true })
     press: number; // 'PRS'
 
-    @Column('decimal', { nullable: true })
-    value: number;
+    // @Column('decimal', { nullable: true })
+    // value: number;
 
     @Column({ nullable: true })
     draft_round: number

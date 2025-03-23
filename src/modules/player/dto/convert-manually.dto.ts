@@ -19,7 +19,7 @@ export class ConversionDto {
 
   data: ConverstionDataDto;
 
-  @ApiProperty() @IsNumber() 
+  @ApiProperty() @IsNumber()
   draft_round: number;
 
 }
@@ -77,6 +77,7 @@ export class QuarterBackDto {
   @ApiProperty() @IsNumber() trucking: number;
   @ApiProperty() @IsNumber() carrying: number;
   @ApiProperty() @IsNumber() ball_carrier_vision: number;
+  @ApiProperty() @IsNumber() stiff_arm: number;
   @ApiProperty() @IsNumber() spin_move: number;
   @ApiProperty() @IsNumber() juke_move: number;
   @ApiProperty() @IsNumber() stamina: number;
@@ -106,6 +107,7 @@ export class RunningBackDto {
   @ApiProperty() @IsNumber() medium_route_running: number;
   @ApiProperty() @IsNumber() release: number;
   @ApiProperty() @IsNumber() stamina: number;
+  @ApiProperty() @IsNumber() return: number;
   @ApiProperty() @IsNumber() injury: number;
 }
 
@@ -133,6 +135,7 @@ export class WideReceiverDto {
   @ApiProperty() @IsNumber() medium_route_running: number;
   @ApiProperty() @IsNumber() deep_route_running: number;
   @ApiProperty() @IsNumber() stamina: number;
+  @ApiProperty() @IsNumber() return: number;
   @ApiProperty() @IsNumber() injury: number;
 }
 
@@ -239,9 +242,11 @@ export class InteriorOffensiveLinemanDto {
   @ApiProperty() @IsNumber() age: number;
   @ApiProperty() @IsNumber() speed: number;
   @ApiProperty() @IsNumber() acceleration: number;
+  @ApiProperty() @IsNumber() awareness: number;
   @ApiProperty() @IsNumber() agility: number;
   @ApiProperty() @IsNumber() strength: number;
   @ApiProperty() @IsNumber() lead_block: number;
+  @ApiProperty() @IsNumber() impact_blocking: number;
   @ApiProperty() @IsNumber() run_blocking: number;
   @ApiProperty() @IsNumber() pass_blocking: number;
   @ApiProperty() @IsNumber() pass_block_power: number;
