@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { PlayerAttributesEntity, PlayerEntity, PositionAttributeMappingEntity } from "./entity/players.entity";
+import { PlayerAttributesEntity, PlayerEntity } from "./entity/players.entity";
 import { Repository } from "typeorm";
 import { PlayerPositionEntity } from "./entity/player-position.entity";
-import { ConversionDto, ConverstionDataDto, DefensiveEndDto, EdgeRusherDto, InteriorOffensiveLinemanDto, LineBeckerDto, OffensiveTackleDto, QuarterBackDto, RunningBackDto, TightEndDto, WideReceiverDto } from "./dto/convert-manually.dto";
+import { ConversionDto, ConverstionDataDto, CornerBackDto, DefensiveEndDto, EdgeRusherDto, InteriorOffensiveLinemanDto, LineBeckerDto, OffensiveTackleDto, QuarterBackDto, RunningBackDto, SafetyDto, TightEndDto, WideReceiverDto } from "./dto/convert-manually.dto";
 import { POSTION_CODE } from "src/types/enums/roles";
 
 @Injectable()
@@ -14,9 +14,6 @@ export class playerService {
 
     @InjectRepository(PlayerPositionEntity)
     private readonly playerPositionRepo: Repository<PlayerPositionEntity>,
-
-    @InjectRepository(PositionAttributeMappingEntity)
-    private readonly playerAttributesMapping: Repository<PositionAttributeMappingEntity>,
 
     @InjectRepository(PlayerAttributesEntity)
     private readonly playerAttrRepo: Repository<PlayerAttributesEntity>
@@ -376,6 +373,8 @@ export class playerService {
             result: resultWR,
           };
 
+
+        //-----------------------OT CONVERSION ------------------------
         case POSTION_CODE.OffensiveTackle:
           dataobj = rawData as OffensiveTackleDto
 
@@ -422,6 +421,7 @@ export class playerService {
             result: resultOT,
           };
 
+        //--------------------------------IOL CONVERSION ----------------------
         case POSTION_CODE.InteriorOffensiveLineman:
 
           dataobj = rawData as InteriorOffensiveLinemanDto
@@ -469,6 +469,7 @@ export class playerService {
             result: resultIOL,
           };
 
+        //----------------------------EDGE CONVERSION ------------------------------
         case POSTION_CODE.EdgeRusher:
 
           dataobj = rawData as EdgeRusherDto
@@ -516,6 +517,7 @@ export class playerService {
             result: resultEDGE,
           }
 
+        //-------------------------------DI CONVERSION --------------------
         case POSTION_CODE.DefensiveEnd:
           dataobj = rawData as DefensiveEndDto
 
@@ -562,28 +564,172 @@ export class playerService {
             result: resultDE,
           }
 
+        //------------------------------ LB CONVERSION ================
         case POSTION_CODE.LineBacker:
+
           dataobj = rawData as LineBeckerDto
+
           const convertedDataLB = {
             age: dataobj.age, //logic
             speed: dataobj.speed - 4,
             acceleration: dataobj.acceleration - 2,
             agility: dataobj.agility - 2,
-            // change_of_direction: dataobj. - 3,
+            change_of_direction: 'change_of_direction' in dataobj ? (dataobj.change_of_direction - 4) : undefined,
             awareness: dataobj.awareness - 9 - (draft_round),
             strength: dataobj.strength - 7,
+            jumping: 'jumping' in dataobj ? dataobj.jumping - 12 : undefined,
+            tackling: dataobj.tackling - 7 - (draft_round),
+            hit_power: dataobj.hit_power - 3,
+            power_moves: dataobj.power_moves - 21 - (draft_round),
+            finesse_moves: dataobj.finesse_moves - 25 - (draft_round),
+            block_shed: dataobj.block_shedding - 6 - (draft_round),
+            pursuit: dataobj.pursuit - 6 - (draft_round),
+            play_recognition: dataobj.play_recognition - 18 - (draft_round),
+            man_coverage: 'man_coverage' in dataobj ? (dataobj.man_coverage - 25 - (draft_round)) : undefined,
+            zone_coverage: 'zone_coverage' in dataobj ? (dataobj.zone_coverage - 22 - (draft_round)) : undefined,
+            stamina: dataobj.stamina - 1,
+            injury: dataobj.injury - 1
+          }
+          const resultLB = this.playerAttrRepo.create({
+            player: { id: player.id },
+            age: convertedDataLB.age,
+            speed: convertedDataLB.speed,
+            acceleration: convertedDataLB.acceleration,
+            agility: convertedDataLB.agility,
+            change_of_direction: convertedDataLB.change_of_direction,
+            awareness: convertedDataLB.awareness,
+            strength: convertedDataLB.strength,
+            jumping: convertedDataLB.jumping,
+            tackling: convertedDataLB.tackling,
+            hit_power: convertedDataLB.hit_power,
+            power_moves: convertedDataLB.power_moves,
+            finesse_moves: convertedDataLB.finesse_moves,
+            block_shedding: convertedDataLB.block_shed,
+            pursuit: convertedDataLB.pursuit,
+            play_recognition: convertedDataLB.play_recognition
+          });
+          await this.playerAttrRepo.save(resultLB)
 
-
-
+          return {
+            message: `Conversion of ${positionCode} Successful`,
+            result: resultLB,
           }
 
 
+        //------------------------CB CONVERSION ------------------------------ 
+        case POSTION_CODE.CornerBack:
+
+          dataobj = rawData as CornerBackDto
+
+          const convertedDataCB = {
+            age: dataobj.age, // logic
+            speed: dataobj.speed - 4,
+            acceleration: dataobj.acceleration + 0,
+            agility: dataobj.agility + 0,
+            catch_of_direction: dataobj.change_of_direction - 2,
+            catching: 'catching' in dataobj ? (dataobj.catching - 19 - (draft_round)) : undefined,
+            awareness: dataobj.awareness - 7 - (draft_round),
+            strength: dataobj.strength - 8,
+            jumping: dataobj.jumping - 1,
+            tackling: 'tackling' in dataobj ? (dataobj.tackling - 8 - (draft_round)) : undefined,
+            hit_power: dataobj.hit_power - 10,
+            pursuit: dataobj.pursuit - 13 - (draft_round),
+            play_recognition: dataobj.play_recognition - 15 - (draft_round),
+            man_coverage: dataobj.man_coverage - 13 - (draft_round),
+            zone_coverage: dataobj.zone_coverage - 13 - (draft_round),
+            press: dataobj.press - 10 - (draft_round),
+            return: dataobj.return + 0,
+            stamina: dataobj.stamina - 1,
+            injury: dataobj.injury - 1
+
+          }
+          const resultCB = this.playerAttrRepo.create({
+            age: convertedDataCB.age,
+            speed: convertedDataCB.speed,
+            acceleration: convertedDataCB.acceleration,
+            agility: convertedDataCB.agility,
+            change_of_direction: convertedDataCB.catch_of_direction,
+            catching: convertedDataCB.catching,
+            awareness: convertedDataCB.awareness,
+            strength: convertedDataCB.strength,
+            jumping: convertedDataCB.jumping,
+            tackling: convertedDataCB.tackling,
+            hit_power: convertedDataCB.hit_power,
+            pursuit: convertedDataCB.pursuit,
+            man_coverage: convertedDataCB.man_coverage,
+            zone_coverage: convertedDataCB.zone_coverage,
+            press: convertedDataCB.press,
+            return: convertedDataCB.return,
+            stamina: convertedDataCB.stamina,
+            injury: convertedDataCB.injury,
+            play_recognition: convertedDataCB.play_recognition
+          });
+          await this.playerAttrRepo.save(resultCB)
+
+          return {
+            message: `Conversion of ${positionCode} Successful`,
+            result: resultCB,
+          }
+
+        //------------------S CONVERSION --------------------------
+        case POSTION_CODE.Safety:
+
+          dataobj = rawData as SafetyDto
+
+          const convertedDataS = {
+            age: dataobj.age, // logic
+            speed: dataobj.speed - 1,
+            acceleration: dataobj.acceleration - 1,
+            agility: dataobj.agility + 1,
+            cod: dataobj.change_of_direction - 9,
+            catching: dataobj.catching - 22 - (draft_round),
+            awareness: dataobj.awareness - 8 - (draft_round),
+            strength: dataobj.strength - 11,
+            block_shed: 'block_shed' in dataobj ? (dataobj.block_shed - 8 - (draft_round)) : undefined,
+            jumping: dataobj.jumping - 6,
+            tackling: dataobj.tackling - 7 - (draft_round),
+            hit_power: dataobj.hit_power - 8,
+            pursuit: dataobj.pursuit - 11 - (draft_round),
+            play_recognition: dataobj.play_recognition - 18 - (draft_round),
+            man_coverage: dataobj.man_coverage - 6 - (draft_round),
+            zone_coverage: dataobj.zone_coverage - 15 - (draft_round),
+            press: dataobj.press - 6 - (draft_round),
+            stamina: dataobj.stamina - 1,
+            injury: dataobj.injury - 1,
+          }
+          const resultS = this.playerAttrRepo.create({
+            player: { id: player.id },
+            age: convertedDataS.age,
+            speed: convertedDataS.speed,
+            acceleration: convertedDataS.acceleration,
+            agility: convertedDataS.agility,
+            change_of_direction: convertedDataS.cod,
+            catching: convertedDataS.catching,
+            awareness: convertedDataS.awareness,
+            strength: convertedDataS.strength,
+            block_shedding: convertedDataS.block_shed,
+            jumping: convertedDataS.jumping,
+            tackling: convertedDataS.tackling,
+            hit_power: convertedDataS.hit_power,
+            pursuit: convertedDataS.pursuit,
+            man_coverage: convertedDataS.man_coverage,
+            zone_coverage: convertedDataS.zone_coverage,
+            press: convertedDataS.press,
+            stamina: convertedDataS.stamina,
+            injury: convertedDataS.injury,
+            play_recognition: convertedDataS.play_recognition,
+          })
+          await this.playerAttrRepo.save(resultS)
+
+          return {
+            message: `Conversion of ${positionCode} Successful`,
+            result: resultS,
+          }
+
         default:
-          break
+          throw new Error('Invalid Position Code')
       }
-
     }
-
 
     catch (error) {
       throw new Error(error.message)
