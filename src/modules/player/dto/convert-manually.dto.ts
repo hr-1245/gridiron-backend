@@ -176,35 +176,14 @@ export class DefensiveEndDto {
   @ApiProperty() @IsNumber() injury: number;
 }
 
-export class LineBeckerDto {
-  @ApiProperty() @IsNumber() age: number;
-  @ApiProperty() @IsNumber() speed: number;
-  @ApiProperty() @IsNumber() acceleration: number;
-  @ApiProperty() @IsNumber() agility: number;
-  @ApiProperty() @IsNumber() change_of_direction: number;
-  @ApiProperty() @IsNumber() awareness: number;
-  @ApiProperty() @IsNumber() strength: number;
-  @ApiProperty() @IsNumber() jumping: number;
-  @ApiProperty() @IsNumber() tackling: number;
-  @ApiProperty() @IsNumber() hit_power: number;
-  @ApiProperty() @IsNumber() power_moves: number;
-  @ApiProperty() @IsNumber() finesse_moves: number;
-  @ApiProperty() @IsNumber() block_shedding: number;
-  @ApiProperty() @IsNumber() pursuit: number;
-  @ApiProperty() @IsNumber() play_recognition: number;
-  @ApiProperty() @IsNumber() man_coverage: number;
-  @ApiProperty() @IsNumber() zone_coverage: number;
-  @ApiProperty() @IsNumber() stamina: number;
-  @ApiProperty() @IsNumber() injury: number;
 
-
-}
 export class CornerBackDto {
   @ApiProperty() @IsNumber() age: number;
   @ApiProperty() @IsNumber() speed: number;
   @ApiProperty() @IsNumber() acceleration: number;
   @ApiProperty() @IsNumber() agility: number;
   @ApiProperty() @IsNumber() change_of_direction: number;
+  @ApiProperty() @IsNumber() catching: number;
   @ApiProperty() @IsNumber() awareness: number;
   @ApiProperty() @IsNumber() strength: number;
   @ApiProperty() @IsNumber() jumping: number;
@@ -225,9 +204,12 @@ export class SafetyDto {
   @ApiProperty() @IsNumber() acceleration: number;
   @ApiProperty() @IsNumber() agility: number;
   @ApiProperty() @IsNumber() change_of_direction: number;
+  @ApiProperty() @IsNumber() catching: number;
   @ApiProperty() @IsNumber() awareness: number;
   @ApiProperty() @IsNumber() strength: number;
+  @ApiProperty() @IsNumber() block_shed: number;
   @ApiProperty() @IsNumber() jumping: number;
+  @ApiProperty() @IsNumber() tackling: number;
   @ApiProperty() @IsNumber() hit_power: number;
   @ApiProperty() @IsNumber() pursuit: number;
   @ApiProperty() @IsNumber() play_recognition: number;
@@ -291,6 +273,28 @@ export class EdgeRusherDto {
   @ApiProperty() @IsNumber() stamina: number;
   @ApiProperty() @IsNumber() injury: number;
 }
+export class LineBeckerDto {
+  @ApiProperty() @IsNumber() age: number;
+  @ApiProperty() @IsNumber() speed: number;
+  @ApiProperty() @IsNumber() acceleration: number;
+  @ApiProperty() @IsNumber() agility: number;
+  @ApiProperty() @IsNumber() change_of_direction: number;
+  @ApiProperty() @IsNumber() awareness: number;
+  @ApiProperty() @IsNumber() strength: number;
+  @ApiProperty() @IsNumber() jumping: number;
+  @ApiProperty() @IsNumber() tackling: number;
+  @ApiProperty() @IsNumber() hit_power: number;
+  @ApiProperty() @IsNumber() power_moves: number;
+  @ApiProperty() @IsNumber() finesse_moves: number;
+  @ApiProperty() @IsNumber() block_shedding: number;
+  @ApiProperty() @IsNumber() pursuit: number;
+  @ApiProperty() @IsNumber() play_recognition: number;
+  @ApiProperty() @IsNumber() man_coverage: number;
+  @ApiProperty() @IsNumber() zone_coverage: number;
+  @ApiProperty() @IsNumber() stamina: number;
+  @ApiProperty() @IsNumber() injury: number;
+}
+
 
 
 export type ConverstionDataDto =
@@ -300,9 +304,9 @@ export type ConverstionDataDto =
   | WideReceiverDto
   | OffensiveLineDto
   | DefensiveEndDto
-  | LineBeckerDto
   | CornerBackDto
   | SafetyDto
   | InteriorOffensiveLinemanDto
   | OffensiveTackleDto
   | EdgeRusherDto
+  | LineBeckerDto
