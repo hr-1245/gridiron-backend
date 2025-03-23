@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { PlayerAttributesEntity, PlayerEntity, PlayerImageEntity, PositionAttributeMappingEntity } from './src/modules/player/entity/players.entity';
-import { userEntity } from './src/modules/user/entity/user.entity'; // Ensure this is imported
+import { userEntity } from './src/modules/user/entity/user.entity';
 import { userPlanEntity } from 'src/modules/user/entity/userPlan.entity';
 import { otpEntity } from 'src/modules/otp/entity/otp.entity';
 import { SeedPlayerPositionsAndMappings20250318121000 } from 'src/entities/migrations/playerpositionmapping';
@@ -14,11 +14,11 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || '1264273',
   database: process.env.DB_DATABASE || 'gridiron',
-  synchronize: false, // set to false when using migrations
+  synchronize: false,
   logging: process.env.DB_LOGGING === 'true',
   entities: [
     userEntity,
-    userPlanEntity,         // <-- Add this so TypeORM can load metadata for playerEntity#user
+    userPlanEntity,
     PlayerEntity,
     PlayerPositionEntity,
     PlayerAttributesEntity,
