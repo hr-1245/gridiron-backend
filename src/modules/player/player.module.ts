@@ -3,11 +3,13 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { PlayerAttributesEntity, PlayerEntity, PlayerImageEntity, PositionAttributeMappingEntity, } from "./entity/players.entity";
 import { PlayerPositionEntity } from "./entity/player-position.entity";
 import { PlayerController } from "./player.controller";
-import { playerService } from "./player.service";
 import { userEntity } from "../user/entity/user.entity";
+import { playerService } from "./services/player.service";
+import { CloudinaryModule } from "../cloudinary/cloudinary.module";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([userEntity, PlayerEntity, PlayerPositionEntity, PlayerAttributesEntity, PlayerImageEntity, PositionAttributeMappingEntity])],
+  imports: [TypeOrmModule.forFeature([userEntity, PlayerEntity, PlayerPositionEntity, PlayerAttributesEntity, PlayerImageEntity, PositionAttributeMappingEntity]),
+CloudinaryModule],
   controllers: [PlayerController],
   providers: [playerService],
 })

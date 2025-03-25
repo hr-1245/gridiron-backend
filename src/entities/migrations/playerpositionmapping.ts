@@ -2,7 +2,6 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class SeedPlayerPositionsAndMappings20250318121000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Insert static player positions (exactly as provided)
     await queryRunner.query(`
       INSERT INTO "player_position" (code, name)
       VALUES 
