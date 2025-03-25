@@ -11,6 +11,7 @@ import { userModule } from './modules/user/user.module';
 import { stripeModule } from './modules/stripe/stripe.module';
 import { mailModule } from './modules/mail/mail.module';
 import { OtpModule } from './modules/otp/otp.module';
+import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true }),
@@ -21,7 +22,8 @@ import { OtpModule } from './modules/otp/otp.module';
     userModule,
     stripeModule,
     mailModule,
-    OtpModule
+    OtpModule,
+    CloudinaryModule
   ],
   providers: [adminjwtStrategy, userjwtStrategy],
 })
