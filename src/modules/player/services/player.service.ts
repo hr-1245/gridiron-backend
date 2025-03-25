@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { PlayerAttributesEntity, PlayerEntity } from "./entity/players.entity";
 import { Repository } from "typeorm";
-import { PlayerPositionEntity } from "./entity/player-position.entity";
-import { ConversionDto, ConverstionDataDto, CornerBackDto, DefensiveEndDto, EdgeRusherDto, InteriorOffensiveLinemanDto, LineBeckerDto, OffensiveTackleDto, QuarterBackDto, RunningBackDto, SafetyDto, TightEndDto, WideReceiverDto } from "./dto/convert-manually.dto";
+import { ConversionDto, ConverstionDataDto, CornerBackDto, DefensiveEndDto, EdgeRusherDto, InteriorOffensiveLinemanDto, LineBeckerDto, OffensiveTackleDto, QuarterBackDto, RunningBackDto, SafetyDto, TightEndDto, WideReceiverDto } from "../dto/convert-manually.dto"
 import { POSTION_CODE } from "src/types/enums/roles";
+import { PlayerPositionEntity } from "../entity/player-position.entity";
+import { PlayerAttributesEntity, PlayerEntity } from "../entity/players.entity";
 
 @Injectable()
 export class playerService {
