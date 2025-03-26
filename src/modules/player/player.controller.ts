@@ -1,11 +1,11 @@
 import { Body, Controller, Get, Param, Post, SetMetadata, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { playerService } from "./player.service";
-import { userSubscriptionGuard } from "src/providers/guards/user-guard/user-subscription.guard";
 import { subscriptionEnum } from "src/types/enums/subscription";
 import { ConversionDto } from "./dto/convert-manually.dto";
 import { User } from "src/utils/user.decorator";
 import { userjwtInterface } from "../jwt/interface/jwt.interface";
+import { playerService } from "./services/player.service";
+import { userSubscriptionGuard } from "src/providers/guards/user-guard/user-subscription.guard";
 
 @ApiTags("Player Positions")
 @ApiBearerAuth('jwt')

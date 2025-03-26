@@ -22,15 +22,7 @@ export class ocrService {
 
   }
 
-  async execture(playerId: string, userId: number) {
+  async exectute() {
 
-    const user = await this.userRepo.findOne({
-      where: { id: userId },
-      relations: ["players"]
-    })
-    if (!user) {
-      throw new Error("User not found")
-    }
   }
-
 }
