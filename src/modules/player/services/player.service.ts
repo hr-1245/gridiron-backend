@@ -182,7 +182,7 @@ export class playerService {
           dataobj = rawData as QuarterBackDto
 
           const convertedDataQB = {
-            age: dataobj.age,  // logic need
+            // age: dataobj.age,  // logic need
             speed: dataobj.speed - 2,
             acceleration: dataobj.acceleration - 2,
             agility: dataobj.agility - 5,
@@ -209,7 +209,7 @@ export class playerService {
 
           const resultQB = this.playerAttrRepo.create({
             player: { id: player.id },
-            age: convertedDataQB.age,
+            // age: convertedDataQB.age,
             speed: convertedDataQB.speed,
             acceleration: convertedDataQB.acceleration,
             agility: convertedDataQB.acceleration,
@@ -610,10 +610,18 @@ export class playerService {
           });
           await this.playerAttrRepo.save(resultLB)
 
+          const cleanedResultLB = Object.keys(resultLB).reduce((acc, key) => {
+            if (resultLB[key] !== null && resultLB[key] !== undefined) {
+              acc[key] = resultLB[key];
+            }
+            return acc;
+          }, {});
+
           return {
             message: `Conversion of ${positionCode} Successful`,
-            result: resultLB,
-          }
+            result: cleanedResultLB,
+          };
+
 
 
         //------------------------CB CONVERSION ------------------------------ 
@@ -666,10 +674,18 @@ export class playerService {
           });
           await this.playerAttrRepo.save(resultCB)
 
+          const cleanedResultCB = Object.keys(resultCB).reduce((acc, key) => {
+            if (resultCB[key] !== null && resultCB[key] !== undefined) {
+              acc[key] = resultCB[key];
+            }
+            return acc;
+          }, {});
+
           return {
             message: `Conversion of ${positionCode} Successful`,
-            result: resultCB,
-          }
+            result: cleanedResultCB,
+          };
+
 
         //------------------S CONVERSION --------------------------
         case POSTION_CODE.Safety:
@@ -721,10 +737,17 @@ export class playerService {
           })
           await this.playerAttrRepo.save(resultS)
 
+          const cleanedResultS = Object.keys(resultS).reduce((acc, key) => {
+            if (resultS[key] !== null && resultS[key] !== undefined) {
+              acc[key] = resultS[key];
+            }
+            return acc;
+          }, {});
+
           return {
             message: `Conversion of ${positionCode} Successful`,
-            result: resultS,
-          }
+            result: cleanedResultS,
+          };
 
         default:
           throw new Error('Invalid Position Code')
