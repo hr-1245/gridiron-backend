@@ -17,6 +17,10 @@ export class ConversionDto {
   @IsNotEmpty()
   playerName: string;
 
+  // @ApiProperty()
+  // @IsString()
+  // playerImage?: string;
+
   data: ConverstionDataDto;
 
   @ApiProperty() @IsNumber()
