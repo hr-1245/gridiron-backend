@@ -6,11 +6,12 @@ import { PlayerController } from "./player.controller";
 import { userEntity } from "../user/entity/user.entity";
 import { playerService } from "./services/player.service";
 import { CloudinaryModule } from "../cloudinary/cloudinary.module";
+import { ocrService } from "./services/playerocr.service";
 
 @Module({
   imports: [TypeOrmModule.forFeature([userEntity, PlayerEntity, PlayerPositionEntity, PlayerAttributesEntity, PlayerImageEntity, PositionAttributeMappingEntity]),
-CloudinaryModule],
+    CloudinaryModule],
   controllers: [PlayerController],
-  providers: [playerService],
+  providers: [playerService, ocrService],
 })
 export class playerModule { }

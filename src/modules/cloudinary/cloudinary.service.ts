@@ -5,7 +5,7 @@ import * as streamifier from 'streamifier';
 @Injectable()
 export class CloudinaryService {
   uploadFile(
-    file: Express.Multer.File,
+file: Express.Multer.File, 
   ): Promise<UploadApiErrorResponse | UploadApiResponse> {
     return new Promise<UploadApiErrorResponse | UploadApiResponse>(
       (resolve, reject) => {

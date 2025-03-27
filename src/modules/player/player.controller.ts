@@ -1,11 +1,13 @@
-import { Body, Controller, Get, Param, Post, SetMetadata, UseGuards } from "@nestjs/common";
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { Body, Controller, Get, HttpStatus, Param, Post, SetMetadata, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { subscriptionEnum } from "src/types/enums/subscription";
 import { ConversionDto } from "./dto/convert-manually.dto";
 import { User } from "src/utils/user.decorator";
 import { userjwtInterface } from "../jwt/interface/jwt.interface";
 import { playerService } from "./services/player.service";
 import { userSubscriptionGuard } from "src/providers/guards/user-guard/user-subscription.guard";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { ocrService } from "./services/playerocr.service";
 
 @ApiTags("Player Positions")
 @ApiBearerAuth('jwt')
@@ -14,7 +16,9 @@ import { userSubscriptionGuard } from "src/providers/guards/user-guard/user-subs
 @Controller("positions")
 
 export class PlayerController {
-  constructor(private readonly playerService: playerService) { }
+  constructor(private readonly playerService: playerService,
+    private ocerService: ocrService
+  ) { }
 
   // New endpoint: GET /positions/:code/attributes
   // @Get(":code/attributes")
@@ -49,5 +53,32 @@ export class PlayerController {
   })
   async convertPlayerAttributes(@Body() conversionDto: ConversionDto, @User() user: userjwtInterface) {
     return this.playerService.conversionLogic(conversionDto, user.id);
+  }
+
+  @Post('upload/profile-picture')
+  @ApiOperation({ summary: 'Upload Profile Picture' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'File uploaded successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid file format or upload error',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  uploadfile(@UploadedFile() file: Express.Multer.File, @Body() conversionDto: ConversionDto, @User() user: userjwtInterface) {
+    return this.ocerService.exectute(conversionDto, file, user.id);
   }
 }
