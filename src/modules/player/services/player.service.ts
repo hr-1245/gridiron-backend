@@ -131,7 +131,6 @@ export class playerService {
             shortRouteRunning: dataobj.short_route_running - 12 - (draft_round),
             mediumRouteRunning: dataobj.medium_route_running - 13 - (draft_round),
             deepRouteRunning: dataobj.deep_route_running - 6 - (draft_round),
-            jumping1: dataobj.jumping + 2,
             stamina: dataobj.stamina - 1,
             injury: dataobj.injury - 1
           }
@@ -325,7 +324,6 @@ export class playerService {
             carrying: dataobj.carrying - 14 - (draft_round),
             trucking: dataobj.trucking - 21 - (draft_round),
             ball_carrier_vision: dataobj.ball_carrier_vision - 15 - (draft_round),
-            strength1: dataobj.strength - 7, // need reivison
             catching: dataobj.catching - 9 - (draft_round),
             stiff_arm: dataobj.stiff_arm - 7 - (draft_round),
             spin_move: dataobj.spin_move - 5 - (draft_round),
@@ -333,7 +331,6 @@ export class playerService {
             short_route_running: dataobj.short_route_running - 11 - (draft_round),
             medium_route_running: dataobj.medium_route_running - 16 - (draft_round),
             deep_route_running: dataobj.deep_route_running - 17 - (draft_round),
-            jumping1: dataobj.jumping - 1, // need revision,
             stamina: dataobj.stamina - 1,
             return: dataobj.return - 1,
             injury: dataobj.injury - 1
