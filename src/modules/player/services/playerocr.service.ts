@@ -5,10 +5,14 @@ import { Repository } from "typeorm";
 import { CloudinaryService } from "src/modules/cloudinary/cloudinary.service";
 import { userEntity } from "src/modules/user/entity/user.entity";
 import { PlayerPositionEntity } from "../entity/player-position.entity";
-import { ConversionDto } from "../dto/convert-manually.dto";
-import vision from '@google-cloud/vision';
+import { ConversionDto, TightEndDto } from "../dto/convert-manually.dto";
+import { ImageAnnotatorClient } from '@google-cloud/vision'; // Correct import
+import { POSTION_CODE } from "src/types/enums/roles";
+import { ConverstionDataDto, ImageConversionDto } from "../dto/image-conversion.dto";
+
 @Injectable()
 export class ocrService {
+  private visionClient: ImageAnnotatorClient; // Type correctly set
   constructor(
     @InjectRepository(PlayerEntity)
     private readonly playerRepo: Repository<PlayerEntity>,
@@ -24,55 +28,61 @@ export class ocrService {
 
     private readonly cloudinaryService: CloudinaryService
   ) {
-    const client = new vision.ImageAnnotatorClient();
+    // Initialize the vision client correctly
+    this.visionClient = new ImageAnnotatorClient();
   }
 
-  async exectute(data: ConversionDto, file: Express.Multer.File, userId: number) {
+  async exectute(file: Express.Multer.File, obj: ImageConversionDto): Promise<any> {
     try {
+      const { playerName, positionId, positionCode, data: rawData, draft_round } = obj
 
-      const { playerName, positionId, positionCode, data: rawData, draft_round } = data
-
-      const fetchData = await this.playerPositionRepo.findOne({
+      const positionData = await this.playerPositionRepo.findOne({
         where: {
-          id: data.positionId,
-          code: data.positionCode
+          id: positionId,
+          code: positionCode,
         }
-      })
-      if (!fetchData) {
-        throw new NotFoundException('Invalid Position | Position Code')
-      }
-      let player: PlayerEntity | null
+      });
 
-      const image = this.cloudinaryService.uploadFile(
-        file)
-      if (!image) {
-        throw new NotFoundException('Invalid Image')
+      if (!positionData) {
+        throw new NotFoundException('Invalid Position | Position Code');
       }
-      const playerImage1 = this.playerImageRepo.create({
-        url: (await image).secure_url,
-      })
-      this.playerImageRepo.save(playerImage1)
 
-      player = await this.playerRepo.findOne({ where: { name: playerName } })
+      let player: PlayerEntity | null;
+      player = await this.playerRepo.findOne({
+        where: { name: playerName },
+      });
+
       if (!player) {
+        const uploadedImage = await this.cloudinaryService.uploadFile(file);
 
         const newPlayer = this.playerRepo.create({
+          images: uploadedImage ? [{ url: uploadedImage.secure_url }] : [],
           name: playerName,
-          user: { id: userId },
           position: { id: positionId },
-        })
-        player = await this.playerRepo.save(newPlayer)
+        });
+
+        let { images, ...playerData } = newPlayer;
+        player = await this.playerRepo.save(playerData);
+        images = await this.playerImageRepo.save(images);
       }
 
+      let dataobj: ConverstionDataDto;
 
+      switch (obj.positionCode) {
 
+        case POSTION_CODE.TightEnd:
 
+          dataobj = rawData as TightEndDto;
+
+          break;
+
+        default:
+          break;
+      }
 
 
     } catch (error) {
-
-
-      throw new Error(error.message)
+      throw new Error(error.message);
     }
   }
 }

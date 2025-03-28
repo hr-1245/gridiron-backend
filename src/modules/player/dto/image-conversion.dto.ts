@@ -1,7 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsNumber, IsString, } from "class-validator";
+import { IsNotEmpty, IsNumber, IsString, ValidateNested } from "class-validator";
 
-export class ConversionDto {
+export class ImageConversionDto {
   @ApiProperty()
   @IsNumber()
   @IsNotEmpty()

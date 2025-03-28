@@ -8,6 +8,7 @@ import { playerService } from "./services/player.service";
 import { userSubscriptionGuard } from "src/providers/guards/user-guard/user-subscription.guard";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ocrService } from "./services/playerocr.service";
+import { ImageConversionDto } from "./dto/image-conversion.dto";
 
 @ApiTags("Player Positions")
 @ApiBearerAuth('jwt')
@@ -36,6 +37,8 @@ export class PlayerController {
   // }
 
   // Existing dropdown endpoint remains the same
+
+  //-----------GET DROPDOWN ------------------------
   @Get("dropdown")
   @ApiResponse({
     status: 200,
@@ -45,7 +48,8 @@ export class PlayerController {
     return this.playerService.getAllPositionDropDown();
   }
 
-  @Post("convert")
+  //----------------------CONVERT MANUALLY ----------------------
+  @Post("convert-manually")
   @ApiOperation({ summary: "Convert player attributes based on position" })
   @ApiResponse({
     status: 200,
@@ -55,7 +59,8 @@ export class PlayerController {
     return this.playerService.conversionLogic(conversionDto, user.id);
   }
 
-  @Post('upload/profile-picture')
+  //-----------------------CONVERT WITH IMAGE -------------------------
+  @Post('convert-image')
   @ApiOperation({ summary: 'Upload Profile Picture' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -78,7 +83,7 @@ export class PlayerController {
     },
   })
   @UseInterceptors(FileInterceptor('file'))
-  uploadfile(@UploadedFile() file: Express.Multer.File, @Body() conversionDto: ConversionDto, @User() user: userjwtInterface) {
-    return this.ocerService.exectute(conversionDto, file, user.id);
+  uploadfile(@UploadedFile() file: Express.Multer.File,@Body() data: ImageConversionDto) {
+    return this.ocerService.exectute(file, data);
   }
 }
