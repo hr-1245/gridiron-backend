@@ -1,12 +1,17 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PlayerEntity, PlayerAttributesEntity } from '../entity/players.entity';
 import { PlayerPositionEntity } from '../entity/player-position.entity';
-import { PositionAttributeMappingEntity } from '../entity/players.entity';
 import { Repository } from 'typeorm';
 
+export interface PaginatedPlayers {
+  data: any[];
+  totalCount: number;
+  totalPages: number;
+}
+
 @Injectable()
-export class playerDataService {
+export class PlayerDataService {
   constructor(
     @InjectRepository(PlayerEntity)
     private readonly playerRepo: Repository<PlayerEntity>,
@@ -16,141 +21,86 @@ export class playerDataService {
 
     @InjectRepository(PlayerPositionEntity)
     private readonly playerPosRepo: Repository<PlayerPositionEntity>,
-
-    @InjectRepository(PositionAttributeMappingEntity)
-    private readonly playerAttrMappRepo: Repository<PositionAttributeMappingEntity>,
   ) { }
 
-  // Helper function to remove null or undefined properties from an object.
   private removeNulls<T extends Record<string, any>>(obj: T): Partial<T> {
-    const newObj: any = {};
+    const cleaned: any = {};
     Object.entries(obj).forEach(([key, value]) => {
       if (value !== null && value !== undefined) {
-        newObj[key] = value;
+        cleaned[key] = value;
       }
     });
-    return newObj;
+    return cleaned;
   }
 
-  /**
-   * Get all converted players for the given user (i.e. players with non-empty attributes)
-   * with pagination and optional name search.
-   */
-  async getAllConvertedPlayers(
+  //-----------------GET CONVERTED PLAYERS -------------------------------
+  async getConvertedPlayers(
     userId: number,
     page: number = 1,
     limit: number = 10,
     searchValue?: string,
-  ): Promise<any> {
+    positionCode?: string,
+  ): Promise<PaginatedPlayers> {
     try {
-      const query = this.playerRepo
+      // Build the query for players that have attributes and belong to the given user
+      let query = this.playerRepo
         .createQueryBuilder('player')
         .leftJoinAndSelect('player.attributes', 'attributes')
         .leftJoinAndSelect('player.position', 'position')
         .where('attributes.id IS NOT NULL')
-        // Only include players of the authenticated user:
         .andWhere('player.user.id = :userId', { userId });
 
+      // Optionally filter by player name using ILIKE for case-insensitive search
       if (searchValue) {
-        query.andWhere('player.name ILIKE :search', { search: `%${searchValue}%` });
+        query = query.andWhere('player.name ILIKE :search', { search: `%${searchValue}%` });
       }
 
-      query.orderBy('player.createdAt', 'DESC')
+      // Optionally filter by position code
+      if (positionCode) {
+        query = query.andWhere('position.code = :positionCode', { positionCode });
+      }
+
+      // Order, paginate and get the results with total count
+      query = query.orderBy('player.createdAt', 'DESC')
         .skip((page - 1) * limit)
         .take(limit);
 
-      const [players, total] = await query.getManyAndCount();
+      const [players, totalCount] = await query.getManyAndCount();
+      const totalPages = Math.ceil(totalCount / limit);
 
-      // Remove null properties from player and each of its attributes
+      // Clean each returned entity by removing null values
       const cleanedPlayers = players.map(player => ({
         ...this.removeNulls(player),
-        attributes: player.attributes.map(attr => this.removeNulls(attr)),
-        position: this.removeNulls(player.position),
+        position: player.position ? this.removeNulls(player.position) : null,
+        attributes: player.attributes?.map(attr => this.removeNulls(attr)) || [],
+
       }));
 
       return {
         data: cleanedPlayers,
-        totalCount: total,
-        totalPages: Math.ceil(total / limit),
+        totalCount,
+        totalPages,
       };
     } catch (error) {
-      throw new InternalServerErrorException('Error retrieving players');
+      console.error('Error retrieving converted players:', error);
+      throw new InternalServerErrorException('Error retrieving converted players');
     }
   }
-
-  /**
-   * Get converted players by name (search by partial match) for the authenticated user.
-   */
-  async getConvertedPlayerByName(
-    userId: number,
-    search: string,
-    page: number = 1,
-    limit: number = 10,
-  ): Promise<any> {
+  //--------------Delete a Player Card ---------------
+  async deletePlayerCard(playerId: number, userId: number): Promise<{ message: string }> {
     try {
-      const query = this.playerRepo
-        .createQueryBuilder('player')
-        .leftJoinAndSelect('player.attributes', 'attributes')
-        .leftJoinAndSelect('player.position', 'position')
-        .where('player.name ILIKE :search', { search: `%${search}%` })
-        .andWhere('attributes.id IS NOT NULL')
-        .andWhere('player.user.id = :userId', { userId })
-        .orderBy('player.createdAt', 'DESC')
-        .skip((page - 1) * limit)
-        .take(limit);
-
-      const [players, total] = await query.getManyAndCount();
-      const cleanedPlayers = players.map(player => ({
-        ...this.removeNulls(player),
-        attributes: player.attributes.map(attr => this.removeNulls(attr)),
-        position: this.removeNulls(player.position),
-      }));
-
+      const player = await this.playerRepo.findOne({
+        where: { id: playerId, user: { id: userId } },
+      });
+      if (!player) {
+        throw new Error('Player not found or you do not have permission to delete this player');
+      }
+      await this.playerRepo.remove(player);
       return {
-        data: cleanedPlayers,
-        totalCount: total,
-        totalPages: Math.ceil(total / limit),
+        message: 'Player card deleted successfully'
       };
     } catch (error) {
-      throw new InternalServerErrorException('Error retrieving players by name');
-    }
-  }
-
-  /**
-   * Get converted players by position code for the authenticated user.
-   */
-  async getConvertedPlayerByPosition(
-    userId: number,
-    positionCode: string,
-    page: number = 1,
-    limit: number = 10,
-  ): Promise<any> {
-    try {
-      const query = this.playerRepo
-        .createQueryBuilder('player')
-        .leftJoinAndSelect('player.attributes', 'attributes')
-        .leftJoinAndSelect('player.position', 'position')
-        .where('position.code = :positionCode', { positionCode })
-        .andWhere('attributes.id IS NOT NULL')
-        .andWhere('player.user.id = :userId', { userId })
-        .orderBy('player.createdAt', 'DESC')
-        .skip((page - 1) * limit)
-        .take(limit);
-
-      const [players, total] = await query.getManyAndCount();
-      const cleanedPlayers = players.map(player => ({
-        ...this.removeNulls(player),
-        attributes: player.attributes.map(attr => this.removeNulls(attr)),
-        position: this.removeNulls(player.position),
-      }));
-
-      return {
-        data: cleanedPlayers,
-        totalCount: total,
-        totalPages: Math.ceil(total / limit),
-      };
-    } catch (error) {
-      throw new InternalServerErrorException('Error retrieving players by position');
+      throw new InternalServerErrorException('Player not Found');
     }
   }
 }

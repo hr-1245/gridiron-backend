@@ -215,7 +215,7 @@ export class PlayerAttributesEntity extends baseEntity {
     @Column({ nullable: true })
     draft_round: number
 
-    @ManyToOne(() => PlayerEntity, player => player.attributes, { nullable: true })
+    @ManyToOne(() => PlayerEntity, player => player.attributes, { nullable: true, onDelete: 'CASCADE' })
     player: PlayerEntity;
 }
 

@@ -32,9 +32,9 @@ export class ocrService {
     this.visionClient = new ImageAnnotatorClient();
   }
 
-  async exectute(file: Express.Multer.File, obj: ImageConversionDto): Promise<any> {
+  async exectute( file: Express.Multer.File, id: number, obj: ImageConversionDto): Promise<any> {
     try {
-      const { playerName, positionId, positionCode, data: rawData, draft_round } = obj
+      const { playerName, positionId, positionCode, data: rawData, draft_round }  = obj
 
       const positionData = await this.playerPositionRepo.findOne({
         where: {
