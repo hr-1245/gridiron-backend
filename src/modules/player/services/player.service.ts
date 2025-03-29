@@ -169,10 +169,15 @@ export class playerService {
             injury: convertedData.injury
           })
           await this.playerAttrRepo.save(resultTE)
-
+          const cleanedResultTE = Object.keys(resultTE).reduce((acc, key) => {
+            if (resultTE[key] !== null && resultTE[key] !== undefined) {
+              acc[key] = resultTE[key];
+            }
+            return acc;
+          }, {});
           return {
             message: `Conversion of ${positionCode} Sucessfull`,
-            resultTE
+            resultTE: cleanedResultTE
           }
 
         ///////////////////////////----------------QB CONVERISON=========================
@@ -233,9 +238,16 @@ export class playerService {
 
           })
           await this.playerAttrRepo.save(resultQB)
+          const cleanedResultQB = Object.keys(resultQB).reduce((acc, key) => {
+            if (resultQB[key] !== null && resultQB[key] !== undefined) {
+              acc[key] = resultQB[key];
+            }
+            return acc;
+          }, {});
+
           return {
-            message: `Conversion of ${positionCode} Sucessfull`,
-            resultQB: resultQB
+            message: `Conversion of ${positionCode} Successful`,
+            result: cleanedResultQB,
           }
 
         //------------------------------RB CONVERSION
@@ -299,10 +311,18 @@ export class playerService {
           });
           await this.playerAttrRepo.save(resultRB);
 
+          const cleanedResultRB = Object.keys(resultRB).reduce((acc, key) => {
+            if (resultRB[key] !== null && resultRB[key] !== undefined) {
+              acc[key] = resultRB[key];
+            }
+            return acc;
+          }, {});
+
           return {
             message: `Conversion of ${positionCode} Successful`,
-            result: resultRB,
-          };
+            result: cleanedResultRB,
+          }
+
 
         ///////////////---------------WR CONVERSION =========
         case POSTION_CODE.WiderReceiver:
@@ -365,10 +385,18 @@ export class playerService {
           });
           await this.playerAttrRepo.save(resultWR);
 
+          const cleanedResultWR = Object.keys(resultWR).reduce((acc, key) => {
+            if (resultWR[key] !== null && resultWR[key] !== undefined) {
+              acc[key] = resultWR[key];
+            }
+            return acc;
+          }, {});
+
           return {
             message: `Conversion of ${positionCode} Successful`,
-            result: resultWR,
-          };
+            result: cleanedResultWR,
+          }
+
 
 
         //-----------------------OT CONVERSION ------------------------
@@ -412,11 +440,18 @@ export class playerService {
           });
 
           await this.playerAttrRepo.save(resultOT);
+          const cleanedResultOT = Object.keys(resultOT).reduce((acc, key) => {
+            if (resultOT[key] !== null && resultOT[key] !== undefined) {
+              acc[key] = resultOT[key];
+            }
+            return acc;
+          }, {});
 
           return {
             message: `Conversion of ${positionCode} Successful`,
-            result: resultOT,
-          };
+            result: cleanedResultOT,
+          }
+
 
         //--------------------------------IOL CONVERSION ----------------------
         case POSTION_CODE.InteriorOffensiveLineman:
@@ -461,10 +496,17 @@ export class playerService {
 
           await this.playerAttrRepo.save(resultIOL);
 
+          const cleanedResultIOL = Object.keys(resultIOL).reduce((acc, key) => {
+            if (resultIOL[key] !== null && resultIOL[key] !== undefined) {
+              acc[key] = resultIOL[key];
+            }
+            return acc;
+          }, {});
+
           return {
             message: `Conversion of ${positionCode} Successful`,
-            result: resultIOL,
-          };
+            result: cleanedResultIOL,
+          }
 
         //----------------------------EDGE CONVERSION ------------------------------
         case POSTION_CODE.EdgeRusher:
@@ -508,10 +550,16 @@ export class playerService {
             injury: convertedDataEDGE.injury
           });
           await this.playerAttrRepo.save(resultEDGE)
+          const cleanedResultEDGE = Object.keys(resultEDGE).reduce((acc, key) => {
+            if (resultEDGE[key] !== null && resultEDGE[key] !== undefined) {
+              acc[key] = resultEDGE[key];
+            }
+            return acc;
+          }, {});
 
           return {
             message: `Conversion of ${positionCode} Successful`,
-            result: resultEDGE,
+            result: cleanedResultEDGE,
           }
 
         //-------------------------------DI CONVERSION --------------------
@@ -555,10 +603,16 @@ export class playerService {
             injury: convertedDataDI.injury
           });
           await this.playerAttrRepo.save(resultDE)
+          const cleanedResultDE = Object.keys(resultDE).reduce((acc, key) => {
+            if (resultDE[key] !== null && resultDE[key] !== undefined) {
+              acc[key] = resultDE[key];
+            }
+            return acc;
+          }, {});
 
           return {
             message: `Conversion of ${positionCode} Successful`,
-            result: resultDE,
+            result: cleanedResultDE,
           }
 
         //------------------------------ LB CONVERSION ================
@@ -649,6 +703,7 @@ export class playerService {
 
           }
           const resultCB = this.playerAttrRepo.create({
+            player: { id: player.id },
             age: convertedDataCB.age,
             speed: convertedDataCB.speed,
             acceleration: convertedDataCB.acceleration,

@@ -2,10 +2,10 @@ import { Controller, Post, Get, Body, Req, Res, UseGuards } from '@nestjs/common
 import { Request, Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { userjwtGuard } from 'src/providers/guards/user-guard/user.guard';
-import { StripeService } from '../stripe/stripe.service';
+import { StripeService } from '../../stripe/stripe.service';
 import { User } from 'src/utils/user.decorator';
-import { userjwtInterface } from '../jwt/interface/jwt.interface';
-import { AttachPaymentMethodDto, SubscribeDto } from '../stripe/dto/stripe.dto';
+import { userjwtInterface } from '../../jwt/interface/jwt.interface';
+import { AttachPaymentMethodDto, SubscribeDto } from '../../stripe/dto/stripe.dto';
 
 @ApiBearerAuth('jwt')
 @ApiTags('Stripe')
