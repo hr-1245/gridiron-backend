@@ -5,7 +5,7 @@ import { signupDto } from "../dto/signup.dto";
 import { loginDto } from "../dto/login.dto";
 import { ResendVerificationDto, VerifyEmailDto } from "../dto/verifyemai.dto";
 
-@ApiTags('auth/user')
+@ApiTags('USER')
 @Controller('auth')
 export class userauthController {
   constructor(private authService: userAuthService) { }

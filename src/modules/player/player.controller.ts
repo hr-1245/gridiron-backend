@@ -10,7 +10,7 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { ocrService } from "./services/playerocr.service";
 import { ImageConversionDto } from "./dto/image-conversion.dto";
 
-@ApiTags("Player Positions")
+@ApiTags("Convert For Maden")
 @ApiBearerAuth('jwt')
 @UseGuards(userSubscriptionGuard)
 @SetMetadata('requiredPlans', [subscriptionEnum.REGULAR, subscriptionEnum.REGULAR])
@@ -83,7 +83,7 @@ export class PlayerController {
     },
   })
   @UseInterceptors(FileInterceptor('file'))
-  uploadfile(@UploadedFile() file: Express.Multer.File,@Body() data: ImageConversionDto) {
-    return this.ocerService.exectute(file, data);
+  uploadfile(@UploadedFile() file: Express.Multer.File, @Body() data: ImageConversionDto, @User() user: userjwtInterface) {
+    return this.ocerService.exectute(file, user.id, data);
   }
 }

@@ -1,57 +1,48 @@
-import { Controller, Get, Query, Param, ParseIntPipe, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiQuery, ApiParam } from '@nestjs/swagger';
-import { playerDataService } from 'src/modules/player/services/playerdata.service';
-import { User } from 'src/utils/user.decorator';
+import { Controller, Get, Query, UseGuards, ParseIntPipe, Delete, Param, HttpStatus } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
 import { userjwtInterface } from 'src/modules/jwt/interface/jwt.interface';
+import { PlayerDataService } from 'src/modules/player/services/playerdata.service';
 import { userjwtGuard } from 'src/providers/guards/user-guard/user.guard';
+import { User } from 'src/utils/user.decorator';
 
-@ApiTags('Player Analytics')
+@ApiTags('Converted Players')
 @ApiBearerAuth('jwt')
-@Controller('players')
 @UseGuards(userjwtGuard)
+@Controller('players')
 export class userPlayerCardsController {
-  constructor(private readonly playerDataService: playerDataService) { }
+  constructor(private readonly playerDataService: PlayerDataService) { }
 
-  @ApiOperation({ summary: 'Get all converted players for the authenticated user' })
-  @ApiResponse({ status: 200, description: 'Players fetched successfully' })
-  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
-  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
-  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search by player name' })
   @Get('converted')
-  async getAllConvertedPlayers(
+  @ApiOperation({ summary: 'Get all converted players for the authenticated user with pagination' })
+  @ApiResponse({ status: 200, description: 'Converted players retrieved successfully.' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Number of records per page' })
+  @ApiQuery({ name: 'searchValue', required: false, type: String, description: 'Search value for player name' })
+  @ApiQuery({ name: 'positionCode', required: false, type: String, description: 'Filter by position code' })
+  async getConvertedPlayers(
     @User() user: userjwtInterface,
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
-    @Query('search') searchValue?: string,
+    @Query('searchValue') searchValue?: string,
+    @Query('positionCode') positionCode?: string,
   ) {
-    return await this.playerDataService.getAllConvertedPlayers(user.id, page, limit, searchValue);
+    return this.playerDataService.getConvertedPlayers(user.id, page, limit, searchValue, positionCode);
+  }
+  @ApiOperation({ summary: 'Delete a player card by ID for the authenticated user' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Player card deleted successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Player card not found or unauthorized access',
+  })
+  @Delete(':id')
+  async deletePlayerCard(
+    @Param('id', ParseIntPipe) id: number,
+    @User() user: userjwtInterface,
+  ) {
+    return this.playerDataService.deletePlayerCard(id, user.id);
   }
 
-  @ApiOperation({ summary: 'Get converted players by name for the authenticated user' })
-  @ApiParam({ name: 'search', type: String, description: 'Player name (partial match)' })
-  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
-  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
-  @Get('converted/name/:search')
-  async getConvertedPlayerByName(
-    @User() user: userjwtInterface,
-    @Param('search') search: string,
-    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
-  ) {
-    return await this.playerDataService.getConvertedPlayerByName(user.id, search, page, limit);
-  }
-
-  @ApiOperation({ summary: 'Get converted players by position for the authenticated user' })
-  @ApiParam({ name: 'positionCode', type: String, description: 'Position code (e.g., TE, QB, etc.)' })
-  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
-  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
-  @Get('converted/position/:positionCode')
-  async getConvertedPlayerByPosition(
-    @User() user: userjwtInterface,
-    @Param('positionCode') positionCode: string,
-    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
-  ) {
-    return await this.playerDataService.getConvertedPlayerByPosition(user.id, positionCode, page, limit);
-  }
 }

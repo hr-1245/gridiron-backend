@@ -4,8 +4,7 @@ import { adminauthService } from "../services/adminAuth.service";
 import { loginDto } from "../dto/login.dto";
 
 
-@Controller()
-@ApiTags('auth/admin')
+@ApiTags('ADMIN')
 @Controller('auth')
 export class adminauthController {
 
