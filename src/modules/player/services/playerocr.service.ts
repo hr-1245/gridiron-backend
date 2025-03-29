@@ -28,7 +28,7 @@ export class ocrService {
 
     private readonly cloudinaryService: CloudinaryService
   ) {
-    // Initialize the vision client correctly
+
     this.visionClient = new ImageAnnotatorClient();
   }
 
