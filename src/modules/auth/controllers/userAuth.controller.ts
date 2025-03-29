@@ -54,7 +54,7 @@ export class userauthController {
       }
     }
   })
-  @Post('login')
+  @Post('signin')
   async login(@Body() body: loginDto) {
     return await this.authService.login(body);
   }
@@ -77,6 +77,8 @@ export class userauthController {
     }
   })
 
+ 
+ //--------------------------VERIFY EMAIL ----------------
   @ApiOperation({ summary: 'Verify user email with OTP' })
   @ApiBody({ type: VerifyEmailDto, description: 'OTP verification code' })
   @ApiResponse({
@@ -92,7 +94,7 @@ export class userauthController {
     return await this.authService.verifyEmail(body.otp);
   }
 
-
+//--------------------RESEND VERIFY EMAIL ------------
   @Post('resend-verification')
   async resendVerification(@Body() body: ResendVerificationDto) {
     return await this.authService.resendVerificationOtp(body.email);
