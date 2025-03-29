@@ -10,7 +10,7 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { ocrService } from "./services/playerocr.service";
 import { ImageConversionDto } from "./dto/image-conversion.dto";
 
-@ApiTags("Convert For Maden")
+@ApiTags("CONVERT FOR MADEN")
 @ApiBearerAuth('jwt')
 @UseGuards(userSubscriptionGuard)
 @SetMetadata('requiredPlans', [subscriptionEnum.REGULAR, subscriptionEnum.REGULAR])
