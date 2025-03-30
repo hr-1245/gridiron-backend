@@ -12,7 +12,8 @@ import { User } from 'src/utils/user.decorator';
 export class userPlayerCardsController {
   constructor(private readonly playerDataService: PlayerDataService) { }
 
-  @Get('converted')
+ //--------------------------GET ALL CONVERTED PLAYERS ================
+  @Get('getAll/converted/players')
   @ApiOperation({ summary: 'Get all converted players for the authenticated user with pagination' })
   @ApiResponse({ status: 200, description: 'Converted players retrieved successfully.' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
@@ -28,6 +29,9 @@ export class userPlayerCardsController {
   ) {
     return this.playerDataService.getConvertedPlayers(user.id, page, limit, searchValue, positionCode);
   }
+ 
+ 
+ //--------------------------DELETE PLAYER CARD BY ID -----------------
   @ApiOperation({ summary: 'Delete a player card by ID for the authenticated user' })
   @ApiResponse({
     status: HttpStatus.OK,
