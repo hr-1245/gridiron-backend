@@ -42,7 +42,6 @@ export class PlayerDataService {
     positionCode?: string,
   ): Promise<PaginatedPlayers> {
     try {
-      // Build the query for players that have attributes and belong to the given user
       let query = this.playerRepo
         .createQueryBuilder('player')
         .leftJoinAndSelect('player.attributes', 'attributes')
@@ -50,17 +49,14 @@ export class PlayerDataService {
         .where('attributes.id IS NOT NULL')
         .andWhere('player.user.id = :userId', { userId });
 
-      // Optionally filter by player name using ILIKE for case-insensitive search
       if (searchValue) {
         query = query.andWhere('player.name ILIKE :search', { search: `%${searchValue}%` });
       }
 
-      // Optionally filter by position code
       if (positionCode) {
         query = query.andWhere('position.code = :positionCode', { positionCode });
       }
 
-      // Order, paginate and get the results with total count
       query = query.orderBy('player.createdAt', 'DESC')
         .skip((page - 1) * limit)
         .take(limit);
@@ -68,7 +64,6 @@ export class PlayerDataService {
       const [players, totalCount] = await query.getManyAndCount();
       const totalPages = Math.ceil(totalCount / limit);
 
-      // Clean each returned entity by removing null values
       const cleanedPlayers = players.map(player => ({
         ...this.removeNulls(player),
         position: player.position ? this.removeNulls(player.position) : null,
@@ -90,7 +85,7 @@ export class PlayerDataService {
   async deletePlayerCard(playerId: number, userId: number): Promise<{ message: string }> {
     try {
       const player = await this.playerRepo.findOne({
-        where: { id: playerId, user: { id: userId } },
+        where: { id: playerId, user: { id: userId }   }, 
       });
       if (!player) {
         throw new Error('Player not found or you do not have permission to delete this player');

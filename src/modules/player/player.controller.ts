@@ -1,89 +1,93 @@
-import { Body, Controller, Get, HttpStatus, Param, Post, SetMetadata, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { subscriptionEnum } from "src/types/enums/subscription";
-import { ConversionDto } from "./dto/convert-manually.dto";
-import { User } from "src/utils/user.decorator";
-import { userjwtInterface } from "../jwt/interface/jwt.interface";
-import { playerService } from "./services/player.service";
-import { userSubscriptionGuard } from "src/providers/guards/user-guard/user-subscription.guard";
-import { FileInterceptor } from "@nestjs/platform-express";
-import { ocrService } from "./services/playerocr.service";
-import { ImageConversionDto } from "./dto/image-conversion.dto";
+import {
+  Controller,
+  Post,
+  UploadedFile,
+  UseInterceptors,
+  Body,
+  BadRequestException,
+  UseGuards,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiConsumes,
+  ApiBody,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+import { Express } from 'express';
+import { PlayerOcrService } from './services/playerocr.service';
+import { ConversionDto } from './dto/convert-manually.dto';
+import { userjwtGuard } from 'src/providers/guards/user-guard/user.guard';
 
-@ApiTags("CONVERT FOR MADEN")
-@ApiBearerAuth('jwt')
-@UseGuards(userSubscriptionGuard)
-@SetMetadata('requiredPlans', [subscriptionEnum.REGULAR, subscriptionEnum.REGULAR])
-@Controller("positions")
+@ApiTags('Player OCR')
+@Controller('player-ocr')
 
-export class PlayerController {
-  constructor(private readonly playerService: playerService,
-    private ocerService: ocrService
-  ) { }
+export class PlayerOcrController {
+  constructor(private readonly playerOcrService: PlayerOcrService) { }
 
-  // New endpoint: GET /positions/:code/attributes
-  // @Get(":code/attributes")
-  // @ApiOperation({ summary: "Fetch attributes for a specific position by code" })
-  // @ApiResponse({
-  //   status: 200,
-  //   description: "The attributes for the specified position",
-  //   type: PositionAttributesResponseDto,
-  // })
-  // async getPositionAttributesByCode(
-  //   @Param("code") code: string
-  // ): Promise<PositionAttributesResponseDto> {
-
-  //   return this.playerService.getPositionAttributes({ position: code });
-  // }
-
-  // Existing dropdown endpoint remains the same
-
-  //-----------GET DROPDOWN ------------------------
-  @Get("dropdown")
-  @ApiResponse({
-    status: 200,
-    description: "Dropdown Position",
-  })
-  async getPositionDropDown() {
-    return this.playerService.getAllPositionDropDown();
-  }
-
-  //----------------------CONVERT MANUALLY ----------------------
-  @Post("convert-manually")
-  @ApiOperation({ summary: "Convert player attributes based on position" })
-  @ApiResponse({
-    status: 200,
-    description: "Player attributes converted successfully",
-  })
-  async convertPlayerAttributes(@Body() conversionDto: ConversionDto, @User() user: userjwtInterface) {
-    return this.playerService.conversionLogic(conversionDto, user.id);
-  }
-
-  //-----------------------CONVERT WITH IMAGE -------------------------
-  @Post('convert-image')
-  @ApiOperation({ summary: 'Upload Profile Picture' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'File uploaded successfully',
-  })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Invalid file format or upload error',
+  /**
+   * Upload an image and process it via Cloudinary and Google Cloud Vision OCR.
+   *
+   * The request must contain:
+   * - A file (multipart/form-data).
+   * - A "conversionData" field (JSON string of ConversionDto).
+   *
+   * @param file - The uploaded image file.
+   * @param conversionDataStr - The JSON stringified ConversionDto.
+   * @param user - The authenticated user's info.
+   */
+  @Post('process')
+  @ApiOperation({
+    summary:
+      'Upload an image, process it via Cloudinary and Google Cloud Vision OCR, and update the player record.',
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
-        file: {
+        file: { type: 'string', format: 'binary' },
+        conversionData: {
           type: 'string',
-          format: 'binary',
+          description:
+            'JSON stringified ConversionDto (includes positionId, positionCode, playerName, draft_round, etc.)',
+          example:
+            '{"positionId":7,"positionCode":"TE","playerName":"John Doe","draft_round":2}',
         },
       },
     },
   })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Image processed successfully. Returns the image URL, OCR extracted text, parsed attributes, and player info.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request: Missing file or conversion data, or invalid JSON.',
+  })
   @UseInterceptors(FileInterceptor('file'))
-  uploadfile(@UploadedFile() file: Express.Multer.File, @Body() data: ImageConversionDto, @User() user: userjwtInterface) {
-    return this.ocerService.exectute(file, user.id, data);
+  async processPlayerImage(
+    @UploadedFile() file: Express.Multer.File,
+    @Body('conversionData') conversionDataStr: string,
+  ) {
+    if (!file) {
+      throw new BadRequestException('File is required');
+    }
+    if (!conversionDataStr) {
+      throw new BadRequestException('Conversion data is required');
+    }
+    let conversionData: ConversionDto;
+    try {
+      conversionData = JSON.parse(conversionDataStr);
+    } catch (error) {
+      throw new BadRequestException('Invalid JSON for conversion data');
+    }
+    return await this.playerOcrService.processImage(
+      file,
+      conversionData,
+    );
   }
 }
