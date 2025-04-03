@@ -27,7 +27,11 @@ export enum POSTION_CODE {
 
 
 export enum COLLAGE_AGE_ENUM {
-  
-  SO
+
+  SO_RS = 3,
+  JR = 3,
+  JR_RS = 4,
+  SR = 4,
+  SR_RS = 5
 
 }

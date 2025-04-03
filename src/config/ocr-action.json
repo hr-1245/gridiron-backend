@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "black-practice-454717-j7",
+  "private_key_id": "af9dbe8e2e5db4c9883aeee23b188b0af24cc7c3",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDUNuJWc+8NBp7k\np7TeFpmP+rfAun0lWxolCbCGcV8yRmpjxumIvZAHYK7KZbO7RYj+BfUQJzC45/Uk\nuJuw54J2+AgYlyua2HznL7lGN9DrTbWgMSKPGVZRxcHZA053kOYkFimHDqZEh+Db\n4ZACx/p+D2rUU+EfWBXN39t4nrRNabxU6DYLLgPeQ5WPEH75zK2LBga8knRUtbou\nn3u8GbgHd2L8637bQ6VTJJUoQ8au/ReHyaFgG9fm2JjxGZIC9/oJpuvZuX0uoyq2\n2cxHMNq9hAvJ9v/pOXbTEawEdCGlHHRS5O8kih0UcXzViFbRDgXVHkygvVlLNO3W\nMES5+YfpAgMBAAECggEABakBGHU3Jw3KJych99p6dhCl3gobVGe9psc/YhacB2dB\nZy/jArarpMa7YsKbrJ8KLFxUUP36mrP1IemanXlPTYUIEj/V9edYTYJEWs8aT2xf\nL8qftVljqAKyTOt9qErBGK1Opj+Jx8IoCTVW9fwHfl1C6C7kjkV3L2qNHAZ/oKDo\n5atsfKkKcm582tPXoE309kEmn+B1pnfsXydrHG1MQkqbQIuH5krPd+VEkT7NjA6N\n1fdssqIlKZ2xyYUJYKBP54edXOwe4RAD/AaYwnitPeuG/j4fUGgqxEONrSOyS1h8\nQwUURFOJTTDNAItQwSw2cYqm3PN+crOnwtYAj45jQQKBgQD1mWdqd8bFb/pcbFDd\nfyFwl0n/USp+RPO+cw9n15t0G2PuKVioJqBGOJcQh0gIiCVKw4ZIOtE8K7EcM9Li\nBPjhYG0gZytYZ17nE3AD5/p/wSYOH3cw/vlay5r33UPk+HiL44/ySwN2EMtrfu5T\nnzHPWXIbr4AiDzBNMYKMDA4w7QKBgQDdM4wyFKTiiRi0jK2ycjxVhnbGPm7EbKvk\nb3Acs8+XwORdhKrKuO2DBxz5bFo8RLRfurSbCoN2Rii/DR5tjUXm4+Ce2NrqBhxG\nj7QQ2zG1/gMOZTXElfgs9GC+mKKNqCHqQ8kVP3x0hyYKHI9HE9eVILYXOYjfoHhB\n9m8gucofbQKBgQDvg2hYa3D80USe579BE59f9xriFJzVQZdXj0xh3+GprKCa/dWJ\nPwolEUE5jETSlTuRGveU709oV8/EikHJzEGPQgOKizK5Zy4lOk6OcKhZ+NqNAWCy\n9qXlRxTdTvrMjQi6m/WgvEkm1iAbuFDiWikwZrGikFfsX1WionsG6ybXzQKBgHmA\nPPutNzxvjbBurWIdOWLI7yjJVlJyVqCtTWmWoup6O3Xaz2120o9sMtAWYiJEoscK\naPXYeolW1D7M1+/Y75J5jQHzn5t4K8PeX0v6+n06vzcDBNusfJtEyHcoo/Enbymc\nfjE7pALl0VEwisrB7WKuixaKtdIP9L5WvIe/RXSpAoGARoeSF3ptuxgwvkZH9PIA\nb4kTyTZ+KYT3DGUCTIaGkAfFWt7mnH8/jtiIkw16NSfnTtTae9Gi29cj+s4GG7d9\nsK5m1Ug3OIfOV4OjzrinpofvYBw50p/PXxJDacTCYjAVnIiNW19s7VHdVHq9frTf\nG7u7i7KmfCy3TWNjygLzLVs=\n-----END PRIVATE KEY-----\n",
+  "client_email": "grid-iron-backend@black-practice-454717-j7.iam.gserviceaccount.com",
+  "client_id": "113290212724524925604",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/grid-iron-backend%40black-practice-454717-j7.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

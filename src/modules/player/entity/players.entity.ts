@@ -1,11 +1,14 @@
 import { Entity, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { PlayerPositionEntity } from './player-position.entity';
-import { approvalStatusEnum } from 'src/types/enums/roles';
+import { approvalStatusEnum, POSTION_CODE } from 'src/types/enums/roles';
 import { baseEntity } from 'src/entities/base.entity';
 import { userEntity } from 'src/modules/user/entity/user.entity';
 
 @Entity({ name: 'player' })
 export class PlayerEntity extends baseEntity {
+    draft_round(positionCode: POSTION_CODE, ocrText: string, draft_round: any) {
+      throw new Error("Method not implemented.");
+    }
     @Column({ nullable: false })
     name: string;
 

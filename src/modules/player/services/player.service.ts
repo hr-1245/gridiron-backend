@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { ConversionDto, ConverstionDataDto, CornerBackDto, DefensiveEndDto, EdgeRusherDto, InteriorOffensiveLinemanDto, LineBeckerDto, OffensiveTackleDto, QuarterBackDto, RunningBackDto, SafetyDto, TightEndDto, WideReceiverDto } from "../dto/convert-manually.dto"
-import { POSTION_CODE } from "src/types/enums/roles";
+import { COLLAGE_AGE_ENUM, POSTION_CODE } from "src/types/enums/roles";
 import { PlayerPositionEntity } from "../entity/player-position.entity";
 import { PlayerAttributesEntity, PlayerEntity } from "../entity/players.entity";
 
@@ -94,15 +94,17 @@ export class playerService {
       let dataobj: ConverstionDataDto
 
 
-      switch (obj.positionCode) {
-
+      const randomAge = Math.floor(Math.random() * 2) + 17;
+      const collegeYearAge = COLLAGE_AGE_ENUM[rawData.age as unknown as keyof typeof COLLAGE_AGE_ENUM];
+      const calculatedAge = randomAge + collegeYearAge; // Add years i
+      switch (obj.positionCode || rawData.age) {
         /////----------------------TE CONVERISON =----------
-        case POSTION_CODE.TightEnd:
 
+        case POSTION_CODE.TightEnd:
           dataobj = rawData as TightEndDto;
 
           const convertedData = {
-            age: dataobj.age, // logic
+            age: calculatedAge,
             speed: dataobj.speed + 0,
             acceleration: dataobj.acceleration + 2,
             agility: dataobj.agility + 1,
@@ -136,7 +138,7 @@ export class playerService {
           }
           const resultTE = this.playerAttrRepo.create({
             player: { id: player.id },
-            age: dataobj.age,
+            age: calculatedAge,
             speed: convertedData.speed,
             acceleration: convertedData.acceleration,
             agility: convertedData.agility,

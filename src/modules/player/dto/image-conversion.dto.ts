@@ -4,7 +4,6 @@ import { IsNotEmpty, IsNumber, IsString, ValidateNested } from "class-validator"
 export class ImageConversionDto {
   @ApiProperty()
   @IsNumber()
-  @IsNotEmpty()
   positionId: number;
 
   @ApiProperty()
@@ -17,9 +16,15 @@ export class ImageConversionDto {
   @IsNotEmpty()
   playerName: string;
 
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  uploadfile: string
+
   data: ConverstionDataDto;
 
-  @ApiProperty() @IsNumber()
+  @ApiProperty()
+  @IsNumber()
   draft_round: number;
 
 }
