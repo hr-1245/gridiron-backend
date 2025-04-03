@@ -55,7 +55,6 @@ export class userController {
     return this.stripeService.cancelSubscription(user.id);
   }
 
-  // The webhook endpoint remains public since Stripe calls it without authentication.
   @Post('webhook')
   @ApiOperation({ summary: 'Stripe webhook endpoint' })
   @ApiResponse({ status: 200, description: 'Webhook received' })

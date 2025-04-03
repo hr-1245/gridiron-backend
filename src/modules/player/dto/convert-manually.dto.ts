@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsNumber, IsString, } from "class-validator";
+import { IsEnum, isEnum, IsNotEmpty, IsNumber, IsString, } from "class-validator";
+import { COLLAGE_AGE_ENUM } from "src/types/enums/roles";
 
 export class ConversionDto {
   @ApiProperty()

@@ -1,93 +1,64 @@
-import {
-  Controller,
-  Post,
-  UploadedFile,
-  UseInterceptors,
-  Body,
-  BadRequestException,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Post, UploadedFile, UseInterceptors, Req, BadRequestException, Body, Get, UseGuards } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiConsumes,
-  ApiBody,
-  ApiResponse,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiConsumes, ApiBody, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Express } from 'express';
 import { PlayerOcrService } from './services/playerocr.service';
+import { playerService } from './services/player.service';
 import { ConversionDto } from './dto/convert-manually.dto';
+import { User } from 'src/utils/user.decorator';
+import { userjwtInterface } from '../jwt/interface/jwt.interface';
 import { userjwtGuard } from 'src/providers/guards/user-guard/user.guard';
 
 @ApiTags('Player OCR')
-@Controller('player-ocr')
-
+@ApiBearerAuth('jwt')
+@Controller('players/ocr')
+@UseGuards(userjwtGuard)
 export class PlayerOcrController {
-  constructor(private readonly playerOcrService: PlayerOcrService) { }
+  constructor(private readonly playerOcrService: PlayerOcrService,
+    private readonly playeService: playerService
+  ) { }
 
-  /**
-   * Upload an image and process it via Cloudinary and Google Cloud Vision OCR.
-   *
-   * The request must contain:
-   * - A file (multipart/form-data).
-   * - A "conversionData" field (JSON string of ConversionDto).
-   *
-   * @param file - The uploaded image file.
-   * @param conversionDataStr - The JSON stringified ConversionDto.
-   * @param user - The authenticated user's info.
-   */
-  @Post('process')
-  @ApiOperation({
-    summary:
-      'Upload an image, process it via Cloudinary and Google Cloud Vision OCR, and update the player record.',
+  @Get("dropdown")
+  @ApiResponse({
+    status: 200,
+    description: "Dropdown Position",
   })
+  async getPositionDropDown() {
+    return this.playeService.getAllPositionDropDown();
+  }
+
+  @Post("convert")
+  @ApiOperation({ summary: "Convert player attributes based on position" })
+  @ApiResponse({
+    status: 200,
+    description: "Player attributes converted successfully",
+  })
+  async convertPlayerAttributes(@Body() conversionDto: ConversionDto, @User() user: userjwtInterface) {
+    return this.playeService.conversionLogic(conversionDto, user.id);
+  }
+
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Upload player image and process OCR-based conversion' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
+    description: 'Upload an image file. The OCR will extract the player name and position code.',
     schema: {
       type: 'object',
       properties: {
-        file: { type: 'string', format: 'binary' },
-        conversionData: {
+        file: {
           type: 'string',
-          description:
-            'JSON stringified ConversionDto (includes positionId, positionCode, playerName, draft_round, etc.)',
-          example:
-            '{"positionId":7,"positionCode":"TE","playerName":"John Doe","draft_round":2}',
+          format: 'binary',
         },
       },
+      required: ['file'],
     },
   })
-  @ApiResponse({
-    status: 200,
-    description:
-      'Image processed successfully. Returns the image URL, OCR extracted text, parsed attributes, and player info.',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Bad Request: Missing file or conversion data, or invalid JSON.',
-  })
-  @UseInterceptors(FileInterceptor('file'))
-  async processPlayerImage(
+  @ApiResponse({ status: 200, description: 'Player created successfully.' })
+  async uploadPlayerImage(
     @UploadedFile() file: Express.Multer.File,
-    @Body('conversionData') conversionDataStr: string,
+    @User() user: userjwtInterface,
   ) {
-    if (!file) {
-      throw new BadRequestException('File is required');
-    }
-    if (!conversionDataStr) {
-      throw new BadRequestException('Conversion data is required');
-    }
-    let conversionData: ConversionDto;
-    try {
-      conversionData = JSON.parse(conversionDataStr);
-    } catch (error) {
-      throw new BadRequestException('Invalid JSON for conversion data');
-    }
-    return await this.playerOcrService.processImage(
-      file,
-      conversionData,
-    );
+    return await this.playerOcrService.processPlayerImage(file, user.id);
   }
 }

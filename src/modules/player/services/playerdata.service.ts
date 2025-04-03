@@ -77,8 +77,7 @@ export class PlayerDataService {
         totalPages,
       };
     } catch (error) {
-      console.error('Error retrieving converted players:', error);
-      throw new InternalServerErrorException('Error retrieving converted players');
+      throw new Error('Error retrieving converted players');
     }
   }
   //--------------Delete a Player Card ---------------
