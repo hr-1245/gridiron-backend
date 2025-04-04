@@ -96,7 +96,7 @@ export class playerService {
 
       const randomAge = Math.floor(Math.random() * 2) + 17;
       const collegeYearAge = COLLAGE_AGE_ENUM[rawData.age as unknown as keyof typeof COLLAGE_AGE_ENUM];
-      const calculatedAge = randomAge + collegeYearAge; // Add years i
+      const calculatedAge = randomAge + collegeYearAge;
       switch (obj.positionCode || rawData.age) {
         /////----------------------TE CONVERISON =----------
 
@@ -188,7 +188,7 @@ export class playerService {
           dataobj = rawData as QuarterBackDto
 
           const convertedDataQB = {
-            // age: dataobj.age,  // logic need
+            age: calculatedAge,
             speed: dataobj.speed - 2,
             acceleration: dataobj.acceleration - 2,
             agility: dataobj.agility - 5,
@@ -215,7 +215,7 @@ export class playerService {
 
           const resultQB = this.playerAttrRepo.create({
             player: { id: player.id },
-            // age: convertedDataQB.age,
+            age: calculatedAge,
             speed: convertedDataQB.speed,
             acceleration: convertedDataQB.acceleration,
             agility: convertedDataQB.acceleration,
@@ -258,7 +258,7 @@ export class playerService {
           dataobj = rawData as RunningBackDto
 
           const convertedDataRB = {
-            age: dataobj.age,  // logic need
+            age: calculatedAge,
             speed: dataobj.speed - 2,
             acceleration: dataobj.acceleration + 0,
             agility: dataobj.agility - 4,
@@ -286,7 +286,7 @@ export class playerService {
           }
           const resultRB = this.playerAttrRepo.create({
             player: { id: player.id },
-            age: convertedDataRB.age,
+            age: calculatedAge,
             speed: convertedDataRB.speed,
             acceleration: convertedDataRB.acceleration,
             agility: convertedDataRB.agility,
@@ -331,7 +331,7 @@ export class playerService {
           dataobj = rawData as WideReceiverDto
 
           const convertedDataWR = {
-            age: dataobj.age,  // logic need
+            age: calculatedAge,
             speed: dataobj.speed - 2,
             acceleartion: dataobj.acceleration + 0,
             agility: dataobj.agility + 0,
@@ -360,7 +360,7 @@ export class playerService {
 
           const resultWR = this.playerAttrRepo.create({
             player: { id: player.id },
-            age: convertedDataWR.age,
+            age: calculatedAge,
             speed: convertedDataWR.speed,
             acceleration: convertedDataWR.acceleartion,
             agility: convertedDataWR.agility,
@@ -406,7 +406,7 @@ export class playerService {
           dataobj = rawData as OffensiveTackleDto
 
           const convertedDataOT = {
-            age: dataobj.age, // logic need
+            age: calculatedAge,
             speed: dataobj.speed - 6,
             acceleration: dataobj.acceleration - 5,
             awareness: dataobj.awareness - 8 - (draft_round),
@@ -424,7 +424,7 @@ export class playerService {
           }
           const resultOT = this.playerAttrRepo.create({
             player: { id: player.id },
-            age: convertedDataOT.age,
+            age: calculatedAge,
             speed: convertedDataOT.speed,
             acceleration: convertedDataOT.acceleration,
             awareness: convertedDataOT.awareness,
@@ -461,7 +461,7 @@ export class playerService {
           dataobj = rawData as InteriorOffensiveLinemanDto
 
           const convertedDataIOL = {
-            age: dataobj.age, //logic need,
+            age: calculatedAge,
             speed: dataobj.speed,
             acceleartion: dataobj.acceleration - 3,
             awareness: dataobj.awareness - 9 - (draft_round),
@@ -479,7 +479,7 @@ export class playerService {
           }
           const resultIOL = this.playerAttrRepo.create({
             player: { id: player.id },
-            age: convertedDataIOL.age,
+            age: calculatedAge,
             speed: convertedDataIOL.speed,
             acceleration: convertedDataIOL.acceleartion,
             awareness: convertedDataIOL.awareness,
@@ -516,7 +516,7 @@ export class playerService {
           dataobj = rawData as EdgeRusherDto
 
           const convertedDataEDGE = {
-            age: dataobj.age,
+            age: calculatedAge,
             speed: dataobj.speed - 4,
             acceleartion: dataobj.acceleration - 2,
             agility: dataobj.agility - 14,
@@ -535,7 +535,7 @@ export class playerService {
 
           const resultEDGE = this.playerAttrRepo.create({
             player: { id: player.id },
-            age: convertedDataEDGE.age,
+            age: calculatedAge,
             speed: convertedDataEDGE.speed,
             acceleration: convertedDataEDGE.acceleartion,
             agility: convertedDataEDGE.agility,
@@ -569,7 +569,7 @@ export class playerService {
           dataobj = rawData as DefensiveEndDto
 
           const convertedDataDI = {
-            age: dataobj.age,
+            age: calculatedAge,
             speed: dataobj.speed - 1,
             acceleartion: dataobj.acceleration + 0,
             agility: dataobj.agility - 5,
@@ -588,7 +588,7 @@ export class playerService {
 
           const resultDE = this.playerAttrRepo.create({
             player: { id: player.id },
-            age: convertedDataDI.age,
+            age: calculatedAge,
             speed: convertedDataDI.speed,
             acceleration: convertedDataDI.acceleartion,
             agility: convertedDataDI.agility,
@@ -623,7 +623,7 @@ export class playerService {
           dataobj = rawData as LineBeckerDto
 
           const convertedDataLB = {
-            age: dataobj.age, //logic
+            age: calculatedAge,
             speed: dataobj.speed - 4,
             acceleration: dataobj.acceleration - 2,
             agility: dataobj.agility - 2,
@@ -645,7 +645,7 @@ export class playerService {
           }
           const resultLB = this.playerAttrRepo.create({
             player: { id: player.id },
-            age: convertedDataLB.age,
+            age: calculatedAge,
             speed: convertedDataLB.speed,
             acceleration: convertedDataLB.acceleration,
             agility: convertedDataLB.agility,
@@ -683,7 +683,7 @@ export class playerService {
           dataobj = rawData as CornerBackDto
 
           const convertedDataCB = {
-            age: dataobj.age, // logic
+            age: calculatedAge,
             speed: dataobj.speed - 4,
             acceleration: dataobj.acceleration + 0,
             agility: dataobj.agility + 0,
@@ -706,7 +706,7 @@ export class playerService {
           }
           const resultCB = this.playerAttrRepo.create({
             player: { id: player.id },
-            age: convertedDataCB.age,
+            age: calculatedAge,
             speed: convertedDataCB.speed,
             acceleration: convertedDataCB.acceleration,
             agility: convertedDataCB.agility,
@@ -747,7 +747,7 @@ export class playerService {
           dataobj = rawData as SafetyDto
 
           const convertedDataS = {
-            age: dataobj.age, // logic
+            age: calculatedAge,
             speed: dataobj.speed - 1,
             acceleration: dataobj.acceleration - 1,
             agility: dataobj.agility + 1,
@@ -769,7 +769,7 @@ export class playerService {
           }
           const resultS = this.playerAttrRepo.create({
             player: { id: player.id },
-            age: convertedDataS.age,
+            age: calculatedAge,
             speed: convertedDataS.speed,
             acceleration: convertedDataS.acceleration,
             agility: convertedDataS.agility,
