@@ -22,7 +22,8 @@ export enum POSTION_CODE {
   Safety = 'S',
   InteriorOffensiveLineman = 'IOL',
   OffensiveTackle = 'OT',
-  EdgeRusher = 'EDGE'
+  EdgeRusher = 'EDGE',
+  HalfBack = 'HB'
 }
 
 
