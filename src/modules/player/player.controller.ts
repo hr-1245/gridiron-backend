@@ -42,7 +42,7 @@ export class PlayerOcrController {
   @ApiOperation({ summary: 'Upload player image and process OCR-based conversion' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
-    description: 'Upload an image file. The OCR will extract the player name and position code.',
+    description: 'Upload an image file. The OCR will extract NAME and POS fields to create a player associated with the authenticated user.',
     schema: {
       type: 'object',
       properties: {

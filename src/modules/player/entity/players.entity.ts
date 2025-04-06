@@ -6,15 +6,17 @@ import { userEntity } from 'src/modules/user/entity/user.entity';
 
 @Entity({ name: 'player' })
 export class PlayerEntity extends baseEntity {
-    draft_round(positionCode: POSTION_CODE, ocrText: string, draft_round: any) {
-      throw new Error("Method not implemented.");
-    }
+  
     @Column({ nullable: false })
     name: string;
 
     @ManyToOne(() => userEntity, user => user.player, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn()
     user: userEntity;
+
+    @Column({ nullable: true })
+    overallRating: number;
+
 
     @ManyToOne(() => PlayerPositionEntity, position => position.players, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn()
@@ -33,8 +35,6 @@ export class PlayerEntity extends baseEntity {
 
 @Entity({ name: 'player_attributes' })
 export class PlayerAttributesEntity extends baseEntity {
-    // @Column({ nullable: true })
-    // overallRating: number;
 
     @Column({ nullable: true })
     age: number

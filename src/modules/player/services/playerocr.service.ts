@@ -4,7 +4,7 @@ import { Repository } from "typeorm";
 import * as ocr from "@google-cloud/vision";
 import { ConfigService } from "@nestjs/config";
 import { CloudinaryService } from "src/modules/cloudinary/cloudinary.service";
-import { PlayerEntity, PlayerImageEntity, PlayerAttributesEntity } from "../entity/players.entity";
+import { PlayerEntity, PlayerImageEntity } from "../entity/players.entity";
 import { userEntity } from "src/modules/user/entity/user.entity";
 import { PlayerPositionEntity } from "../entity/player-position.entity";
 import { POSTION_CODE } from "src/types/enums/roles";
@@ -22,8 +22,6 @@ export class PlayerOcrService {
     private readonly playerImageRepo: Repository<PlayerImageEntity>,
     @InjectRepository(PlayerPositionEntity)
     private readonly playerPositionRepo: Repository<PlayerPositionEntity>,
-    @InjectRepository(PlayerAttributesEntity)
-    private readonly playerAttrRepo: Repository<PlayerAttributesEntity>,
     private readonly cloudinaryService: CloudinaryService,
     private readonly configService: ConfigService,
   ) {
@@ -40,6 +38,8 @@ export class PlayerOcrService {
   ): Promise<PlayerEntity> {
     let uploadResult: any;
     const queryRunner = this.playerRepo.manager.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
     try {
       if (!file) {
@@ -51,37 +51,26 @@ export class PlayerOcrService {
         throw new InternalServerErrorException('Cloudinary upload failed');
       }
 
-      const ocrText = await this.extractTextFromImage(uploadResult.secure_url);
+      const { playerName, positionCode, ovr } = await this.extractAndParseData(uploadResult.secure_url);
 
-      const { playerName, positionCode } = this.parseOcrData(ocrText);
-
-      const position = await this.validatePosition(positionCode);
-
-      await queryRunner.connect();
-
-      await queryRunner.startTransaction();
+      const position = await this.playerPositionRepo.findOne({ where: { code: positionCode } });
+      if (!position) {
+        throw new NotFoundException(`Position ${positionCode} not found`);
+      }
 
       let player = await this.playerRepo.findOne({
         where: { name: playerName },
-        relations: ['attributes']
+        relations: ['images']
       });
-
       if (!player) {
         const newPlayer = this.playerRepo.create({
           name: playerName,
+          overallRating: ovr,
           user: { id: userId },
           position: { id: position.id },
         });
         player = await queryRunner.manager.save(PlayerEntity, newPlayer);
       }
-
-      const attributes = this.processConversionLogic(positionCode, ocrText);
-
-      const playerAttributes = this.playerAttrRepo.create({
-        ...attributes,
-        player: { id: player.id }
-      });
-      await queryRunner.manager.save(PlayerAttributesEntity, playerAttributes);
 
       const playerImage = this.playerImageRepo.create({
         url: uploadResult.secure_url,
@@ -93,13 +82,12 @@ export class PlayerOcrService {
 
       const foundPlayer = await this.playerRepo.findOne({
         where: { id: player.id },
-        relations: ['attributes', 'images']
+        relations: ['images']
       });
 
       if (!foundPlayer) {
         throw new NotFoundException(`Player with ID ${player.id} not found`);
       }
-
       return foundPlayer;
 
     } catch (error) {
@@ -113,72 +101,60 @@ export class PlayerOcrService {
     }
   }
 
-  private async extractTextFromImage(imageUrl: string): Promise<string> {
+  private async extractAndParseData(
+    imageUrl: string
+  ): Promise<{ playerName: string; positionCode: POSTION_CODE; ovr: number }> {
     try {
       const [result] = await this.ocrClient.textDetection(imageUrl);
+      const ocrText = result.textAnnotations?.[0]?.description || '';
+      console.log('Extracted OCR Text:', ocrText);
 
-      return result.textAnnotations?.[0]?.description || '';
+      const allLines = ocrText.split('\n').map(line => line.trim()).filter(line => line);
+      const expectedLabels = ['NAME', 'POS', 'YEAR', 'OVR', 'REASON', 'PERSUASION'];
+      let labelSectionEnd = allLines.findIndex(line => !expectedLabels.includes(line.toUpperCase()));
 
+      // If all lines are labels, check next possible index
+      if (labelSectionEnd === -1) {
+        labelSectionEnd = allLines.length;
+      }
+
+      if (labelSectionEnd === 0) {
+        throw new BadRequestException('No recognizable labels found in OCR text');
+      }
+
+      const labelLines = allLines.slice(0, labelSectionEnd);
+      const valueLines = allLines.slice(labelSectionEnd);
+
+      const data: Record<string, string> = {};
+      labelLines.forEach((label, index) => {
+        if (valueLines[index]) {
+          data[label.toUpperCase()] = valueLines[index];
+        }
+      });
+
+      console.log('Parsed data:', data);
+
+      const playerName = data['NAME'];
+      const positionCode = data['POS'];
+      const ovrText = data['OVR'];
+
+      const ovr = parseInt(ovrText, 10);
+     
+      if (!Object.values(POSTION_CODE).includes(positionCode as POSTION_CODE)) {
+        throw new BadRequestException(`Invalid position code: ${positionCode}`);
+      }
+
+      return {
+        playerName: playerName.trim(),
+        positionCode: positionCode.trim().toUpperCase() as POSTION_CODE,
+        ovr
+      };
     } catch (error) {
-
-      throw new InternalServerErrorException('OCR processing failed');
-    }
-  }
-
-  private parseOcrData(ocrText: string): { playerName: string; positionCode: POSTION_CODE } {
-
-    const nameMatch = ocrText.match(/NAME:\s*(.+)/i);
-
-    const posMatch = ocrText.match(/POS:\s*([A-Z]{1,3})/i);
-
-    if (!nameMatch || !posMatch) {
-      throw new BadRequestException('Unable to parse NAME or POS from OCR text');
-    }
-
-    const playerName = nameMatch[1].trim();
-    const positionCode = posMatch[1].trim().toUpperCase() as POSTION_CODE;
-
-    return { playerName, positionCode };
-  }
-
-
-  private async validatePosition(positionCode: string): Promise<PlayerPositionEntity> {
-    const position = await this.playerPositionRepo.findOne({
-      where: { code: positionCode }
-    });
-
-    if (!position) {
-      throw new NotFoundException(`Position ${positionCode} not found`);
-    }
-    return position;
-  }
-
-  private processConversionLogic(
-    positionCode: POSTION_CODE,
-    ocrText: string,
-  ): Partial<PlayerAttributesEntity> {
-    const extractValue = (key: string): number => {
-      const regex = new RegExp(`${key}:\\s*(\\d+)`);
-      const match = ocrText.match(regex);
-      return match ? parseInt(match[1], 10) : 0;
-    };
-
-    const baseConversion = (value: number, modifiers: number[]): number => {
-      return value + modifiers.reduce((a, b) => a + b, 0);
-    };
-
-    switch (positionCode) {
-      case POSTION_CODE.TightEnd:
-        return {
-          speed: baseConversion(extractValue('Speed'), [0]),
-          acceleration: baseConversion(extractValue('Acceleration'), [2]),
-          agility: baseConversion(extractValue('Agility'), [1]),
-          change_of_direction: baseConversion(extractValue('Change of Direction'), [3]),
-          strength: baseConversion(extractValue('Strength'), [-3]),
-          awareness: baseConversion(extractValue('Awareness'), [-4]),
-        };
-      default:
-        throw new BadRequestException(`${positionCode} Not Found`);
+      console.error('OCR Processing Error:', error);
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('OCR processing failed: ' + error.message);
     }
   }
 }
