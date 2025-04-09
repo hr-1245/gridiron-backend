@@ -1,4 +1,4 @@
-import { Controller, Post, UploadedFile, UseInterceptors, Req, BadRequestException, Body, Get, UseGuards } from '@nestjs/common';
+import { Controller, Post, UploadedFile, UseInterceptors, Req, BadRequestException, Body, Get, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiConsumes, ApiBody, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Express } from 'express';
@@ -37,12 +37,15 @@ export class PlayerOcrController {
     return this.playeService.conversionLogic(conversionDto, user.id);
   }
 
-  @Post('upload')
+  @Post('ConvertWithImage')
   @UseInterceptors(FileInterceptor('file'))
-  @ApiOperation({ summary: 'Upload player image and process OCR-based conversion' })
+  @ApiOperation({
+    summary:
+      'Process an uploaded player image to extract highlighted text via OCR, structure the data using GPT, and create a player record.',
+  })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
-    description: 'Upload an image file. The OCR will extract NAME and POS fields to create a player associated with the authenticated user.',
+    description: 'Player image upload',
     schema: {
       type: 'object',
       properties: {
@@ -54,11 +57,14 @@ export class PlayerOcrController {
       required: ['file'],
     },
   })
-  @ApiResponse({ status: 200, description: 'Player created successfully.' })
-  async uploadPlayerImage(
+  @ApiResponse({
+    status: 200,
+    description: 'Player processed successfully',
+  })
+  async processPlayerImage(
     @UploadedFile() file: Express.Multer.File,
-    @User() user: userjwtInterface,
+    @User() user: userjwtInterface
   ) {
-    return await this.playerOcrService.processPlayerImage(file, user.id);
+    return this.playerOcrService.processPlayerImage(file, user.id);
   }
 }
