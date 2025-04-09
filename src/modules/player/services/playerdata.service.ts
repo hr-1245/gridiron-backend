@@ -10,6 +10,7 @@ export interface PaginatedPlayers {
   totalPages: number;
 }
 
+
 @Injectable()
 export class PlayerDataService {
   constructor(

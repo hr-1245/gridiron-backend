@@ -6,20 +6,18 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import * as ocr from '@google-cloud/vision';
 import { ConfigService } from '@nestjs/config';
 import { CloudinaryService } from 'src/modules/cloudinary/cloudinary.service';
-import {
-  PlayerEntity,
-  PlayerImageEntity,
-} from '../entity/players.entity';
+import { PlayerEntity, PlayerImageEntity } from '../entity/players.entity';
 import { userEntity } from 'src/modules/user/entity/user.entity';
 import { PlayerPositionEntity } from '../entity/player-position.entity';
-import { POSTION_CODE } from 'src/types/enums/roles';
-
+import { OpenAI } from 'openai';
+import * as fs from 'fs';
+import * as path from 'path';
+import { Readable } from 'stream';
 @Injectable()
 export class PlayerOcrService {
-  private ocrClient: ocr.ImageAnnotatorClient;
+  private readonly openAI: OpenAI;
 
   constructor(
     @InjectRepository(PlayerEntity)
@@ -33,12 +31,9 @@ export class PlayerOcrService {
     private readonly cloudinaryService: CloudinaryService,
     private readonly configService: ConfigService,
   ) {
-    const credentialsPath = this.configService.get<string>('OCR_KEY_FILE');
-    if (!credentialsPath) {
-      throw new InternalServerErrorException('OCR_KEY_FILE not configured');
-    }
-    this.ocrClient = new ocr.ImageAnnotatorClient({
-      keyFilename: credentialsPath,
+    // Initialize OpenAI Client with API Key
+    this.openAI = new OpenAI({
+      apiKey: this.configService.get<string>('GPT_API_KEY'),
     });
   }
 
@@ -51,45 +46,46 @@ export class PlayerOcrService {
     try {
       if (!file) throw new BadRequestException('No file uploaded');
 
+      // Upload to Cloudinary
       uploadResult = await this.cloudinaryService.uploadFile(file);
       if (uploadResult.error || !uploadResult.secure_url) {
         throw new InternalServerErrorException('Cloudinary upload failed');
       }
 
-      const { playerName, positionCode, ovr } = await this.extractAndParseData(uploadResult.secure_url);
+      // Extract structured data using GPT-4o Mini
+      const structuredData = await this.extractStructuredPlayerData(file);
+      console.log('Structured Data from GPT-4o Mini:', structuredData);
 
-      const position = await this.playerPositionRepo.findOne({ where: { code: positionCode } });
-      if (!position) throw new NotFoundException(`Position ${positionCode} not found`);
-
-      let player = await this.playerRepo.findOne({
-        where: { name: playerName },
-        relations: ['images'],
+      // Find player position
+      const position = await this.playerPositionRepo.findOne({
+        where: { code: structuredData.position },
       });
+      if (!position) throw new NotFoundException(`Position ${structuredData.position} not found`);
 
-      if (!player) {
-        const newPlayer = this.playerRepo.create({
-          name: playerName,
-          overallRating: ovr,
-          user: { id: userId },
-          position: { id: position.id },
-        });
-        player = await queryRunner.manager.save(PlayerEntity, newPlayer);
-      }
+      // Create new player
+      const newPlayer = this.playerRepo.create({
+        name: structuredData.name,
+        overallRating: structuredData.overallRating,
+        user: { id: userId },
+        position: { id: position.id },
+      });
+      const player = await queryRunner.manager.save(PlayerEntity, newPlayer);
 
+      // Save player image
       const playerImage = this.playerImageRepo.create({
         url: uploadResult.secure_url,
         player: { id: player.id },
       });
       await queryRunner.manager.save(PlayerImageEntity, playerImage);
+
       await queryRunner.commitTransaction();
 
+      // Return processed player details
       const foundPlayer = await this.playerRepo.findOne({
         where: { id: player.id },
         relations: ['images'],
       });
-
       if (!foundPlayer) throw new NotFoundException(`Player with ID ${player.id} not found`);
-
       return foundPlayer;
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -102,70 +98,57 @@ export class PlayerOcrService {
     }
   }
 
-  private async extractAndParseData(imageUrl: string): Promise<{
-    playerName: string;
-    positionCode: POSTION_CODE;
-    ovr: number;
-  }> {
+  async extractStructuredPlayerData(file: Express.Multer.File) {
     try {
-      const [result] = await this.ocrClient.textDetection(imageUrl);
-      const ocrText = result.textAnnotations?.[0]?.description || '';
-      console.log('Extracted OCR Text:', ocrText);
+      const base64Image = file.buffer.toString('base64');
 
-      const allLines = ocrText.split('\n').map((line) => line.trim()).filter((line) => line);
-
-      const expectedLabels = ['NAME', 'POS', 'YEAR', 'OVR', 'REASON'];
-      const labelMap: Record<string, string> = {};
-      let labelSectionEnd = allLines.findIndex((line) => !expectedLabels.includes(line.toUpperCase()));
-
-      if (labelSectionEnd === -1) labelSectionEnd = allLines.length;
-
-      const labelLines = allLines.slice(0, labelSectionEnd);
-      const valueLines = allLines.slice(labelSectionEnd);
-
-      labelLines.forEach((label, index) => {
-        const upperLabel = label.toUpperCase();
-        if (expectedLabels.includes(upperLabel) && valueLines[index]) {
-          labelMap[upperLabel] = valueLines[index];
-        }
+      const response = await this.openAI.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a helpful assistant that extracts structured Collage football player data from game screenshots. Only return JSON with fields: name, position, overallRating, class, height, weight, hometown.`,
+          },
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:image/png;base64,${base64Image}`,
+                },
+              },
+              {
+                type: 'text',
+                text: `Extract the player's data shown on the right side of the screen.`,
+              },
+            ],
+          },
+        ],
+        temperature: 0.3,
+        max_tokens: 300,
       });
 
-      console.log('Parsed Label Map:', labelMap);
+      const content = response.choices[0].message.content;
 
-      let playerName = labelMap['NAME'];
-      let positionCode = labelMap['POS'];
-      let ovrText = labelMap['OVR'];
-
-      // 🛑 Fallback if label map is empty or not matching
-      if (!playerName || !positionCode || !ovrText) {
-        console.log('Fallback to regex-based extraction');
-        playerName = ocrText.match(/(?:NAME|Name)?\s*([A-Z][a-z]+\s[A-Z][a-z]+)/)?.[1] as any;
-        positionCode = ocrText.match(/\b(QB|WR|TE|RB|LB|CB|S|OL|DL)\b/)?.[1] as any;
-        ovrText = ocrText.match(/OVR\s*:?[\s]?(\d{2,3})/)?.[1] as any;
+      try {
+        const parsed = JSON.parse(content as any);
+        return parsed;
+      } catch (err) {
+        console.error('Failed to parse GPT response:', content);
+        throw new Error('Failed to extract structured player data using GPT-4o Mini.');
       }
-
-      if (!playerName || !positionCode || !ovrText) {
-        throw new BadRequestException('Failed to extract player data from image');
-      }
-
-      // if (!Object.values(POSTION_CODE).includes(positionCode.toUpperCase() as POSTION_CODE)) {
-      //   throw new BadRequestException(`Invalid position code: ${positionCode}`);
-      // }
-
-      const ovr = parseInt(ovrText, 10);
-
-      return {
-        playerName: playerName.trim(),
-        positionCode: positionCode.trim().toUpperCase() as POSTION_CODE,
-        ovr,
-      };
     } catch (error) {
-      console.error('OCR Extraction Error:', error);
-      if (error instanceof BadRequestException) throw error;
-      throw new InternalServerErrorException('OCR parsing failed: ' + error.message);
+      console.error('OpenAI GPT-4o error:', error);
+      throw new InternalServerErrorException('Failed to extract structured data using GPT-4o Mini.');
     }
   }
+
 }
+
+
+
+
 
 
 // async uploadFile(file: Express.Multer.File, playerId: number) {
