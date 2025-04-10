@@ -4,7 +4,7 @@ import { userEntity } from "./entity/user.entity";
 import { userController } from ".//controller/userStripe.controller";
 import { stripeModule } from "../stripe/stripe.module";
 import { userPlanEntity } from "./entity/userPlan.entity";
-import { playerModule } from "../player/player.module";
+import { PlayerModule } from "../player/player.module";
 import { userPlayerCardsController } from "./controller/getAllPlayers.controller";
 
 @Module({
@@ -12,4 +12,4 @@ import { userPlayerCardsController } from "./controller/getAllPlayers.controller
   exports: [TypeOrmModule],
   controllers: [userController, userPlayerCardsController]
 })
-export class userModule { }
+export class UserModule { }

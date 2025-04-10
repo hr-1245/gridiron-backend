@@ -17,13 +17,23 @@ export enum POSTION_CODE {
   WiderReceiver = 'WR',
   OffensiveLine = 'OL',
   DefensiveEnd = 'DI',
-  LineBacker = 'LB',
+  DefensiveTackle = 'DT',
   CornerBack = 'CB',
   Safety = 'S',
-  InteriorOffensiveLineman = 'IOL',
-  OffensiveTackle = 'OT',
-  EdgeRusher = 'EDGE',
-  HalfBack = 'HB'
+  LeftGuard = 'LG',
+  RightGuard = 'RG',
+  LeftTackle = 'LT',
+  RightTackle = 'RT',
+  LeftEnd = 'LE',
+  RightEnd = 'RE',
+  LeftOutside_linebacker_above_245_lbs = 'LOLB>',
+  RightOutside_linebacker_above_245lbs = 'ROLB>',
+  LeftOutside_linebacker_below_245lbs = 'LOLB<',
+  All_Middle_Linebackers = 'MLB',
+  RightOutside_linebacker_below_245lbs = 'ROLB<',
+  FullBack = 'FB',
+  Kicker = 'K',
+  Punter = 'P',
 }
 
 

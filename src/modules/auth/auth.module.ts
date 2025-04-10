@@ -6,14 +6,14 @@ import { adminauthEntity } from "../admin/entity/admin.entity";
 import { adminauthService } from "./services/adminAuth.service";
 import { userauthController } from "./controllers/userAuth.controller";
 import { adminauthController } from "./controllers/adminAuth.controller";
-import { jwtModule } from "../jwt/jwt.module";
-import { mailModule } from "../mail/mail.module";
+import { JwtModule } from "../jwt/jwt.module";
+import { MailModule } from "../mail/mail.module";
 import { OtpModule } from "../otp/otp.module";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([userEntity, adminauthEntity]), jwtModule, mailModule, OtpModule],
+  imports: [TypeOrmModule.forFeature([userEntity, adminauthEntity]), JwtModule, MailModule, OtpModule],
   controllers: [userauthController, adminauthController],
   providers: [userAuthService, adminauthService],
 })
 
-export class authModule { }
+export class AuthModule { }
