@@ -17,4 +17,4 @@ import { userjwtService } from './services/player-jwt.service';
   providers: [adminjwtService, userjwtService],
   exports: [adminjwtService, userjwtService],
 })
-export class jwtModule { }
+export class JwtModule { }

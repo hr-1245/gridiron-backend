@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { ConversionDto, ConverstionDataDto, CornerBackDto, DefensiveEndDto, EdgeRusherDto, InteriorOffensiveLinemanDto, LineBeckerDto, OffensiveTackleDto, QuarterBackDto, RunningBackDto, SafetyDto, TightEndDto, WideReceiverDto } from "../dto/convert-manually.dto"
+import { All_Middle_LinebackersDTO, ConversionDto, ConverstionDataDto, CornerBackDto, DefensiveEndDto, Left_Outside_linebacker_above_245_lbsDTO, LeftEndDTO, LeftGaurdDto, LeftOutside_linebacker_below_245lbsDTO, LeftTackleDto, QuarterBackDto, Right_Outside_linebacker_above_245lbsDTO, RightEndDTO, RightGaurdDto, RightOutside_linebacker_below_245lbsDTO, RightTackleDto, RunningBackDto, SafetyDto, TightEndDto, WideReceiverDto } from "../dto/convert-manually.dto"
 import { COLLAGE_AGE_ENUM, POSTION_CODE } from "src/types/enums/roles";
 import { PlayerPositionEntity } from "../entity/player-position.entity";
 import { PlayerAttributesEntity, PlayerEntity } from "../entity/players.entity";
@@ -399,13 +399,11 @@ export class playerService {
             result: cleanedResultWR,
           }
 
+        //-----------------------LT Conversion ------------------------
+        case POSTION_CODE.LeftTackle:
+          dataobj = rawData as LeftTackleDto
 
-
-        //-----------------------OT CONVERSION ------------------------
-        case POSTION_CODE.OffensiveTackle:
-          dataobj = rawData as OffensiveTackleDto
-
-          const convertedDataOT = {
+          const convertedDataLT = {
             age: calculatedAge,
             speed: dataobj.speed - 6,
             acceleration: dataobj.acceleration - 5,
@@ -422,45 +420,99 @@ export class playerService {
             stamina: dataobj.stamina - 1,
             injury: dataobj.injury - 1
           }
-          const resultOT = this.playerAttrRepo.create({
+          const resultLT = this.playerAttrRepo.create({
             player: { id: player.id },
             age: calculatedAge,
-            speed: convertedDataOT.speed,
-            acceleration: convertedDataOT.acceleration,
-            awareness: convertedDataOT.awareness,
-            agility: convertedDataOT.agility,
-            strength: convertedDataOT.strength,
-            lead_block: convertedDataOT.lead_block,
-            impact_block: convertedDataOT.impact_block,
-            run_block: convertedDataOT.run_block,
-            pass_block: convertedDataOT.pass_block,
-            pass_block_finesse: convertedDataOT.pass_block_finesse,
-            run_block_power: convertedDataOT.run_block_power,
-            run_block_finesse: convertedDataOT.run_block_finesse,
-            stamina: convertedDataOT.stamina,
-            injury: convertedDataOT.injury,
+            speed: convertedDataLT.speed,
+            acceleration: convertedDataLT.acceleration,
+            awareness: convertedDataLT.awareness,
+            agility: convertedDataLT.agility,
+            strength: convertedDataLT.strength,
+            lead_block: convertedDataLT.lead_block,
+            impact_block: convertedDataLT.impact_block,
+            run_block: convertedDataLT.run_block,
+            pass_block: convertedDataLT.pass_block,
+            pass_block_finesse: convertedDataLT.pass_block_finesse,
+            run_block_power: convertedDataLT.run_block_power,
+            run_block_finesse: convertedDataLT.run_block_finesse,
+            stamina: convertedDataLT.stamina,
+            injury: convertedDataLT.injury,
           });
 
-          await this.playerAttrRepo.save(resultOT);
-          const cleanedResultOT = Object.keys(resultOT).reduce((acc, key) => {
-            if (resultOT[key] !== null && resultOT[key] !== undefined) {
-              acc[key] = resultOT[key];
+          await this.playerAttrRepo.save(resultLT);
+          const cleanedResultLT = Object.keys(resultLT).reduce((acc, key) => {
+            if (resultLT[key] !== null && resultLT[key] !== undefined) {
+              acc[key] = resultLT[key];
             }
             return acc;
           }, {});
 
           return {
             message: `Conversion of ${positionCode} Successful`,
-            result: cleanedResultOT,
+            result: cleanedResultLT,
+          }
+
+        //---------------RT CONVERSION=-----------------
+
+        case POSTION_CODE.RightTackle:
+          dataobj = rawData as RightTackleDto
+
+          const convertedDataRT = {
+            age: calculatedAge,
+            speed: dataobj.speed - 6,
+            acceleration: dataobj.acceleration - 5,
+            awareness: dataobj.awareness - 8 - (draft_round),
+            agility: dataobj.agility - 13,
+            strength: dataobj.strength + 1,
+            lead_block: dataobj.lead_block - 9 - (draft_round),
+            impact_block: dataobj.lead_block - 6 - (draft_round),
+            run_block: dataobj.run_block - 15 - (draft_round),
+            pass_block: dataobj.pass_block - 13 - (draft_round),
+            pass_block_finesse: dataobj.pass_block_finesse - 14 - (draft_round),
+            run_block_power: dataobj.run_block_power - 18 - (draft_round),
+            run_block_finesse: dataobj.run_block_finesse - 14 - (draft_round),
+            stamina: dataobj.stamina - 1,
+            injury: dataobj.injury - 1
+          }
+          const resultRT = this.playerAttrRepo.create({
+            player: { id: player.id },
+            age: calculatedAge,
+            speed: convertedDataRT.speed,
+            acceleration: convertedDataRT.acceleration,
+            awareness: convertedDataRT.awareness,
+            agility: convertedDataRT.agility,
+            strength: convertedDataRT.strength,
+            lead_block: convertedDataRT.lead_block,
+            impact_block: convertedDataRT.impact_block,
+            run_block: convertedDataRT.run_block,
+            pass_block: convertedDataRT.pass_block,
+            pass_block_finesse: convertedDataRT.pass_block_finesse,
+            run_block_power: convertedDataRT.run_block_power,
+            run_block_finesse: convertedDataRT.run_block_finesse,
+            stamina: convertedDataRT.stamina,
+            injury: convertedDataRT.injury,
+          });
+
+          await this.playerAttrRepo.save(resultRT);
+          const cleanedResultRT = Object.keys(resultRT).reduce((acc, key) => {
+            if (resultRT[key] !== null && resultRT[key] !== undefined) {
+              acc[key] = resultRT[key];
+            }
+            return acc;
+          }, {});
+
+          return {
+            message: `Conversion of ${positionCode} Successful`,
+            result: cleanedResultRT,
           }
 
 
-        //--------------------------------IOL CONVERSION ----------------------
-        case POSTION_CODE.InteriorOffensiveLineman:
+        //--------------------------------LG CONVERSION ----------------------
+        case POSTION_CODE.LeftGuard:
 
-          dataobj = rawData as InteriorOffensiveLinemanDto
+          dataobj = rawData as LeftGaurdDto
 
-          const convertedDataIOL = {
+          const convertedDataLG = {
             age: calculatedAge,
             speed: dataobj.speed,
             acceleartion: dataobj.acceleration - 3,
@@ -477,45 +529,100 @@ export class playerService {
             stamina: dataobj.stamina - 1,
             injury: dataobj.injury - 1
           }
-          const resultIOL = this.playerAttrRepo.create({
+          const resultLG = this.playerAttrRepo.create({
             player: { id: player.id },
             age: calculatedAge,
-            speed: convertedDataIOL.speed,
-            acceleration: convertedDataIOL.acceleartion,
-            awareness: convertedDataIOL.awareness,
-            agility: convertedDataIOL.agility,
-            lead_block: convertedDataIOL.lead_block,
-            impact_block: convertedDataIOL.impact_block,
-            run_block: convertedDataIOL.run_block,
-            pass_block: convertedDataIOL.pass_block,
-            pass_block_power: convertedDataIOL.pass_block_power,
-            pass_block_finesse: convertedDataIOL.pass_block_finesse,
-            run_block_power: convertedDataIOL.run_block_power,
-            run_block_finesse: convertedDataIOL.run_block_finesse,
-            stamina: convertedDataIOL.stamina,
-            injury: convertedDataIOL.injury
+            speed: convertedDataLG.speed,
+            acceleration: convertedDataLG.acceleartion,
+            awareness: convertedDataLG.awareness,
+            agility: convertedDataLG.agility,
+            lead_block: convertedDataLG.lead_block,
+            impact_block: convertedDataLG.impact_block,
+            run_block: convertedDataLG.run_block,
+            pass_block: convertedDataLG.pass_block,
+            pass_block_power: convertedDataLG.pass_block_power,
+            pass_block_finesse: convertedDataLG.pass_block_finesse,
+            run_block_power: convertedDataLG.run_block_power,
+            run_block_finesse: convertedDataLG.run_block_finesse,
+            stamina: convertedDataLG.stamina,
+            injury: convertedDataLG.injury
           });
 
-          await this.playerAttrRepo.save(resultIOL);
+          await this.playerAttrRepo.save(resultLG);
 
-          const cleanedResultIOL = Object.keys(resultIOL).reduce((acc, key) => {
-            if (resultIOL[key] !== null && resultIOL[key] !== undefined) {
-              acc[key] = resultIOL[key];
+          const cleanedResultLG = Object.keys(resultLG).reduce((acc, key) => {
+            if (resultLG[key] !== null && resultLG[key] !== undefined) {
+              acc[key] = resultLG[key];
             }
             return acc;
           }, {});
 
           return {
             message: `Conversion of ${positionCode} Successful`,
-            result: cleanedResultIOL,
+            result: cleanedResultLG,
           }
 
-        //----------------------------EDGE CONVERSION ------------------------------
-        case POSTION_CODE.EdgeRusher:
+        //---------------------LG CONVERSION ---------------
+        case POSTION_CODE.RightGuard:
 
-          dataobj = rawData as EdgeRusherDto
+          dataobj = rawData as RightGaurdDto
 
-          const convertedDataEDGE = {
+          const convertedDataRG = {
+            age: calculatedAge,
+            speed: dataobj.speed,
+            acceleartion: dataobj.acceleration - 3,
+            awareness: dataobj.awareness - 9 - (draft_round),
+            agility: dataobj.agility - 12,
+            lead_block: dataobj.lead_block - 8 - (draft_round),
+            impact_block: dataobj.impact_blocking - 3 - (draft_round),
+            run_block: dataobj.run_blocking - 16 - (draft_round),
+            pass_block: dataobj.pass_blocking - 12 - (draft_round),
+            pass_block_power: dataobj.pass_block_power - 15 - (draft_round),
+            pass_block_finesse: dataobj.pass_block_finesse - 16 - (draft_round),
+            run_block_power: dataobj.run_block_power - 16 - (draft_round),
+            run_block_finesse: dataobj.run_block_finesse - 16 - (draft_round),
+            stamina: dataobj.stamina - 1,
+            injury: dataobj.injury - 1
+          }
+          const resultRG = this.playerAttrRepo.create({
+            player: { id: player.id },
+            age: calculatedAge,
+            speed: convertedDataRG.speed,
+            acceleration: convertedDataRG.acceleartion,
+            awareness: convertedDataRG.awareness,
+            agility: convertedDataRG.agility,
+            lead_block: convertedDataRG.lead_block,
+            impact_block: convertedDataRG.impact_block,
+            run_block: convertedDataRG.run_block,
+            pass_block: convertedDataRG.pass_block,
+            pass_block_power: convertedDataRG.pass_block_power,
+            pass_block_finesse: convertedDataRG.pass_block_finesse,
+            run_block_power: convertedDataRG.run_block_power,
+            run_block_finesse: convertedDataRG.run_block_finesse,
+            stamina: convertedDataRG.stamina,
+            injury: convertedDataRG.injury
+          });
+
+          await this.playerAttrRepo.save(resultRG);
+
+          const cleanedResultRG = Object.keys(resultRG).reduce((acc, key) => {
+            if (resultRG[key] !== null && resultRG[key] !== undefined) {
+              acc[key] = resultRG[key];
+            }
+            return acc;
+          }, {});
+
+          return {
+            message: `Conversion of ${positionCode} Successful`,
+            result: cleanedResultRG,
+          }
+
+        //----------------------------LE CONVERSION ------------------------------
+        case POSTION_CODE.LeftEnd:
+
+          dataobj = rawData as LeftEndDTO
+
+          const convertedDataLE = {
             age: calculatedAge,
             speed: dataobj.speed - 4,
             acceleartion: dataobj.acceleration - 2,
@@ -533,36 +640,201 @@ export class playerService {
             injury: dataobj.injury - 1
           }
 
-          const resultEDGE = this.playerAttrRepo.create({
+          const resultLE = this.playerAttrRepo.create({
             player: { id: player.id },
             age: calculatedAge,
-            speed: convertedDataEDGE.speed,
-            acceleration: convertedDataEDGE.acceleartion,
-            agility: convertedDataEDGE.agility,
-            awareness: convertedDataEDGE.awareness,
-            strength: convertedDataEDGE.strength,
-            tackling: convertedDataEDGE.tackling,
-            hit_power: convertedDataEDGE.hit_power,
-            power_moves: convertedDataEDGE.power_moves,
-            finesse_moves: convertedDataEDGE.finesse_moves,
-            block_shedding: convertedDataEDGE.block_shed,
-            pursuit: convertedDataEDGE.pursuit,
-            play_recognition: convertedDataEDGE.play_recognition,
-            stamina: convertedDataEDGE.stamina,
-            injury: convertedDataEDGE.injury
+            speed: convertedDataLE.speed,
+            acceleration: convertedDataLE.acceleartion,
+            agility: convertedDataLE.agility,
+            awareness: convertedDataLE.awareness,
+            strength: convertedDataLE.strength,
+            tackling: convertedDataLE.tackling,
+            hit_power: convertedDataLE.hit_power,
+            power_moves: convertedDataLE.power_moves,
+            finesse_moves: convertedDataLE.finesse_moves,
+            block_shedding: convertedDataLE.block_shed,
+            pursuit: convertedDataLE.pursuit,
+            play_recognition: convertedDataLE.play_recognition,
+            stamina: convertedDataLE.stamina,
+            injury: convertedDataLE.injury
           });
-          await this.playerAttrRepo.save(resultEDGE)
-          const cleanedResultEDGE = Object.keys(resultEDGE).reduce((acc, key) => {
-            if (resultEDGE[key] !== null && resultEDGE[key] !== undefined) {
-              acc[key] = resultEDGE[key];
+          await this.playerAttrRepo.save(resultLE)
+          const cleanedResultLE = Object.keys(resultLE).reduce((acc, key) => {
+            if (resultLE[key] !== null && resultLE[key] !== undefined) {
+              acc[key] = resultLE[key];
             }
             return acc;
           }, {});
 
           return {
             message: `Conversion of ${positionCode} Successful`,
-            result: cleanedResultEDGE,
+            result: cleanedResultLE,
           }
+        //----------------------------RE CONVERSION ------------------------------
+        case POSTION_CODE.RightEnd:
+
+          dataobj = rawData as RightEndDTO
+
+          const convertedDataRE = {
+            age: calculatedAge,
+            speed: dataobj.speed - 4,
+            acceleartion: dataobj.acceleration - 2,
+            agility: dataobj.agility - 14,
+            awareness: dataobj.awareness - 15 - (draft_round),
+            strength: dataobj.strength - 2,
+            tackling: dataobj.tackling - 13 - (draft_round),
+            hit_power: dataobj.hit_power - 6,
+            power_moves: dataobj.power_moves - 13 - (draft_round),
+            finesse_moves: dataobj.finesse_moves - 8 - (draft_round),
+            block_shed: dataobj.block_shed - 16 - (draft_round),
+            pursuit: dataobj.pursuit - 16 - (draft_round),
+            play_recognition: dataobj.play_recognition - 24 - (draft_round),
+            stamina: dataobj.stamina - 1,
+            injury: dataobj.injury - 1
+          }
+
+          const resultRE = this.playerAttrRepo.create({
+            player: { id: player.id },
+            age: calculatedAge,
+            speed: convertedDataRE.speed,
+            acceleration: convertedDataRE.acceleartion,
+            agility: convertedDataRE.agility,
+            awareness: convertedDataRE.awareness,
+            strength: convertedDataRE.strength,
+            tackling: convertedDataRE.tackling,
+            hit_power: convertedDataRE.hit_power,
+            power_moves: convertedDataRE.power_moves,
+            finesse_moves: convertedDataRE.finesse_moves,
+            block_shedding: convertedDataRE.block_shed,
+            pursuit: convertedDataRE.pursuit,
+            play_recognition: convertedDataRE.play_recognition,
+            stamina: convertedDataRE.stamina,
+            injury: convertedDataRE.injury
+          });
+          await this.playerAttrRepo.save(resultRE)
+          const cleanedResultRE = Object.keys(resultRE).reduce((acc, key) => {
+            if (resultRE[key] !== null && resultRE[key] !== undefined) {
+              acc[key] = resultRE[key];
+            }
+            return acc;
+          }, {});
+
+          return {
+            message: `Conversion of ${positionCode} Successful`,
+            result: cleanedResultRE,
+          }
+
+
+        //----------------------------LOLB> CONVERSION ------------------------------
+        case POSTION_CODE.LeftOutside_linebacker_above_245_lbs:
+
+          dataobj = rawData as Left_Outside_linebacker_above_245_lbsDTO
+
+          const convertedDataLOLB = {
+            age: calculatedAge,
+            speed: dataobj.speed - 4,
+            acceleartion: dataobj.acceleration - 2,
+            agility: dataobj.agility - 14,
+            awareness: dataobj.awareness - 15 - (draft_round),
+            strength: dataobj.strength - 2,
+            tackling: dataobj.tackling - 13 - (draft_round),
+            hit_power: dataobj.hit_power - 6,
+            power_moves: dataobj.power_moves - 13 - (draft_round),
+            finesse_moves: dataobj.finesse_moves - 8 - (draft_round),
+            block_shed: dataobj.block_shed - 16 - (draft_round),
+            pursuit: dataobj.pursuit - 16 - (draft_round),
+            play_recognition: dataobj.play_recognition - 24 - (draft_round),
+            stamina: dataobj.stamina - 1,
+            injury: dataobj.injury - 1
+          }
+
+          const resultLOLB = this.playerAttrRepo.create({
+            player: { id: player.id },
+            age: calculatedAge,
+            speed: convertedDataLOLB.speed,
+            acceleration: convertedDataLOLB.acceleartion,
+            agility: convertedDataLOLB.agility,
+            awareness: convertedDataLOLB.awareness,
+            strength: convertedDataLOLB.strength,
+            tackling: convertedDataLOLB.tackling,
+            hit_power: convertedDataLOLB.hit_power,
+            power_moves: convertedDataLOLB.power_moves,
+            finesse_moves: convertedDataLOLB.finesse_moves,
+            block_shedding: convertedDataLOLB.block_shed,
+            pursuit: convertedDataLOLB.pursuit,
+            play_recognition: convertedDataLOLB.play_recognition,
+            stamina: convertedDataLOLB.stamina,
+            injury: convertedDataLOLB.injury
+          });
+          await this.playerAttrRepo.save(resultLOLB)
+          const cleanedResultLOLB = Object.keys(resultLOLB).reduce((acc, key) => {
+            if (resultLOLB[key] !== null && resultLOLB[key] !== undefined) {
+              acc[key] = resultLOLB[key];
+            }
+            return acc;
+          }, {});
+
+          return {
+            message: `Conversion of ${positionCode} Successful`,
+            result: cleanedResultLOLB,
+          }
+
+
+        //----------------------------ROLB> CONVERSION ------------------------------
+        case POSTION_CODE.RightOutside_linebacker_above_245lbs:
+
+          dataobj = rawData as Right_Outside_linebacker_above_245lbsDTO
+
+          const convertedDataROLB = {
+            age: calculatedAge,
+            speed: dataobj.speed - 4,
+            acceleartion: dataobj.acceleration - 2,
+            agility: dataobj.agility - 14,
+            awareness: dataobj.awareness - 15 - (draft_round),
+            strength: dataobj.strength - 2,
+            tackling: dataobj.tackling - 13 - (draft_round),
+            hit_power: dataobj.hit_power - 6,
+            power_moves: dataobj.power_moves - 13 - (draft_round),
+            finesse_moves: dataobj.finesse_moves - 8 - (draft_round),
+            block_shed: dataobj.block_shed - 16 - (draft_round),
+            pursuit: dataobj.pursuit - 16 - (draft_round),
+            play_recognition: dataobj.play_recognition - 24 - (draft_round),
+            stamina: dataobj.stamina - 1,
+            injury: dataobj.injury - 1
+          }
+
+          const resultROLB = this.playerAttrRepo.create({
+            player: { id: player.id },
+            age: calculatedAge,
+            speed: convertedDataROLB.speed,
+            acceleration: convertedDataROLB.acceleartion,
+            agility: convertedDataROLB.agility,
+            awareness: convertedDataROLB.awareness,
+            strength: convertedDataROLB.strength,
+            tackling: convertedDataROLB.tackling,
+            hit_power: convertedDataROLB.hit_power,
+            power_moves: convertedDataROLB.power_moves,
+            finesse_moves: convertedDataROLB.finesse_moves,
+            block_shedding: convertedDataROLB.block_shed,
+            pursuit: convertedDataROLB.pursuit,
+            play_recognition: convertedDataROLB.play_recognition,
+            stamina: convertedDataROLB.stamina,
+            injury: convertedDataROLB.injury
+          });
+          await this.playerAttrRepo.save(resultROLB)
+          const cleanedResultROLB = Object.keys(resultROLB).reduce((acc, key) => {
+            if (resultROLB[key] !== null && resultROLB[key] !== undefined) {
+              acc[key] = resultROLB[key];
+            }
+            return acc;
+          }, {});
+
+          return {
+            message: `Conversion of ${positionCode} Successful`,
+            result: cleanedResultROLB,
+          }
+
+        //-------------- DT CONVERSION -----------
 
         //-------------------------------DI CONVERSION --------------------
         case POSTION_CODE.DefensiveEnd:
@@ -617,12 +889,12 @@ export class playerService {
             result: cleanedResultDE,
           }
 
-        //------------------------------ LB CONVERSION ================
-        case POSTION_CODE.LineBacker:
+        //------------------------------ LOLB CONVERSION ================
+        case POSTION_CODE.LeftOutside_linebacker_below_245lbs:
 
-          dataobj = rawData as LineBeckerDto
+          dataobj = rawData as LeftOutside_linebacker_below_245lbsDTO
 
-          const convertedDataLB = {
+          const convertedDataLOLBG = {
             age: calculatedAge,
             speed: dataobj.speed - 4,
             acceleration: dataobj.acceleration - 2,
@@ -643,39 +915,157 @@ export class playerService {
             stamina: dataobj.stamina - 1,
             injury: dataobj.injury - 1
           }
-          const resultLB = this.playerAttrRepo.create({
+          const resultLOLBG = this.playerAttrRepo.create({
             player: { id: player.id },
             age: calculatedAge,
-            speed: convertedDataLB.speed,
-            acceleration: convertedDataLB.acceleration,
-            agility: convertedDataLB.agility,
-            change_of_direction: convertedDataLB.change_of_direction,
-            awareness: convertedDataLB.awareness,
-            strength: convertedDataLB.strength,
-            jumping: convertedDataLB.jumping,
-            tackling: convertedDataLB.tackling,
-            hit_power: convertedDataLB.hit_power,
-            power_moves: convertedDataLB.power_moves,
-            finesse_moves: convertedDataLB.finesse_moves,
-            block_shedding: convertedDataLB.block_shed,
-            pursuit: convertedDataLB.pursuit,
-            play_recognition: convertedDataLB.play_recognition
+            speed: convertedDataLOLBG.speed,
+            acceleration: convertedDataLOLBG.acceleration,
+            agility: convertedDataLOLBG.agility,
+            change_of_direction: convertedDataLOLBG.change_of_direction,
+            awareness: convertedDataLOLBG.awareness,
+            strength: convertedDataLOLBG.strength,
+            jumping: convertedDataLOLBG.jumping,
+            tackling: convertedDataLOLBG.tackling,
+            hit_power: convertedDataLOLBG.hit_power,
+            power_moves: convertedDataLOLBG.power_moves,
+            finesse_moves: convertedDataLOLBG.finesse_moves,
+            block_shedding: convertedDataLOLBG.block_shed,
+            pursuit: convertedDataLOLBG.pursuit,
+            play_recognition: convertedDataLOLBG.play_recognition
           });
-          await this.playerAttrRepo.save(resultLB)
+          await this.playerAttrRepo.save(resultLOLBG)
 
-          const cleanedResultLB = Object.keys(resultLB).reduce((acc, key) => {
-            if (resultLB[key] !== null && resultLB[key] !== undefined) {
-              acc[key] = resultLB[key];
+          const cleanedResultLOLBG = Object.keys(resultLOLBG).reduce((acc, key) => {
+            if (resultLOLBG[key] !== null && resultLOLBG[key] !== undefined) {
+              acc[key] = resultLOLBG[key];
             }
             return acc;
           }, {});
 
           return {
             message: `Conversion of ${positionCode} Successful`,
-            result: cleanedResultLB,
+            result: cleanedResultLOLBG,
+          };
+        //------------------------------ ROLB CONVERSION ================
+        case POSTION_CODE.RightOutside_linebacker_below_245lbs:
+
+          dataobj = rawData as RightOutside_linebacker_below_245lbsDTO
+
+          const convertedDataLOLBB = {
+            age: calculatedAge,
+            speed: dataobj.speed - 4,
+            acceleration: dataobj.acceleration - 2,
+            agility: dataobj.agility - 2,
+            change_of_direction: 'change_of_direction' in dataobj ? (dataobj.change_of_direction - 4) : undefined,
+            awareness: dataobj.awareness - 9 - (draft_round),
+            strength: dataobj.strength - 7,
+            jumping: 'jumping' in dataobj ? dataobj.jumping - 12 : undefined,
+            tackling: dataobj.tackling - 7 - (draft_round),
+            hit_power: dataobj.hit_power - 3,
+            power_moves: dataobj.power_moves - 21 - (draft_round),
+            finesse_moves: dataobj.finesse_moves - 25 - (draft_round),
+            block_shed: dataobj.block_shedding - 6 - (draft_round),
+            pursuit: dataobj.pursuit - 6 - (draft_round),
+            play_recognition: dataobj.play_recognition - 18 - (draft_round),
+            man_coverage: 'man_coverage' in dataobj ? (dataobj.man_coverage - 25 - (draft_round)) : undefined,
+            zone_coverage: 'zone_coverage' in dataobj ? (dataobj.zone_coverage - 22 - (draft_round)) : undefined,
+            stamina: dataobj.stamina - 1,
+            injury: dataobj.injury - 1
+          }
+          const resultLOLBB = this.playerAttrRepo.create({
+            player: { id: player.id },
+            age: calculatedAge,
+            speed: convertedDataLOLBB.speed,
+            acceleration: convertedDataLOLBB.acceleration,
+            agility: convertedDataLOLBB.agility,
+            change_of_direction: convertedDataLOLBB.change_of_direction,
+            awareness: convertedDataLOLBB.awareness,
+            strength: convertedDataLOLBB.strength,
+            jumping: convertedDataLOLBB.jumping,
+            tackling: convertedDataLOLBB.tackling,
+            hit_power: convertedDataLOLBB.hit_power,
+            power_moves: convertedDataLOLBB.power_moves,
+            finesse_moves: convertedDataLOLBB.finesse_moves,
+            block_shedding: convertedDataLOLBB.block_shed,
+            pursuit: convertedDataLOLBB.pursuit,
+            play_recognition: convertedDataLOLBB.play_recognition
+          });
+          await this.playerAttrRepo.save(resultLOLBB)
+
+          const cleanedResultLOLBB = Object.keys(resultLOLBB).reduce((acc, key) => {
+            if (resultLOLBB[key] !== null && resultLOLBB[key] !== undefined) {
+              acc[key] = resultLOLBB[key];
+            }
+            return acc;
+          }, {});
+
+          return {
+            message: `Conversion of ${positionCode} Successful`,
+            result: cleanedResultLOLBB,
           };
 
 
+        //------------------------------ MLB CONVERSION ================
+        case POSTION_CODE.All_Middle_Linebackers:
+
+          dataobj = rawData as All_Middle_LinebackersDTO
+
+          const convertedDataMLB = {
+            age: calculatedAge,
+            speed: dataobj.speed - 4,
+            acceleration: dataobj.acceleration - 2,
+            agility: dataobj.agility - 2,
+            change_of_direction: 'change_of_direction' in dataobj ? (dataobj.change_of_direction - 4) : undefined,
+            awareness: dataobj.awareness - 9 - (draft_round),
+            strength: dataobj.strength - 7,
+            jumping: 'jumping' in dataobj ? dataobj.jumping - 12 : undefined,
+            tackling: dataobj.tackling - 7 - (draft_round),
+            hit_power: dataobj.hit_power - 3,
+            power_moves: dataobj.power_moves - 21 - (draft_round),
+            finesse_moves: dataobj.finesse_moves - 25 - (draft_round),
+            block_shed: dataobj.block_shedding - 6 - (draft_round),
+            pursuit: dataobj.pursuit - 6 - (draft_round),
+            play_recognition: dataobj.play_recognition - 18 - (draft_round),
+            man_coverage: 'man_coverage' in dataobj ? (dataobj.man_coverage - 25 - (draft_round)) : undefined,
+            zone_coverage: 'zone_coverage' in dataobj ? (dataobj.zone_coverage - 22 - (draft_round)) : undefined,
+            stamina: dataobj.stamina - 1,
+            injury: dataobj.injury - 1
+          }
+          const resultMLB = this.playerAttrRepo.create({
+            player: { id: player.id },
+            age: calculatedAge,
+            speed: convertedDataMLB.speed,
+            acceleration: convertedDataMLB.acceleration,
+            agility: convertedDataMLB.agility,
+            change_of_direction: convertedDataMLB.change_of_direction,
+            awareness: convertedDataMLB.awareness,
+            strength: convertedDataMLB.strength,
+            jumping: convertedDataMLB.jumping,
+            tackling: convertedDataMLB.tackling,
+            hit_power: convertedDataMLB.hit_power,
+            power_moves: convertedDataMLB.power_moves,
+            finesse_moves: convertedDataMLB.finesse_moves,
+            block_shedding: convertedDataMLB.block_shed,
+            pursuit: convertedDataMLB.pursuit,
+            play_recognition: convertedDataMLB.play_recognition
+          });
+          await this.playerAttrRepo.save(resultMLB)
+
+          const cleanedResultMLB = Object.keys(resultMLB).reduce((acc, key) => {
+            if (resultMLB[key] !== null && resultMLB[key] !== undefined) {
+              acc[key] = resultMLB[key];
+            }
+            return acc;
+          }, {});
+
+          return {
+            message: `Conversion of ${positionCode} Successful`,
+            result: cleanedResultMLB,
+          };
+
+        //--FULLBACK CONVERSION
+        //-- KICKER CONVERSION
+        //-- PUNTER CONVERSION 
 
         //------------------------CB CONVERSION ------------------------------ 
         case POSTION_CODE.CornerBack:

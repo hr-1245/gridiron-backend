@@ -9,4 +9,4 @@ import { userPlanEntity } from "../user/entity/userPlan.entity";
   providers: [StripeService],
   exports: [StripeService],
 })
-export class stripeModule { }
+export class StripeModule { }

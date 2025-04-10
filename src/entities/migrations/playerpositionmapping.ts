@@ -17,8 +17,8 @@ export class SeedPlayerPositionsAndMappings20250318121000 implements MigrationIn
         ('IOL', 'Interior Offensive Lineman'),
         ('OT', 'Offensive Tackle'),
         ('EDGE', 'Edge Rusher'),
-        ('HB', 'Half Back')
-    `);
+      
+   `);
 
     // For "TE"
     await queryRunner.query(`

@@ -8,7 +8,7 @@ import { playerService } from "./services/player.service";
 import { CloudinaryModule } from "../cloudinary/cloudinary.module";
 import { PlayerOcrService } from "./services/playerocr.service";
 import { PlayerDataService } from "./services/playerdata.service";
-import { jwtModule } from "../jwt/jwt.module";
+import { JwtModule } from "../jwt/jwt.module";
 
 @Module({
   imports: [TypeOrmModule.forFeature([userEntity, PlayerEntity, PlayerPositionEntity, PlayerAttributesEntity, PlayerImageEntity, PositionAttributeMappingEntity]),
@@ -17,4 +17,4 @@ import { jwtModule } from "../jwt/jwt.module";
   providers: [playerService, PlayerOcrService, PlayerDataService],
   exports: [playerService, PlayerOcrService, PlayerDataService]
 })
-export class playerModule { }
+export class PlayerModule { }

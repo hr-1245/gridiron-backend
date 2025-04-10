@@ -1,6 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsEnum, isEnum, IsNotEmpty, IsNumber, IsString, } from "class-validator";
-import { COLLAGE_AGE_ENUM } from "src/types/enums/roles";
+import { IsNotEmpty, IsNumber, IsString, } from "class-validator";
 
 export class ConversionDto {
   @ApiProperty()
@@ -221,7 +220,7 @@ export class SafetyDto {
   @ApiProperty() @IsNumber() stamina: number;
   @ApiProperty() @IsNumber() injury: number;
 }
-export class InteriorOffensiveLinemanDto {
+export class LeftGaurdDto {
   @ApiProperty() @IsNumber() age: number;
   @ApiProperty() @IsNumber() speed: number;
   @ApiProperty() @IsNumber() acceleration: number;
@@ -239,7 +238,25 @@ export class InteriorOffensiveLinemanDto {
   @ApiProperty() @IsNumber() stamina: number;
   @ApiProperty() @IsNumber() injury: number;
 }
-export class OffensiveTackleDto {
+export class RightGaurdDto {
+  @ApiProperty() @IsNumber() age: number;
+  @ApiProperty() @IsNumber() speed: number;
+  @ApiProperty() @IsNumber() acceleration: number;
+  @ApiProperty() @IsNumber() awareness: number;
+  @ApiProperty() @IsNumber() agility: number;
+  @ApiProperty() @IsNumber() strength: number;
+  @ApiProperty() @IsNumber() lead_block: number;
+  @ApiProperty() @IsNumber() impact_blocking: number;
+  @ApiProperty() @IsNumber() run_blocking: number;
+  @ApiProperty() @IsNumber() pass_blocking: number;
+  @ApiProperty() @IsNumber() pass_block_power: number;
+  @ApiProperty() @IsNumber() pass_block_finesse: number;
+  @ApiProperty() @IsNumber() run_block_power: number;
+  @ApiProperty() @IsNumber() run_block_finesse: number;
+  @ApiProperty() @IsNumber() stamina: number;
+  @ApiProperty() @IsNumber() injury: number;
+}
+export class LeftTackleDto {
   @ApiProperty() @IsNumber() age: number;
   @ApiProperty() @IsNumber() speed: number;
   @ApiProperty() @IsNumber() acceleration: number;
@@ -257,7 +274,27 @@ export class OffensiveTackleDto {
   @ApiProperty() @IsNumber() stamina: number;
   @ApiProperty() @IsNumber() injury: number;
 }
-export class EdgeRusherDto {
+export class RightTackleDto {
+  @ApiProperty() @IsNumber() age: number;
+  @ApiProperty() @IsNumber() speed: number;
+  @ApiProperty() @IsNumber() acceleration: number;
+  @ApiProperty() @IsNumber() awareness: number;
+  @ApiProperty() @IsNumber() agility: number;
+  @ApiProperty() @IsNumber() strength: number;
+  @ApiProperty() @IsNumber() lead_block: number;
+  @ApiProperty() @IsNumber() impact_block: number;
+  @ApiProperty() @IsNumber() run_block: number;
+  @ApiProperty() @IsNumber() pass_block: number;
+  @ApiProperty() @IsNumber() pass_block_power: number;
+  @ApiProperty() @IsNumber() pass_block_finesse: number;
+  @ApiProperty() @IsNumber() run_block_power: number;
+  @ApiProperty() @IsNumber() run_block_finesse: number;
+  @ApiProperty() @IsNumber() stamina: number;
+  @ApiProperty() @IsNumber() injury: number;
+}
+
+
+export class LeftEndDTO {
   @ApiProperty() @IsNumber() age: number;
   @ApiProperty() @IsNumber() speed: number;
   @ApiProperty() @IsNumber() acceleration: number;
@@ -274,7 +311,100 @@ export class EdgeRusherDto {
   @ApiProperty() @IsNumber() stamina: number;
   @ApiProperty() @IsNumber() injury: number;
 }
-export class LineBeckerDto {
+export class RightEndDTO {
+  @ApiProperty() @IsNumber() age: number;
+  @ApiProperty() @IsNumber() speed: number;
+  @ApiProperty() @IsNumber() acceleration: number;
+  @ApiProperty() @IsNumber() agility: number;
+  @ApiProperty() @IsNumber() awareness: number;
+  @ApiProperty() @IsNumber() strength: number;
+  @ApiProperty() @IsNumber() tackling: number;
+  @ApiProperty() @IsNumber() hit_power: number;
+  @ApiProperty() @IsNumber() power_moves: number;
+  @ApiProperty() @IsNumber() finesse_moves: number;
+  @ApiProperty() @IsNumber() block_shed: number;
+  @ApiProperty() @IsNumber() pursuit: number;
+  @ApiProperty() @IsNumber() play_recognition: number;
+  @ApiProperty() @IsNumber() stamina: number;
+  @ApiProperty() @IsNumber() injury: number;
+}
+export class Left_Outside_linebacker_above_245_lbsDTO {
+  @ApiProperty() @IsNumber() age: number;
+  @ApiProperty() @IsNumber() speed: number;
+  @ApiProperty() @IsNumber() acceleration: number;
+  @ApiProperty() @IsNumber() agility: number;
+  @ApiProperty() @IsNumber() awareness: number;
+  @ApiProperty() @IsNumber() strength: number;
+  @ApiProperty() @IsNumber() tackling: number;
+  @ApiProperty() @IsNumber() hit_power: number;
+  @ApiProperty() @IsNumber() power_moves: number;
+  @ApiProperty() @IsNumber() finesse_moves: number;
+  @ApiProperty() @IsNumber() block_shed: number;
+  @ApiProperty() @IsNumber() pursuit: number;
+  @ApiProperty() @IsNumber() play_recognition: number;
+  @ApiProperty() @IsNumber() stamina: number;
+  @ApiProperty() @IsNumber() injury: number;
+}
+export class Right_Outside_linebacker_above_245lbsDTO {
+  @ApiProperty() @IsNumber() age: number;
+  @ApiProperty() @IsNumber() speed: number;
+  @ApiProperty() @IsNumber() acceleration: number;
+  @ApiProperty() @IsNumber() agility: number;
+  @ApiProperty() @IsNumber() awareness: number;
+  @ApiProperty() @IsNumber() strength: number;
+  @ApiProperty() @IsNumber() tackling: number;
+  @ApiProperty() @IsNumber() hit_power: number;
+  @ApiProperty() @IsNumber() power_moves: number;
+  @ApiProperty() @IsNumber() finesse_moves: number;
+  @ApiProperty() @IsNumber() block_shed: number;
+  @ApiProperty() @IsNumber() pursuit: number;
+  @ApiProperty() @IsNumber() play_recognition: number;
+  @ApiProperty() @IsNumber() stamina: number;
+  @ApiProperty() @IsNumber() injury: number;
+}
+export class LeftOutside_linebacker_below_245lbsDTO {
+  @ApiProperty() @IsNumber() age: number;
+  @ApiProperty() @IsNumber() speed: number;
+  @ApiProperty() @IsNumber() acceleration: number;
+  @ApiProperty() @IsNumber() agility: number;
+  @ApiProperty() @IsNumber() change_of_direction: number;
+  @ApiProperty() @IsNumber() awareness: number;
+  @ApiProperty() @IsNumber() strength: number;
+  @ApiProperty() @IsNumber() jumping: number;
+  @ApiProperty() @IsNumber() tackling: number;
+  @ApiProperty() @IsNumber() hit_power: number;
+  @ApiProperty() @IsNumber() power_moves: number;
+  @ApiProperty() @IsNumber() finesse_moves: number;
+  @ApiProperty() @IsNumber() block_shedding: number;
+  @ApiProperty() @IsNumber() pursuit: number;
+  @ApiProperty() @IsNumber() play_recognition: number;
+  @ApiProperty() @IsNumber() man_coverage: number;
+  @ApiProperty() @IsNumber() zone_coverage: number;
+  @ApiProperty() @IsNumber() stamina: number;
+  @ApiProperty() @IsNumber() injury: number;
+}
+export class RightOutside_linebacker_below_245lbsDTO {
+  @ApiProperty() @IsNumber() age: number;
+  @ApiProperty() @IsNumber() speed: number;
+  @ApiProperty() @IsNumber() acceleration: number;
+  @ApiProperty() @IsNumber() agility: number;
+  @ApiProperty() @IsNumber() change_of_direction: number;
+  @ApiProperty() @IsNumber() awareness: number;
+  @ApiProperty() @IsNumber() strength: number;
+  @ApiProperty() @IsNumber() jumping: number;
+  @ApiProperty() @IsNumber() tackling: number;
+  @ApiProperty() @IsNumber() hit_power: number;
+  @ApiProperty() @IsNumber() power_moves: number;
+  @ApiProperty() @IsNumber() finesse_moves: number;
+  @ApiProperty() @IsNumber() block_shedding: number;
+  @ApiProperty() @IsNumber() pursuit: number;
+  @ApiProperty() @IsNumber() play_recognition: number;
+  @ApiProperty() @IsNumber() man_coverage: number;
+  @ApiProperty() @IsNumber() zone_coverage: number;
+  @ApiProperty() @IsNumber() stamina: number;
+  @ApiProperty() @IsNumber() injury: number;
+}
+export class All_Middle_LinebackersDTO {
   @ApiProperty() @IsNumber() age: number;
   @ApiProperty() @IsNumber() speed: number;
   @ApiProperty() @IsNumber() acceleration: number;
@@ -307,7 +437,15 @@ export type ConverstionDataDto =
   | DefensiveEndDto
   | CornerBackDto
   | SafetyDto
-  | InteriorOffensiveLinemanDto
-  | OffensiveTackleDto
-  | EdgeRusherDto
-  | LineBeckerDto
+  | LeftGaurdDto
+  | RightGaurdDto
+  | LeftTackleDto
+  | RightTackleDto
+  | LeftEndDTO
+  | RightEndDTO
+  | RightEndDTO
+  | Left_Outside_linebacker_above_245_lbsDTO
+  | Right_Outside_linebacker_above_245lbsDTO
+  | LeftOutside_linebacker_below_245lbsDTO
+  | RightOutside_linebacker_below_245lbsDTO
+  | All_Middle_LinebackersDTO
