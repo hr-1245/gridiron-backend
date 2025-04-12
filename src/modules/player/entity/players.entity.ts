@@ -1,12 +1,12 @@
 import { Entity, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { PlayerPositionEntity } from './player-position.entity';
-import { approvalStatusEnum, POSTION_CODE } from 'src/types/enums/roles';
+import { approvalStatusEnum, COLLAGE_AGE_ENUM, POSTION_CODE } from 'src/types/enums/roles';
 import { baseEntity } from 'src/entities/base.entity';
 import { userEntity } from 'src/modules/user/entity/user.entity';
 
 @Entity({ name: 'player' })
 export class PlayerEntity extends baseEntity {
-  
+
     @Column({ nullable: false })
     name: string;
 
@@ -17,6 +17,17 @@ export class PlayerEntity extends baseEntity {
     @Column({ nullable: true })
     overallRating: number;
 
+    @Column({ nullable: true })
+    homeTown: string;
+
+    // @Column({ nullable: true, type: 'enum', enum: COLLAGE_AGE_ENUM })
+    // class: COLLAGE_AGE_ENUM
+
+    @Column({ nullable: true })
+    height: number
+
+    @Column({ nullable: true })
+    weight: number
 
     @ManyToOne(() => PlayerPositionEntity, position => position.players, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn()
@@ -239,9 +250,6 @@ export class PositionAttributeMappingEntity extends baseEntity {
 
     @Column()
     attributeKey: string;
-
-    @Column({ type: 'text', nullable: true })
-    conversionLogic?: string;
 
     @Column({ nullable: true })
     displayOrder?: number;

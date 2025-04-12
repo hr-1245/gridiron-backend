@@ -6,28 +6,34 @@ import * as streamifier from 'streamifier';
 export class CloudinaryService {
   private readonly logger = new Logger(CloudinaryService.name);
 
-  async uploadFile(file: Express.Multer.File): Promise<UploadApiResponse> {
-    return new Promise((resolve, reject) => {
-      const uploadStream = v2.uploader.upload_stream(
-        { resource_type: 'auto' },
-        (error, result) => {
-          if (error) {
-            this.logger.error('Cloudinary upload error', error);
-            reject(error);
-          } else if (result) {
-            this.logger.log(`File uploaded successfully: ${result.public_id}`);
-            resolve(result);
-          } else {
-            const err = new Error('Undefined upload result');
-            this.logger.error(err);
-            reject(err);
-          }
-        }
-      );
+async uploadFile(file: Express.Multer.File): Promise<UploadApiResponse> {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      this.logger.error('Cloudinary upload timed out');
+      reject(new Error('Cloudinary upload timed out'));
+    }, 15000); // 15 seconds timeout
 
-      streamifier.createReadStream(file.buffer).pipe(uploadStream);
-    });
-  }
+    const uploadStream = v2.uploader.upload_stream(
+      { resource_type: 'auto' },
+      (error, result) => {
+        clearTimeout(timeout);
+        if (error) {
+          this.logger.error('Cloudinary upload error', error);
+          reject(error);
+        } else if (result) {
+          this.logger.log(`File uploaded successfully: ${result.public_id}`);
+          resolve(result);
+        } else {
+          const err = new Error('Undefined upload result');
+          this.logger.error(err);
+          reject(err);
+        }
+      }
+    );
+
+    streamifier.createReadStream(file.buffer).pipe(uploadStream);
+  });
+}
 
   async deleteFile(publicId: string): Promise<void> {
     return new Promise((resolve, reject) => {

@@ -13,17 +13,27 @@ import { MailModule } from './modules/mail/mail.module';
 import { OtpModule } from './modules/otp/otp.module';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { BullModule } from '@nestjs/bull';
-import { BullModel } from './modules/bull/bull.module';
+import { BullBoardModule } from './modules/bull/bull.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }),
-  TypeOrmModule.forRootAsync(forDatabasePostgresAsyncConfig),
-  BullModule.forRoot({
-    redis: {
-      connectionName: 'localhost',
-      host: '6979'
-    }
-  }),
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    TypeOrmModule.forRootAsync(forDatabasePostgresAsyncConfig),
+
+    // Register Bull with Redis
+    BullModule.forRoot({
+      redis: {
+        host: '127.0.0.1',
+        port: 6379,
+      },
+      // 🔥 Important: prevents the error you're seeing
+      defaultJobOptions: {
+        removeOnComplete: true,
+        removeOnFail: true,
+      },
+    }),
+    
+
     AuthModule,
     JwtModule,
     PlayerModule,
@@ -32,8 +42,8 @@ import { BullModel } from './modules/bull/bull.module';
     MailModule,
     OtpModule,
     CloudinaryModule,
-    BullModel
+    BullBoardModule,
   ],
   providers: [adminjwtStrategy, userjwtStrategy],
 })
-export class AppModule { }
+export class AppModule {}
