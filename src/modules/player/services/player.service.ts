@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { All_Middle_LinebackersDTO, ConversionDto, ConverstionDataDto, CornerBackDto, DefensiveEndDto, Left_Outside_linebacker_above_245_lbsDTO, LeftEndDTO, LeftGaurdDto, LeftOutside_linebacker_below_245lbsDTO, LeftTackleDto, QuarterBackDto, Right_Outside_linebacker_above_245lbsDTO, RightEndDTO, RightGaurdDto, RightOutside_linebacker_below_245lbsDTO, RightTackleDto, RunningBackDto, SafetyDto, TightEndDto, WideReceiverDto } from "../dto/convert-manually.dto"
+import { All_Middle_LinebackersDTO, ConversionDto, ConverstionDataDto, CornerBackDto, DefensiveTackleDto, Left_Outside_linebacker_above_245_lbsDTO, LeftEndDTO, LeftGaurdDto, LeftOutside_linebacker_below_245lbsDTO, LeftTackleDto, QuarterBackDto, Right_Outside_linebacker_above_245lbsDTO, RightEndDTO, RightGaurdDto, RightOutside_linebacker_below_245lbsDTO, RightTackleDto, RunningBackDto, SafetyDto, TightEndDto, WideReceiverDto } from "../dto/convert-manually.dto"
 import { COLLAGE_AGE_ENUM, POSTION_CODE } from "src/types/enums/roles";
 import { PlayerPositionEntity } from "../entity/player-position.entity";
 import { PlayerAttributesEntity, PlayerEntity } from "../entity/players.entity";
@@ -23,15 +23,25 @@ export class playerService {
   //-- Get All Position with Their Attributes ----------------------
 
   async getAllPositionDropDown() {
-
-    const data = await this.playerPositionRepo.find({
+    let data = await this.playerPositionRepo.find({
       relations: { attributeMappings: true }
     });
+
+    const cleanedData = data.map(position => ({
+      code: position.code,
+      name: position.name,
+      attributeMappings: position.attributeMappings.map(attr => ({
+        attributeKey: attr.attributeKey,
+        displayOrder: attr.displayOrder
+      }))
+    }));
+
     return {
-      message: "Fetched Positions Sucessfully",
-      data
-    }
+      message: "Fetched Positions Successfully",
+      data: cleanedData
+    };
   }
+
   // async getPositionAttributes(input: FetchPositionAttributesDto): Promise<PositionAttributesResponseDto> {
   //   // Fetch the position by code or name
   //   const position = await this.playerPositionRepo.findOne({
@@ -837,8 +847,8 @@ export class playerService {
         //-------------- DT CONVERSION -----------
 
         //-------------------------------DI CONVERSION --------------------
-        case POSTION_CODE.DefensiveEnd:
-          dataobj = rawData as DefensiveEndDto
+        case POSTION_CODE.DefensiveTackle:
+          dataobj = rawData as DefensiveTackleDto
 
           const convertedDataDI = {
             age: calculatedAge,

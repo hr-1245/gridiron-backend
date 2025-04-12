@@ -10,7 +10,7 @@ export class SeedPlayerPositionsAndMappings20250318121000 implements MigrationIn
         ('RB', 'Running Back'),
         ('WR', 'Wide Receiver'),
         ('OL', 'Offensive Line'),
-        ('DI', 'Defensive End'),
+        ('DT', 'Defensive Tackle'),
         ('LOLB<', 'Left_Outside_linebacker_below_245_lbs'),
         ('MLB', 'All_Middle_Linebackers'),
         ('ROLB<', 'Right_Outside_linebackers_below_245_lbs'),
@@ -179,25 +179,25 @@ export class SeedPlayerPositionsAndMappings20250318121000 implements MigrationIn
         ('injury', '', 16, (SELECT id FROM "player_position" WHERE code = 'OL'))
     `);
 
-    // FOR "DI"
+    // FOR "DT"
     await queryRunner.query(`
       INSERT INTO "position_attribute_mapping" ("attributeKey", "conversionLogic", "displayOrder", "positionId")
       VALUES 
-        ('age', '', 1, (SELECT id FROM "player_position" WHERE code = 'DI')),
-        ('speed', '', 2, (SELECT id FROM "player_position" WHERE code = 'DI')),
-        ('accleration', '', 3, (SELECT id FROM "player_position" WHERE code = 'DI')),
-        ('agility', '', 4, (SELECT id FROM "player_position" WHERE code = 'DI')),
-        ('awareness', '', 5, (SELECT id FROM "player_position" WHERE code = 'DI')),
-        ('strength', '', 6, (SELECT id FROM "player_position" WHERE code = 'DI')),
-        ('tackling', '', 7, (SELECT id FROM "player_position" WHERE code = 'DI')),
-        ('hit_power', '', 8, (SELECT id FROM "player_position" WHERE code = 'DI')),
-        ('power_moves', '', 9, (SELECT id FROM "player_position" WHERE code = 'DI')),
-        ('finesse_moves', '', 10, (SELECT id FROM "player_position" WHERE code = 'DI')),
-        ('block_shedding', '', 11, (SELECT id FROM "player_position" WHERE code = 'DI')),
-        ('pursuit', '', 12, (SELECT id FROM "player_position" WHERE code = 'DI')),
-        ('play_recognition', '', 13, (SELECT id FROM "player_position" WHERE code = 'DI')),
-        ('stamina', '', 14, (SELECT id FROM "player_position" WHERE code = 'DI')),
-        ('injury', '', 15, (SELECT id FROM "player_position" WHERE code = 'DI'))
+        ('age', '', 1, (SELECT id FROM "player_position" WHERE code = 'DT')),
+        ('speed', '', 2, (SELECT id FROM "player_position" WHERE code = 'DT')),
+        ('accleration', '', 3, (SELECT id FROM "player_position" WHERE code = 'DT')),
+        ('agility', '', 4, (SELECT id FROM "player_position" WHERE code = 'DT')),
+        ('awareness', '', 5, (SELECT id FROM "player_position" WHERE code = 'DT')),
+        ('strength', '', 6, (SELECT id FROM "player_position" WHERE code = 'DT')),
+        ('tackling', '', 7, (SELECT id FROM "player_position" WHERE code = 'DT')),
+        ('hit_power', '', 8, (SELECT id FROM "player_position" WHERE code = 'DT')),
+        ('power_moves', '', 9, (SELECT id FROM "player_position" WHERE code = 'DT')),
+        ('finesse_moves', '', 10, (SELECT id FROM "player_position" WHERE code = 'DT')),
+        ('block_shedding', '', 11, (SELECT id FROM "player_position" WHERE code = 'DT')),
+        ('pursuit', '', 12, (SELECT id FROM "player_position" WHERE code = 'DT')),
+        ('play_recognition', '', 13, (SELECT id FROM "player_position" WHERE code = 'DT')),
+        ('stamina', '', 14, (SELECT id FROM "player_position" WHERE code = 'DT')),
+        ('injury', '', 15, (SELECT id FROM "player_position" WHERE code = 'DT'))
     `);
 
     // For "LOLB<"
@@ -224,7 +224,7 @@ export class SeedPlayerPositionsAndMappings20250318121000 implements MigrationIn
         ('stamina', '', 18, (SELECT id FROM "player_position" WHERE code = 'LOLB<')),
         ('injury', '', 19, (SELECT id FROM "player_position" WHERE code = 'LOLB<'))
     `);
-    // For "LOLB<"
+    // For "ROLB<"
     await queryRunner.query(`
       INSERT INTO "position_attribute_mapping" ("attributeKey", "conversionLogic", "displayOrder", "positionId")
       VALUES 
@@ -449,26 +449,26 @@ export class SeedPlayerPositionsAndMappings20250318121000 implements MigrationIn
         ('stamina', '', 15, (SELECT id FROM "player_position" WHERE code = 'MLB')),
         ('injury', '', 16, (SELECT id FROM "player_position" WHERE code = 'MLB'))
     `);
-    // FOR "ROLB<"
+    // FOR "ROLB>"
     await queryRunner.query(`
       INSERT INTO "position_attribute_mapping" ("attributeKey", "conversionLogic", "displayOrder", "positionId")
       VALUES 
-        ('age', '', 1, (SELECT id FROM "player_position" WHERE code = 'ROLB<')),
-        ('speed', '', 2, (SELECT id FROM "player_position" WHERE code = 'ROLB<')),
-        ('acceleration', '', 3, (SELECT id FROM "player_position" WHERE code = 'ROLB<')),
-        ('agility', '', 4, (SELECT id FROM "player_position" WHERE code = 'ROLB<')),
-        ('awareness', '', 5, (SELECT id FROM "player_position" WHERE code = 'ROLB<')),
-        ('strength', '', 6, (SELECT id FROM "player_position" WHERE code = 'ROLB<')),
-        ('tackling', '', 7, (SELECT id FROM "player_position" WHERE code = 'ROLB<')),
-        ('hit_power', '', 8, (SELECT id FROM "player_position" WHERE code = 'ROLB<')),
-        ('power_moves', '', 9, (SELECT id FROM "player_position" WHERE code = 'ROLB<')),
-        ('finesse_moves', '', 10, (SELECT id FROM "player_position" WHERE code = 'ROLB<')),
-        ('block_shedding', '', 11, (SELECT id FROM "player_position" WHERE code = 'ROLB<')),
-        ('block_shedding', '', 12, (SELECT id FROM "player_position" WHERE code = 'ROLB<')),
-        ('pursuit', '', 13, (SELECT id FROM "player_position" WHERE code = 'ROLB<')),
-        ('play_recognition', '', 14, (SELECT id FROM "player_position" WHERE code = 'ROLB<')),
-        ('stamina', '', 15, (SELECT id FROM "player_position" WHERE code = 'ROLB<')),
-        ('injury', '', 16, (SELECT id FROM "player_position" WHERE code = 'ROLB<'))
+        ('age', '', 1, (SELECT id FROM "player_position" WHERE code = 'ROLB>')),
+        ('speed', '', 2, (SELECT id FROM "player_position" WHERE code = 'ROLB>')),
+        ('acceleration', '', 3, (SELECT id FROM "player_position" WHERE code = 'ROLB>')),
+        ('agility', '', 4, (SELECT id FROM "player_position" WHERE code = 'ROLB>')),
+        ('awareness', '', 5, (SELECT id FROM "player_position" WHERE code = 'ROLB>')),
+        ('strength', '', 6, (SELECT id FROM "player_position" WHERE code = 'ROLB>')),
+        ('tackling', '', 7, (SELECT id FROM "player_position" WHERE code = 'ROLB>')),
+        ('hit_power', '', 8, (SELECT id FROM "player_position" WHERE code = 'ROLB>')),
+        ('power_moves', '', 9, (SELECT id FROM "player_position" WHERE code = 'ROLB>')),
+        ('finesse_moves', '', 10, (SELECT id FROM "player_position" WHERE code = 'ROLB>')),
+        ('block_shedding', '', 11, (SELECT id FROM "player_position" WHERE code = 'ROLB>')),
+        ('block_shedding', '', 12, (SELECT id FROM "player_position" WHERE code = 'ROLB>')),
+        ('pursuit', '', 13, (SELECT id FROM "player_position" WHERE code = 'ROLB>')),
+        ('play_recognition', '', 14, (SELECT id FROM "player_position" WHERE code = 'ROLB>')),
+        ('stamina', '', 15, (SELECT id FROM "player_position" WHERE code = 'ROLB>')),
+        ('injury', '', 16, (SELECT id FROM "player_position" WHERE code = 'ROLB>'))
     `);
     // For "LT"
     await queryRunner.query(`
@@ -522,8 +522,8 @@ export class SeedPlayerPositionsAndMappings20250318121000 implements MigrationIn
     WHERE "positionId" IN (
       SELECT id FROM "player_position" WHERE code IN (
         'TE', 'QB', 'RB', 'WR', 'OL',
-        'DI', 'DT', 'LOLB<', 'MLB', 'ROLB>', 'CB', 'S', 'LG', 'RG', 'LT', 'RT',
-        'LE', 'RE', 'LOLB>', 'ROLB>', 'FB', 'K', 'P'
+        'DT', 'LOLB<', 'MLB', 'ROLB>', 'CB', 'S', 'LG', 'RG', 'LT', 'RT',
+        'LE', 'RE', 'LOLB>', 'ROLB<', 'FB', 'K', 'P'
       )
     )
   `);
@@ -533,7 +533,7 @@ export class SeedPlayerPositionsAndMappings20250318121000 implements MigrationIn
     DELETE FROM "player_position" 
     WHERE code IN (
       'TE', 'QB', 'RB', 'WR', 'OL',
-      'DI', 'DT', 'CB', 'S', 'LG',
+      'DT', 'CB', 'S', 'LG',
       'RG', 'LT', 'RT', 'LE', 'RE',
       'LOLB>', 'ROLB>', 'LOLB<',
       'MLB', 'ROLB<', 'FB', 'K', 'P'

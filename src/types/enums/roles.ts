@@ -16,7 +16,6 @@ export enum POSTION_CODE {
   RunningBack = 'RB',
   WiderReceiver = 'WR',
   OffensiveLine = 'OL',
-  DefensiveEnd = 'DI',
   DefensiveTackle = 'DT',
   CornerBack = 'CB',
   Safety = 'S',

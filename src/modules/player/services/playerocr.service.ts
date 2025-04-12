@@ -3,100 +3,136 @@ import {
   NotFoundException,
   InternalServerErrorException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, QueryRunner } from 'typeorm';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 import { ConfigService } from '@nestjs/config';
 import { CloudinaryService } from 'src/modules/cloudinary/cloudinary.service';
 import { PlayerEntity, PlayerImageEntity } from '../entity/players.entity';
-import { userEntity } from 'src/modules/user/entity/user.entity';
 import { PlayerPositionEntity } from '../entity/player-position.entity';
 import { OpenAI } from 'openai';
-import * as fs from 'fs';
-import * as path from 'path';
-import { Readable } from 'stream';
+
 @Injectable()
 export class PlayerOcrService {
   private readonly openAI: OpenAI;
+  private readonly logger = new Logger(PlayerOcrService.name);
 
   constructor(
     @InjectRepository(PlayerEntity)
     private readonly playerRepo: Repository<PlayerEntity>,
-    @InjectRepository(userEntity)
-    private readonly userRepo: Repository<userEntity>,
+
     @InjectRepository(PlayerImageEntity)
     private readonly playerImageRepo: Repository<PlayerImageEntity>,
+
     @InjectRepository(PlayerPositionEntity)
     private readonly playerPositionRepo: Repository<PlayerPositionEntity>,
+
+    @InjectQueue('imageProcessing')
+    private readonly imageQueue: Queue,
+
     private readonly cloudinaryService: CloudinaryService,
     private readonly configService: ConfigService,
   ) {
-    // Initialize OpenAI Client with API Key
     this.openAI = new OpenAI({
-      apiKey: this.configService.get<string>('GPT_API_KEY'),
+      apiKey: this.configService.get<string>('OPENAI_KEY'),
     });
   }
 
-  async processPlayerImage(file: Express.Multer.File, userId: number): Promise<PlayerEntity> {
+  async processPlayerImage(files: Express.Multer.File[], userId: number): Promise<any> {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('No files uploaded');
+    }
+
+    const primaryFile = files[0];
+    const attributeFiles = files.slice(1);
+
     let uploadResult: any;
     const queryRunner = this.playerRepo.manager.connection.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      if (!file) throw new BadRequestException('No file uploaded');
-
-      // Upload to Cloudinary
-      uploadResult = await this.cloudinaryService.uploadFile(file);
-      if (uploadResult.error || !uploadResult.secure_url) {
-        throw new InternalServerErrorException('Cloudinary upload failed');
+      uploadResult = await this.cloudinaryService.uploadFile(primaryFile);
+      if (!uploadResult?.secure_url) {
+        throw new InternalServerErrorException('Primary image upload failed');
       }
 
-      // Extract structured data using GPT-4o Mini
-      const structuredData = await this.extractStructuredPlayerData(file);
-      console.log('Structured Data from GPT-4o Mini:', structuredData);
+      const structuredData = {
+        name: 'M. Nielsen',
+        overallRating: 90,
+        position: 'QB',
+      };
 
-      // Find player position
-      const position = await this.playerPositionRepo.findOne({
-        where: { code: structuredData.position },
-      });
-      if (!position) throw new NotFoundException(`Position ${structuredData.position} not found`);
+      const position = await this.playerPositionRepo.findOne({ where: { code: structuredData.position } });
+      if (!position) {
+        throw new NotFoundException(`Position ${structuredData.position} not found`);
+      }
 
-      // Create new player
       const newPlayer = this.playerRepo.create({
         name: structuredData.name,
         overallRating: structuredData.overallRating,
         user: { id: userId },
         position: { id: position.id },
       });
+
       const player = await queryRunner.manager.save(PlayerEntity, newPlayer);
 
-      // Save player image
       const playerImage = this.playerImageRepo.create({
         url: uploadResult.secure_url,
         player: { id: player.id },
       });
       await queryRunner.manager.save(PlayerImageEntity, playerImage);
 
+      const uploadPromises = attributeFiles.map(async (file, index) => {
+        try {
+          const result = await this.cloudinaryService.uploadFile(file);
+          if (!result?.secure_url) throw new Error(`Upload failed at index ${index}`);
+
+          await this.imageQueue.add('processImage', {
+            userId,
+            playerId: player.id,
+            imageUrl: result.secure_url,
+            originalName: file.originalname,
+          });
+
+          this.logger.log(`Queued image: ${file.originalname}`);
+          return { file: file.originalname, status: 'queued' };
+        } catch (err) {
+          this.logger.error(`Error processing file at index ${index}: ${err.message}`);
+          return { file: file.originalname, status: 'error', error: err.message };
+        }
+      });
+
+      const queueResults = await Promise.allSettled(uploadPromises);
+
       await queryRunner.commitTransaction();
 
-      // Return processed player details
-      const foundPlayer = await this.playerRepo.findOne({
-        where: { id: player.id },
-        relations: ['images'],
-      });
-      if (!foundPlayer) throw new NotFoundException(`Player with ID ${player.id} not found`);
-      return foundPlayer;
+      return {
+        message: 'Player and images uploaded successfully. Attribute images queued for processing.',
+        playerId: player.id,
+        imagesQueued: queueResults.map((r) => (r.status === 'fulfilled' ? r.value : r.reason)),
+      };
     } catch (error) {
       await queryRunner.rollbackTransaction();
+
       if (uploadResult?.public_id) {
         await this.cloudinaryService.deleteFile(uploadResult.public_id);
       }
+
+      this.logger.error(`Player image processing failed: ${error.message}`);
       throw error;
     } finally {
       await queryRunner.release();
     }
   }
+
+  // Uncomment and implement this later when ready:
+  // async extractStructuredPlayerData(file: Express.Multer.File): Promise<any> {
+  //   // TODO: Implement GPT-4o based extraction logic.
+  // }
 
   async extractStructuredPlayerData(file: Express.Multer.File) {
     try {
@@ -107,7 +143,7 @@ export class PlayerOcrService {
         messages: [
           {
             role: 'system',
-            content: `You are a helpful assistant that extracts structured Collage football player data from game screenshots. Only return JSON with fields: name, position, overallRating, class, height, weight, hometown.`,
+            content: `You are a helpful assistant that extracts structured Collage football player data from game screenshots. Only return JSON with fields: NAME, POS, OVR, CLASS, HEIGHT, WEIGHT, HOMETOWN, TENDENCY.`,
           },
           {
             role: 'user',
@@ -143,179 +179,4 @@ export class PlayerOcrService {
       throw new InternalServerErrorException('Failed to extract structured data using GPT-4o Mini.');
     }
   }
-
 }
-
-
-
-
-
-
-// async uploadFile(file: Express.Multer.File, playerId: number) {
-//   const uploadResponse = await this.cloudinaryService.uploadFile(file);
-//   if (!uploadResponse?.secure_url) {
-//     throw new NotFoundException('Failed to upload image to Cloudinary');
-//   }
-//   const uploadedImage = this.playerImageRepo.create({
-//     player: { id: playerId },
-//     url: uploadResponse.secure_url,
-//   });
-//   return await this.playerImageRepo.save(uploadedImage);
-// }
-
-//   async processImage(
-//     file: Express.Multer.File,
-//     conversionData: ConversionDto,
-//   ): Promise<any> {
-//     try {
-//       const maxSize = 10485760;
-//       if (file.size > maxSize) {
-//         throw new InternalServerErrorException(
-//           `File size too large. Got ${file.size}. Maximum allowed is ${maxSize} bytes.`,
-//         );
-//       }
-
-//       const uploadResult = await this.cloudinaryService.uploadFile(file);
-//       if (!uploadResult?.secure_url) {
-//         throw new NotFoundException('Failed to upload image to Cloudinary');
-//       }
-
-//       const { positionId, positionCode, playerName, draft_round } = conversionData;
-//       const position = await this.playerPositionRepo.findOne({
-//         where: { id: positionId, code: positionCode },
-//       });
-//       if (!position) {
-//         throw new NotFoundException('Invalid position or position code.');
-//       }
-
-//       let player = await this.playerRepo.findOne({
-//         where: {
-//           name: playerName,
-//         },
-//       });
-//       if (!player) {
-//         const newPlayer = this.playerRepo.create({
-//           name: playerName,
-//           position: { id: positionId },
-//         });
-//         player = await this.playerRepo.save(newPlayer);
-//       }
-
-//       const playerImage = await this.uploadFile(file, player.id);
-
-//       const [ocrResult] = await this.ocrClient.textDetection({
-//         image: { content: file.buffer },
-//       });
-//       const detections = ocrResult.textAnnotations;
-//       if (!detections || detections.length === 0) {
-//         throw new NotFoundException('No text detected in the image.');
-//       }
-
-//       const extractedText = detections[0].description;
-//       console.log('Extracted OCR Text:', extractedText);
-
-//       const parsedAttributes = {
-//         playerName: extractedText?.match(/([A-Z][a-z]+)\s([A-Z][a-z]+)/)?.[0] || 'Unknown',
-//         position: extractedText?.match(/\b(QB|WR|TE|RB|LB|CB|S|OL|DL)\b/)?.[0] || 'Unknown',
-//         agility: extractedText?.match(/Agility\s+(\d+)/)?.[1] || 'N/A',
-//         jumping: extractedText?.match(/Jumping\s+(\d+)/)?.[1] || 'N/A',
-//       };
-
-//       return {
-//         message: 'Image processed successfully',
-//         imageUrl: uploadResult.secure_url,
-//         extractedText,
-//         parsedAttributes,
-//         player,
-//       };
-//     } catch (error) {
-//       console.error('OCR Processing Error:', error);
-//       throw new InternalServerErrorException(error.message);
-//     }
-//   }
-// }
-
-
-// async uploadFile(file: Express.Multer.File, playerId: number) {
-//   const uploadResponse = await this.cloudinaryService.uploadFile(file);
-//   if (!uploadResponse?.secure_url) {
-//     throw new NotFoundException('Failed to upload image to Cloudinary');
-//   }
-//   const uploadedImage = this.playerImageRepo.create({
-//     player: { id: playerId },
-//     url: uploadResponse.secure_url,
-//   });
-//   return await this.playerImageRepo.save(uploadedImage);
-// }
-
-//   async processImage(
-//     file: Express.Multer.File,
-//     conversionData: ConversionDto,
-//   ): Promise<any> {
-//     try {
-//       const maxSize = 10485760;
-//       if (file.size > maxSize) {
-//         throw new InternalServerErrorException(
-//           `File size too large. Got ${file.size}. Maximum allowed is ${maxSize} bytes.`,
-//         );
-//       }
-
-//       const uploadResult = await this.cloudinaryService.uploadFile(file);
-//       if (!uploadResult?.secure_url) {
-//         throw new NotFoundException('Failed to upload image to Cloudinary');
-//       }
-
-//       const { positionId, positionCode, playerName, draft_round } = conversionData;
-//       const position = await this.playerPositionRepo.findOne({
-//         where: { id: positionId, code: positionCode },
-//       });
-//       if (!position) {
-//         throw new NotFoundException('Invalid position or position code.');
-//       }
-
-//       let player = await this.playerRepo.findOne({
-//         where: {
-//           name: playerName,
-//         },
-//       });
-//       if (!player) {
-//         const newPlayer = this.playerRepo.create({
-//           name: playerName,
-//           position: { id: positionId },
-//         });
-//         player = await this.playerRepo.save(newPlayer);
-//       }
-
-//       const playerImage = await this.uploadFile(file, player.id);
-
-//       const [ocrResult] = await this.ocrClient.textDetection({
-//         image: { content: file.buffer },
-//       });
-//       const detections = ocrResult.textAnnotations;
-//       if (!detections || detections.length === 0) {
-//         throw new NotFoundException('No text detected in the image.');
-//       }
-
-//       const extractedText = detections[0].description;
-//       console.log('Extracted OCR Text:', extractedText);
-
-//       const parsedAttributes = {
-//         playerName: extractedText?.match(/([A-Z][a-z]+)\s([A-Z][a-z]+)/)?.[0] || 'Unknown',
-//         position: extractedText?.match(/\b(QB|WR|TE|RB|LB|CB|S|OL|DL)\b/)?.[0] || 'Unknown',
-//         agility: extractedText?.match(/Agility\s+(\d+)/)?.[1] || 'N/A',
-//         jumping: extractedText?.match(/Jumping\s+(\d+)/)?.[1] || 'N/A',
-//       };
-
-//       return {
-//         message: 'Image processed successfully',
-//         imageUrl: uploadResult.secure_url,
-//         extractedText,
-//         parsedAttributes,
-//         player,
-//       };
-//     } catch (error) {
-//       console.error('OCR Processing Error:', error);
-//       throw new InternalServerErrorException(error.message);
-//     }
-//   }
-// }

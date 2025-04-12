@@ -158,7 +158,7 @@ export class OffensiveLineDto {
   @ApiProperty() @IsNumber() injury: number;
 }
 
-export class DefensiveEndDto {
+export class DefensiveTackleDto {
   @ApiProperty() @IsNumber() age: number;
   @ApiProperty() @IsNumber() speed: number;
   @ApiProperty() @IsNumber() acceleration: number;
@@ -434,7 +434,7 @@ export type ConverstionDataDto =
   | RunningBackDto
   | WideReceiverDto
   | OffensiveLineDto
-  | DefensiveEndDto
+  | DefensiveTackleDto
   | CornerBackDto
   | SafetyDto
   | LeftGaurdDto
