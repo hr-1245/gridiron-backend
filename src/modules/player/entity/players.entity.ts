@@ -20,14 +20,17 @@ export class PlayerEntity extends baseEntity {
     @Column({ nullable: true })
     homeTown: string;
 
-    // @Column({ nullable: true, type: 'enum', enum: COLLAGE_AGE_ENUM })
-    // class: COLLAGE_AGE_ENUM
+    @Column({ nullable: true, type: 'enum', enum: COLLAGE_AGE_ENUM })
+    playerClass: COLLAGE_AGE_ENUM
+
+    @Column({ nullable: true, type: 'int' })
+    height: number | null
+
+    @Column({ nullable: true, type: 'int' })
+    weight: number | null
 
     @Column({ nullable: true })
-    height: number
-
-    @Column({ nullable: true })
-    weight: number
+    projectedReason?: string;
 
     @ManyToOne(() => PlayerPositionEntity, position => position.players, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn()

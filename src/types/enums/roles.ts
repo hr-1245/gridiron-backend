@@ -37,11 +37,17 @@ export enum POSTION_CODE {
 
 
 export enum COLLAGE_AGE_ENUM {
+  SO_RS = 'SO_RS',
+  JR = 'JR',
+  JR_RS = 'JR_RS',
+  SR = 'SR',
+  SR_RS = 'SR_RS',
+}
 
-  SO_RS = 3,
-  JR = 3,
-  JR_RS = 4,
-  SR = 4,
-  SR_RS = 5
-
+export const CollageAgeMapping: Record<COLLAGE_AGE_ENUM, number> = {
+  [COLLAGE_AGE_ENUM.SO_RS]: 3,
+  [COLLAGE_AGE_ENUM.JR]: 3,
+  [COLLAGE_AGE_ENUM.JR_RS]: 4,
+  [COLLAGE_AGE_ENUM.SR]: 4,
+  [COLLAGE_AGE_ENUM.SR_RS]: 5,
 }

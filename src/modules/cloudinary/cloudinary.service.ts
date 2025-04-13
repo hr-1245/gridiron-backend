@@ -11,7 +11,7 @@ async uploadFile(file: Express.Multer.File): Promise<UploadApiResponse> {
     const timeout = setTimeout(() => {
       this.logger.error('Cloudinary upload timed out');
       reject(new Error('Cloudinary upload timed out'));
-    }, 15000); // 15 seconds timeout
+    }, 50000); // 15 seconds timeout
 
     const uploadStream = v2.uploader.upload_stream(
       { resource_type: 'auto' },
