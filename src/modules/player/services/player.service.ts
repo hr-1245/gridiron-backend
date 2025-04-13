@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { All_Middle_LinebackersDTO, ConversionDto, ConverstionDataDto, CornerBackDto, DefensiveTackleDto, Left_Outside_linebacker_above_245_lbsDTO, LeftEndDTO, LeftGaurdDto, LeftOutside_linebacker_below_245lbsDTO, LeftTackleDto, QuarterBackDto, Right_Outside_linebacker_above_245lbsDTO, RightEndDTO, RightGaurdDto, RightOutside_linebacker_below_245lbsDTO, RightTackleDto, RunningBackDto, SafetyDto, TightEndDto, WideReceiverDto } from "../dto/convert-manually.dto"
-import { COLLAGE_AGE_ENUM, POSTION_CODE } from "src/types/enums/roles";
+import { COLLAGE_AGE_ENUM, POSTION_CODE, CollageAgeMapping } from "src/types/enums/roles";
 import { PlayerPositionEntity } from "../entity/player-position.entity";
 import { PlayerAttributesEntity, PlayerEntity } from "../entity/players.entity";
 
@@ -105,8 +105,10 @@ export class playerService {
 
 
       const randomAge = Math.floor(Math.random() * 2) + 17;
-      const collegeYearAge = COLLAGE_AGE_ENUM[rawData.age as unknown as keyof typeof COLLAGE_AGE_ENUM];
+      const collegeYearKey = rawData.age as unknown as COLLAGE_AGE_ENUM;
+      const collegeYearAge = CollageAgeMapping[collegeYearKey];
       const calculatedAge = randomAge + collegeYearAge;
+
       switch (obj.positionCode || rawData.age) {
         /////----------------------TE CONVERISON =----------
 
