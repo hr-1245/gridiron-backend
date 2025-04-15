@@ -1,20 +1,20 @@
-import { Module } from "@nestjs/common";
-import { TypeOrmModule } from "@nestjs/typeorm";
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import {
   PlayerAttributesEntity,
   PlayerEntity,
   PlayerImageEntity,
   PositionAttributeMappingEntity,
-} from "./entity/players.entity";
-import { PlayerPositionEntity } from "./entity/player-position.entity";
-import { PlayerOcrController } from "./player.controller";
-import { userEntity } from "../user/entity/user.entity";
-import { playerService } from "./services/player.service";
-import { CloudinaryModule } from "../cloudinary/cloudinary.module";
-import { PlayerOcrService } from "./services/playerocr.service";
-import { PlayerDataService } from "./services/playerdata.service";
-import { BullModule } from "@nestjs/bull";
-import { ProcessImageJob } from "../bull/services/bull.service";
+} from './entity/players.entity';
+import { PlayerPositionEntity } from './entity/player-position.entity';
+import { PlayerOcrController } from './player.controller';
+import { userEntity } from '../user/entity/user.entity';
+import { playerService } from './services/player.service';
+import { CloudinaryModule } from '../cloudinary/cloudinary.module';
+import { PlayerOcrService } from './services/playerocr.service';
+import { PlayerDataService } from './services/playerdata.service';
+import { BullModule } from '@nestjs/bull';
+import { ProcessImageJob } from '../bull/services/bull.service';
 
 @Module({
   imports: [
@@ -35,4 +35,4 @@ import { ProcessImageJob } from "../bull/services/bull.service";
   providers: [playerService, PlayerOcrService, PlayerDataService, ProcessImageJob],
   exports: [playerService, PlayerOcrService, PlayerDataService],
 })
-export class PlayerModule { }
+export class PlayerModule {}
