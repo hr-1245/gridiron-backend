@@ -107,6 +107,10 @@ export class playerService {
       const randomAge = Math.floor(Math.random() * 2) + 17;
       const collegeYearKey = rawData.age as unknown as COLLAGE_AGE_ENUM;
       const collegeYearAge = CollageAgeMapping[collegeYearKey];
+      if (collegeYearAge === undefined) {
+        throw new Error(`Invalid college year key: ${collegeYearKey}`);
+
+      }
       const calculatedAge = randomAge + collegeYearAge;
 
       switch (obj.positionCode || rawData.age) {

@@ -41,9 +41,7 @@ export class PlayerEntity extends baseEntity {
 
     @OneToMany(() => PlayerAttributesEntity, attr => attr.player, { cascade: true })
     attributes: PlayerAttributesEntity[];
-
-    @Column({ type: 'enum', enum: approvalStatusEnum, default: approvalStatusEnum.PENDING })
-    approvalStatus: approvalStatusEnum;
+ 
 }
 
 
