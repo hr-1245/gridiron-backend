@@ -17,7 +17,6 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { Express } from 'express';
 import { PlayerOcrService } from './services/playerocr.service';
 import { playerService } from './services/player.service';
 import { ConversionDto } from './dto/convert-manually.dto';
@@ -58,7 +57,7 @@ export class PlayerOcrController {
   }
 
   @Post('ConvertWithImage')
-  @UseInterceptors(FilesInterceptor('files', 7)) // allow up to 7 files
+  @UseInterceptors(FilesInterceptor('files', 10))
   @ApiOperation({
     summary:
       'Process uploaded player images (first image is primary, rest are attributes).',
