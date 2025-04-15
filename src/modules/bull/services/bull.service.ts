@@ -1,63 +1,77 @@
-import { Processor, Process, OnQueueActive, OnQueueCompleted, OnQueueFailed } from '@nestjs/bull';
+import {
+  Processor,
+  Process,
+  OnQueueActive,
+  OnQueueCompleted,
+  OnQueueFailed,
+} from '@nestjs/bull';
 import { Job } from 'bull';
 import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
 import { PlayerOcrService } from 'src/modules/player/services/playerocr.service';
-import axios from 'axios';
-import { Readable } from 'stream';
+import { PlayerEntity, PositionAttributeMappingEntity } from 'src/modules/player/entity/players.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { POSTION_CODE } from 'src/types/enums/roles';
 
 @Injectable()
 @Processor('imageProcessing')
 export class ProcessImageJob {
-  constructor(private readonly ocrService: PlayerOcrService) { }
+  constructor(
+    private readonly ocrService: PlayerOcrService,
+    @InjectRepository(PlayerEntity)
+    private readonly playerRepo: Repository<PlayerEntity>,
+    @InjectRepository(PositionAttributeMappingEntity)
+    private readonly mappingRepo: Repository<PositionAttributeMappingEntity>,
+  ) {}
 
   private readonly logger = new Logger(ProcessImageJob.name);
 
   @OnQueueActive()
-  onActive(job: Job<{ userId: number; playerId: number; imageUrl: string; originalName: string }>) {
-    this.logger.log(`Job ${job.id} is now active. Processing image: ${job.data.originalName}`);
+  onActive(job: Job) {
+    this.logger.log(`Processing image: ${job.data.originalName}`);
   }
 
   @OnQueueCompleted()
   onCompleted(job: Job, result: any) {
-    this.logger.log(`Job ${job.id} completed successfully with result: ${JSON.stringify(result)}`);
+    this.logger.log(`Job completed: ${JSON.stringify(result)}`);
   }
 
   @OnQueueFailed()
-  onFailed(job: Job, err: any) {
-    this.logger.error(`Job ${job.id} failed with error: ${err.message}`);
+  onFailed(job: Job, err: Error) {
+    this.logger.error(`Job failed: ${err.message}`);
   }
 
   @Process('processImage')
-  async handleImageProcessing(job: Job<{ userId: number; playerId: number; imageUrl: string; originalName: string }>) {
+  async handleImageProcessing(job: Job<{
+    userId: number;
+    playerId: string;
+    imageUrl: string;
+    originalName: string;
+    positionCode: string;
+  }>) {
+    const { playerId, imageUrl, positionCode } = job.data;
+
     try {
-      this.logger.log(
-        `🎯 Job ${job.id}: processing image: ${job.data.originalName} for user ${job.data.userId}`,
+      let gptResult;
+      if (positionCode === POSTION_CODE.WiderReceiver) {
+        gptResult = await this.ocrService.extractWideReceiverAttributes(imageUrl);
+      } else {
+        const mappings = await this.mappingRepo.find({
+          where: { position: { code: positionCode } },
+        });
+        const prompt = `Extract: ${mappings.map(m => m.attributeKey).join(', ')}. Return ONLY JSON.`;
+        gptResult = await this.ocrService.callGptOcr(imageUrl, prompt);
+      }
+
+      await this.ocrService.handleAttributeExtractionResults(
+        gptResult,
+        positionCode,
+        Number(playerId)
       );
 
-      const response = await axios.get(job.data.imageUrl, { responseType: 'arraybuffer' });
-      const buffer = Buffer.from(response.data, 'binary');
-
-      // Create a mock file object for extraction
-      const file: Express.Multer.File = {
-        fieldname: 'file',
-        originalname: job.data.originalName,
-        encoding: '7bit',
-        mimetype: 'image/png',
-        buffer,
-        size: buffer.length,
-        stream: Readable.from(buffer),
-        destination: '',
-        filename: '',
-        path: '',
-      };
-
-      const structuredData = await this.ocrService.extractStructuredPlayerData(file);
-      // TODO: Save the extracted attribute data to the database
-
-      this.logger.log(`✅ Job ${job.id} processed successfully`);
-      return { status: 'success' };
+      return { status: 'success', attributes: gptResult };
     } catch (error) {
-      this.logger.error(`❌ Job ${job.id} failed: ${error.message}`);
+      this.logger.error(`Processing failed: ${error.message}`);
       throw new InternalServerErrorException(error.message);
     }
   }
