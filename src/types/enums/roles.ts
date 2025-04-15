@@ -33,6 +33,8 @@ export enum POSTION_CODE {
   FullBack = 'FB',
   Kicker = 'K',
   Punter = 'P',
+  DefensiveEnd = "DefensiveEnd",
+  LineBacker = "LineBacker",
 }
 
 
