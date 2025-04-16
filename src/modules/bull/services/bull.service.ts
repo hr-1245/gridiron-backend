@@ -1,3 +1,4 @@
+
 import {
   Processor,
   Process,
@@ -12,14 +13,14 @@ import { PlayerEntity, PlayerAttributesEntity, PositionAttributeMappingEntity } 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { POSTION_CODE } from 'src/types/enums/roles';
+import { CloudinaryService } from 'src/modules/cloudinary/cloudinary.service';
 
 @Injectable()
 @Processor('imageProcessing')
 export class ProcessImageJob {
   private readonly positionPrompts = {
-    [POSTION_CODE.QuarterBack]: `Extract ONLY these QB attributes from the image in exact format:
+    [POSTION_CODE.QuarterBack]: `Extract ONLY these numeric QB attributes in exact format:
 {
-  "age": number,
   "speed": number,
   "acceleration": number,
   "agility": number,
@@ -36,22 +37,36 @@ export class ProcessImageJob {
   "trucking": number,
   "carrying": number,
   "ball_carrier_vision": number,
+  "stiff_arm": number,
   "spin_move": number,
   "juke_move": number,
   "stamina": number,
   "injury": number
-}`,
+}
+Return ONLY the JSON, no explanations or comments. Use the exact attribute names as shown. Only include attributes visible in the image with numeric values.`,
 
-    [POSTION_CODE.RunningBack]: `Extract all visible Collage-Football(EA) RB attributes including:
-      - Speed, Acceleration, Agility
-      - Carrying, Ball Carrier Vision, Trucking
-      - Break Tackle, Stiff Arm, Spin Move, Juke Move
-      - Catching, Awareness, Strength
-    Return ONLY raw JSON with exact attribute names and values.`,
-
-    [POSTION_CODE.WiderReceiver]: `Extract ONLY these WR attributes from the image in exact format:
+    [POSTION_CODE.RunningBack]: `Extract ONLY these numeric RB attributes in exact format:
 {
-  "age": number,
+  "speed": number,
+  "acceleration": number,
+  "agility": number,
+  "strength": number,
+  "awareness": number,
+  "carrying": number,
+  "ball_carrier_vision": number,
+  "trucking": number,
+  "break_tackle": number,
+  "stiff_arm": number,
+  "spin_move": number,
+  "juke_move": number,
+  "catching": number,
+  "stamina": number,
+  "injury": number
+}
+Return ONLY the JSON, no explanations or comments. Use the exact attribute names as shown. Only include attributes visible in the image with numeric values.`,
+
+    [POSTION_CODE.WiderReceiver]: `Extract ONLY these numeric WR attributes in exact format:
+{
   "speed": number,
   "acceleration": number,
   "agility": number,
@@ -66,7 +81,7 @@ export class ProcessImageJob {
   "carrying": number,
   "trucking": number,
   "ball_carrier_vision": number,
-  "catching": number,
+  "catching": number, 
   "stiff_arm": number,
   "spin_move": number,
   "juke_move": number,
@@ -76,47 +91,124 @@ export class ProcessImageJob {
   "stamina": number,
   "return": number,
   "injury": number
-}`,
+}
+Return ONLY the JSON, no explanations or comments. Use the exact attribute names as shown. Only include attributes visible in the image with numeric values.`,
 
-    [POSTION_CODE.TightEnd]: `Extract all visible Collage-Football(EA) TE attributes including:
-      - Blocking (Run Blocking, Pass Blocking)
-      - Route Running (and sub-attributes)
-      - Catching abilities
-      - Strength, Awareness
-    Return ONLY raw JSON with exact attribute names and values.`,
+    [POSTION_CODE.TightEnd]: `Extract ONLY these numeric TE attributes in exact format:
+{
+  "speed": number,
+  "acceleration": number,
+  "agility": number,
+  "strength": number,
+  "awareness": number,
+  "catching": number,
+  "catch_in_traffic": number,
+  "spectacular_catch": number,
+  "release": number,
+  "short_route_running": number,
+  "medium_route_running": number,
+  "deep_route_running": number,
+  "run_blocking": number,
+  "pass_blocking": number,
+  "impact_blocking": number,
+  "break_tackle": number,
+  "trucking": number,
+  "stiff_arm": number,
+  "carrying": number,
+  "jumping": number,
+  "stamina": number,
+  "injury": number
+}
+Return ONLY the JSON, no explanations or comments. Use the exact attribute names as shown. Only include attributes visible in the image with numeric values.`,
 
-    [POSTION_CODE.OffensiveLine]: `Extract all visible Collage-Football(EA) OL attributes including:
-      - Run Blocking, Pass Blocking
-      - Strength, Awareness
-      - Impact Blocking, Footwork
-    Return ONLY raw JSON with exact attribute names and values.`,
+    [POSTION_CODE.OffensiveLine]: `Extract ONLY these numeric OL attributes in exact format:
+{
+  "strength": number,
+  "awareness": number,
+  "run_blocking": number,
+  "pass_blocking": number,
+  "impact_blocking": number,
+  "lead_blocking": number,
+  "footwork": number,
+  "stamina": number,
+  "injury": number
+}
+Return ONLY the JSON, no explanations or comments. Use the exact attribute names as shown. Only include attributes visible in the image with numeric values.`,
 
-    [POSTION_CODE.DefensiveEnd]: `Extract all visible Collage-Football(EA) DE attributes including:
-      - Block Shedding, Power Moves, Finesse Moves
-      - Tackle, Pursuit, Play Recognition
-      - Strength, Speed
-    Return ONLY raw JSON with exact attribute names and values.`,
+    [POSTION_CODE.DefensiveEnd]: `Extract ONLY these numeric DE attributes in exact format:
+{
+  "speed": number,
+  "acceleration": number,
+  "strength": number,
+  "awareness": number,
+  "tackle": number,
+  "block_shedding": number,
+  "power_moves": number,
+  "finesse_moves": number,
+  "pursuit": number,
+  "play_recognition": number,
+  "hit_power": number,
+  "stamina": number,
+  "injury": number
+}
+Return ONLY the JSON, no explanations or comments. Use the exact attribute names as shown. Only include attributes visible in the image with numeric values.`,
 
-    [POSTION_CODE.LineBacker]: `Extract all visible Collage-Football(EA) LB attributes including:
-      - Tackle, Hit Power, Pursuit
-      - Zone Coverage, Man Coverage
-      - Block Shedding, Play Recognition
-      - Speed, Acceleration
-    Return ONLY raw JSON with exact attribute names and values.`,
+    [POSTION_CODE.LineBacker]: `Extract ONLY these numeric LB attributes in exact format:
+{
+  "speed": number,
+  "acceleration": number,
+  "agility": number,
+  "strength": number,
+  "awareness": number,
+  "tackle": number,
+  "hit_power": number,
+  "block_shedding": number,
+  "pursuit": number,
+  "play_recognition": number,
+  "zone_coverage": number,
+  "man_coverage": number,
+  "stamina": number,
+  "injury": number
+}
+Return ONLY the JSON, no explanations or comments. Use the exact attribute names as shown. Only include attributes visible in the image with numeric values.`,
 
-    [POSTION_CODE.CornerBack]: `Extract all visible Collage-Football(EA) CB attributes including:
-      - Man Coverage, Zone Coverage
-      - Press, Play Recognition
-      - Speed, Acceleration, Agility
-      - Jumping, Catching
-    Return ONLY raw JSON with exact attribute names and values.`,
+    [POSTION_CODE.CornerBack]: `Extract ONLY these numeric CB attributes in exact format:
+{
+  "speed": number,
+  "acceleration": number,
+  "agility": number,
+  "jumping": number,
+  "awareness": number,
+  "man_coverage": number,
+  "zone_coverage": number,
+  "press": number,
+  "play_recognition": number,
+  "catching": number,
+  "tackle": number,
+  "pursuit": number,
+  "stamina": number,
+  "injury": number
+}
+Return ONLY the JSON, no explanations or comments. Use the exact attribute names as shown. Only include attributes visible in the image with numeric values.`,
 
-    [POSTION_CODE.Safety]: `Extract all visible Collage-Football(EA) Safety attributes including:
-      - Zone Coverage, Man Coverage
-      - Play Recognition, Pursuit
-      - Tackle, Hit Power
-      - Speed, Acceleration
-    Return ONLY raw JSON with exact attribute names and values.`,
+    [POSTION_CODE.Safety]: `Extract ONLY these numeric Safety attributes in exact format:
+{
+  "speed": number,
+  "acceleration": number,
+  "agility": number,
+  "jumping": number,
+  "awareness": number,
+  "zone_coverage": number,
+  "man_coverage": number,
+  "play_recognition": number,
+  "tackle": number,
+  "hit_power": number,
+  "pursuit": number,
+  "catching": number,
+  "stamina": number,
+  "injury": number
+}
+Return ONLY the JSON, no explanations or comments. Use the exact attribute names as shown. Only include attributes visible in the image with numeric values.`,
   };
 
   constructor(
@@ -125,8 +217,7 @@ export class ProcessImageJob {
     private readonly playerRepo: Repository<PlayerEntity>,
     @InjectRepository(PlayerAttributesEntity)
     private readonly playerAttrRepo: Repository<PlayerAttributesEntity>,
-    @InjectRepository(PositionAttributeMappingEntity)
-    private readonly mappingRepo: Repository<PositionAttributeMappingEntity>,
+    private readonly cloudinaryService: CloudinaryService
   ) { }
 
   private readonly logger = new Logger(ProcessImageJob.name);
@@ -154,33 +245,19 @@ export class ProcessImageJob {
     originalName: string;
     positionCode: string;
   }>) {
-    const { playerId, imageUrl, positionCode } = job.data;
+    const { playerId, imageUrl, positionCode, originalName } = job.data;
 
     try {
       this.logger.log(`Starting attribute extraction for ${positionCode} player (ID: ${playerId})`);
+      this.logger.log(`Processing image: ${originalName} for player: ${playerId}`);
 
-      // ✅ Check if attributes already exist for this player & position
       const player = await this.playerRepo.findOne({
         where: { id: playerId },
-        relations: ['attributes', 'position'],
+        relations: ['position'],
       });
 
       if (!player) {
         throw new Error(`Player with ID ${playerId} not found`);
-      }
-
-      // Defensive check: if attributes already exist for this position
-      const existingAttrs = player.attributes?.length > 0 &&
-        player.attributes.filter(attr => attr?.player?.id === playerId).length > 0;
-
-      if (existingAttrs) {
-        this.logger.warn(`Duplicate detected: Player ${playerId} already has attributes. Skipping processing.`);
-        return {
-          status: 'skipped',
-          reason: 'Attributes already exist',
-          playerId,
-          processedAt: new Date()
-        };
       }
 
       // GPT call with retries
@@ -192,8 +269,7 @@ export class ProcessImageJob {
         try {
           gptResult = await this.ocrService.callGptOcr(
             imageUrl,
-            this.positionPrompts[positionCode] ||
-            'Extract all visible football player attributes. Return ONLY raw JSON with exact attribute names and numeric values.'
+            this.positionPrompts[positionCode]
           );
           break;
         } catch (error) {
@@ -203,18 +279,39 @@ export class ProcessImageJob {
         }
       }
 
-      // Save extracted attributes (ensure handleAttributeExtractionResults is also deduplicating if called directly)
-      const result = await this.ocrService.handleAttributeExtractionResults(
+      // Convert the attributes with proper adjustments
+      const newAttributes = await this.ocrService.convertAttributes(
         gptResult,
         positionCode,
-        playerId
+        player
       );
+
+      // Get existing attributes or create new empty ones
+      let existingAttrs = await this.playerAttrRepo.findOne({
+        where: { player: { id: playerId } },
+      });
+
+      if (!existingAttrs) {
+        // Create new attributes if none exist
+        existingAttrs = this.playerAttrRepo.create({
+          ...newAttributes,
+          player: { id: playerId },
+        });
+      } else {
+        // Merge new attributes with existing ones
+        Object.assign(existingAttrs, newAttributes);
+      }
+
+      // Save the merged attributes
+      await this.playerAttrRepo.save(existingAttrs);
+
+      this.logger.log(`Successfully processed attributes for player ${playerId}:`, newAttributes);
 
       return {
         status: 'success',
         playerId,
         positionCode,
-        attributesCount: Object.keys(result.result).length,
+        attributes: newAttributes,
         processedAt: new Date()
       };
     } catch (err) {
