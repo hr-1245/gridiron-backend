@@ -15,7 +15,6 @@ export enum POSTION_CODE {
   QuarterBack = 'QB',
   RunningBack = 'RB',
   WiderReceiver = 'WR',
-  OffensiveLine = 'OL',
   DefensiveTackle = 'DT',
   CornerBack = 'CB',
   Safety = 'S',
@@ -33,8 +32,6 @@ export enum POSTION_CODE {
   FullBack = 'FB',
   Kicker = 'K',
   Punter = 'P',
-  DefensiveEnd = "DefensiveEnd",
-  LineBacker = "LineBacker",
 }
 
 

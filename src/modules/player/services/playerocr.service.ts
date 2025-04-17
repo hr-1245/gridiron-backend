@@ -9,7 +9,7 @@ import { PlayerAttributesEntity, PlayerEntity, PlayerImageEntity } from '../enti
 import { PlayerPositionEntity } from '../entity/player-position.entity';
 import { COLLAGE_AGE_ENUM, POSTION_CODE, CollageAgeMapping } from 'src/types/enums/roles';
 import { OpenAI } from 'openai';
-import { WideReceiverDto } from '../dto/convert-manually.dto';
+import { All_Middle_LinebackersDTO, CornerBackDto, DefensiveTackleDto, Left_Outside_linebacker_above_245_lbsDTO, LeftEndDTO, LeftGaurdDto, LeftOutside_linebacker_below_245lbsDTO, LeftTackleDto, QuarterBackDto, Right_Outside_linebacker_above_245lbsDTO, RightEndDTO, RightGaurdDto, RightOutside_linebacker_below_245lbsDTO, RightTackleDto, RunningBackDto, SafetyDto, TightEndDto, WideReceiverDto } from '../dto/convert-manually.dto';
 
 @Injectable()
 export class PlayerOcrService {
@@ -115,21 +115,6 @@ export class PlayerOcrService {
     }
   }
 
-  private safeGetWithAdjustment(
-    data: Record<string, number>,
-    possibleKeys: string[],
-    defaultValue: number,
-    adjustment: number
-  ): number {
-    for (const key of possibleKeys) {
-      if (data[key] !== undefined && data[key] !== null) {
-        return Math.min(100, Math.max(0, data[key] + adjustment));
-      }
-    }
-    return defaultValue;
-  }
-
-  // Update the convertAttributes method
   async convertAttributes(
     rawData: any,
     positionCode: string,
@@ -137,7 +122,6 @@ export class PlayerOcrService {
   ): Promise<Partial<PlayerAttributesEntity>> {
     this.logger.log(`Converting attributes for ${player.name} (${positionCode})`, rawData);
 
-    // Default values
     const draft_round = player.projectedReason ? parseInt(player.projectedReason, 10) || 1 : 1;
     const collegeYearKey = player.playerClass;
     const collegeYearAge = CollageAgeMapping[collegeYearKey] ?? 0;
@@ -145,12 +129,11 @@ export class PlayerOcrService {
 
     let adjustedData: Partial<PlayerAttributesEntity> = { age: calculatedAge };
 
-    // Improved helper function with proper typing
     const getAdjustedValue = <T extends object>(
       data: T,
       key: keyof T,
       adjustment: number
-    ): number | undefined => {  // Changed from null to undefined to match PlayerAttributesEntity
+    ): number | undefined => {
       const value = data[key];
       if (value !== undefined && value !== null) {
         const numericValue = Number(value);
@@ -158,15 +141,13 @@ export class PlayerOcrService {
           return Math.min(100, Math.max(0, numericValue + adjustment));
         }
       }
-      return undefined;  // Matches PlayerAttributesEntity's optional fields
+      return undefined;
     };
 
-    // Position-specific adjustments
     switch (positionCode) {
       case POSTION_CODE.WiderReceiver: {
         const data = rawData as WideReceiverDto;
 
-        // Use non-null assertion for required fields
         adjustedData = {
           ...adjustedData,
           speed: getAdjustedValue(data, 'speed', -2) ?? undefined,
@@ -196,7 +177,466 @@ export class PlayerOcrService {
         };
         break;
       }
-      // Add other position cases here
+
+      case POSTION_CODE.All_Middle_Linebackers: {
+        const data = rawData as All_Middle_LinebackersDTO
+
+        adjustedData = {
+          ...adjustedData,
+          speed: getAdjustedValue(data, 'speed', -4) ?? undefined,
+          acceleration: getAdjustedValue(data, 'acceleration', -2) ?? undefined,
+          agility: getAdjustedValue(data, 'agility', -2) ?? undefined,
+          change_of_direction: getAdjustedValue(data, 'change_of_direction', -4) ?? undefined,
+          awareness: getAdjustedValue(data, 'awareness', - 9 - draft_round) ?? undefined,
+          strength: getAdjustedValue(data, 'strength', -7) ?? undefined,
+          jumping: getAdjustedValue(data, 'jumping', -12) ?? undefined,
+          tackling: getAdjustedValue(data, 'tackling', - 7 - draft_round) ?? undefined,
+          hit_power: getAdjustedValue(data, 'hit_power', -3) ?? undefined,
+          power_moves: getAdjustedValue(data, 'power_moves', - 21 - draft_round) ?? undefined,
+          finesse_moves: getAdjustedValue(data, 'finesse_moves', - 25 - draft_round) ?? undefined,
+          block_shedding: getAdjustedValue(data, 'block_shedding', - 6 - draft_round) ?? undefined,
+          pursuit: getAdjustedValue(data, 'pursuit', - 6 - draft_round) ?? undefined,
+          play_recognition: getAdjustedValue(data, 'play_recognition', - 18 - draft_round) ?? undefined,
+          man_coverage: getAdjustedValue(data, 'man_coverage', - 25 - draft_round) ?? undefined,
+          zone_coverage: getAdjustedValue(data, 'zone_coverage', - 22 - draft_round) ?? undefined,
+          stamina: getAdjustedValue(data, 'stamina', -1) ?? undefined,
+          injury: getAdjustedValue(data, 'injury', -1) ?? undefined,
+
+        }
+        break
+      }
+
+      case POSTION_CODE.QuarterBack: {
+        const data = rawData as QuarterBackDto
+
+        adjustedData = {
+          ...adjustedData,
+          speed: getAdjustedValue(data, 'speed', -2) ?? undefined,
+          acceleration: getAdjustedValue(data, 'acceleration', -2) ?? undefined,
+          agility: getAdjustedValue(data, 'agility', -5) ?? undefined,
+          awareness: getAdjustedValue(data, 'awareness', - 10 - draft_round) ?? undefined,
+          throw_power: getAdjustedValue(data, 'throw_power', -1) ?? undefined,
+          throw_accuracy_short: getAdjustedValue(data, 'throw_accuracy_short', - 7 - draft_round) ?? undefined,
+          throw_accuracy_deep: getAdjustedValue(data, 'throw_accuracy_deep', - 14 - draft_round) ?? undefined,
+          throw_on_the_run: getAdjustedValue(data, 'throw_on_the_run', - 8 - draft_round) ?? undefined,
+          throw_under_pressure: getAdjustedValue(data, 'throw_under_pressure', - 11 - draft_round) ?? undefined,
+          play_action: getAdjustedValue(data, 'play_action', - 15 - draft_round) ?? undefined,
+          break_sack: getAdjustedValue(data, 'break_sack', - 9 - draft_round) ?? undefined,
+          break_tackle: getAdjustedValue(data, 'break_tackle', - 4 - draft_round) ?? undefined,
+          trucking: getAdjustedValue(data, 'trucking', - 13 - draft_round) ?? undefined,
+          carrying: getAdjustedValue(data, 'carrying', - 26 - draft_round) ?? undefined,
+          ball_carrier_vision: getAdjustedValue(data, 'ball_carrier_vision', - 13 - draft_round) ?? undefined,
+          stiff_arm: getAdjustedValue(data, 'stiff_arm', - 7 - draft_round) ?? undefined,
+          spin_move: getAdjustedValue(data, 'spin_move', - 14 - draft_round) ?? undefined,
+          juke_move: getAdjustedValue(data, 'juke_move', - 10 - draft_round) ?? undefined,
+          stamina: getAdjustedValue(data, 'stamina', -2) ?? undefined,
+          injury: getAdjustedValue(data, 'injury', -1) ?? undefined,
+
+        }
+        break
+      }
+      case POSTION_CODE.RunningBack: {
+        const data = rawData as RunningBackDto
+
+        adjustedData = {
+          ...adjustedData,
+          speed: getAdjustedValue(data, 'speed', -2) ?? undefined,
+          acceleration: getAdjustedValue(data, 'acceleration', 0) ?? undefined,
+          agility: getAdjustedValue(data, 'agility', -4) ?? undefined,
+          change_of_direction: getAdjustedValue(data, 'change_of_direction', -4) ?? undefined,
+          strength: getAdjustedValue(data, 'strength', -3) ?? undefined,
+          awareness: getAdjustedValue(data, 'awareness', -11 - draft_round) ?? undefined,
+          break_tackle: getAdjustedValue(data, 'break_tackle', -7 - draft_round) ?? undefined,
+          carrying: getAdjustedValue(data, 'carrying', -5 - draft_round) ?? undefined,
+          trucking: getAdjustedValue(data, 'trucking', -7 - draft_round) ?? undefined,
+          ball_carrier_vision: getAdjustedValue(data, 'ball_carrier_vision', -14 - draft_round) ?? undefined,
+          catching: getAdjustedValue(data, 'catching', -14 - draft_round) ?? undefined,
+          stiff_arm: getAdjustedValue(data, 'stiff_arm', -3 - draft_round) ?? undefined,
+          spin_move: getAdjustedValue(data, 'spin_move', -8 - draft_round) ?? undefined,
+          juke_move: getAdjustedValue(data, 'juke_move', -8 - draft_round) ?? undefined,
+          pass_block: getAdjustedValue(data, 'pass_block', -24 - draft_round) ?? undefined,
+          catch_in_traffic: getAdjustedValue(data, 'catch_in_traffic', -19 - draft_round) ?? undefined,
+          spectacular_catch: getAdjustedValue(data, 'spectacular_catch', -12 - draft_round) ?? undefined,
+          short_route_running: getAdjustedValue(data, 'short_route_running', -16 - draft_round) ?? undefined,
+          medium_route_running: getAdjustedValue(data, 'short_route_running', -16 - draft_round) ?? undefined,
+          release: getAdjustedValue(data, 'release', -7 - draft_round) ?? undefined,
+          stamina: getAdjustedValue(data, 'stamina', -2) ?? undefined,
+          return: getAdjustedValue(data, 'return', -1) ?? undefined,
+          injury: getAdjustedValue(data, 'injury', -1) ?? undefined,
+        }
+
+        break
+      }
+      case POSTION_CODE.TightEnd: {
+        const data = rawData as TightEndDto
+
+        adjustedData = {
+          ...adjustedData,
+          speed: getAdjustedValue(data, 'speed', 0) ?? undefined,
+          acceleration: getAdjustedValue(data, 'acceleration', 2) ?? undefined,
+          agility: getAdjustedValue(data, 'agility', 1) ?? undefined,
+          change_of_direction: getAdjustedValue(data, 'change_of_direction', 3) ?? undefined,
+          strength: getAdjustedValue(data, 'strength', -3) ?? undefined,
+          awareness: getAdjustedValue(data, 'awareness', -4) ?? undefined,
+          break_tackle: getAdjustedValue(data, 'break_tackle', -2 - draft_round) ?? undefined,
+          catch_in_traffic: getAdjustedValue(data, 'catch_in_traffic', -1 - draft_round) ?? undefined,
+          spectacular_catch: getAdjustedValue(data, 'spectacular_catch', 0 - draft_round) ?? undefined,
+          release: getAdjustedValue(data, 'release', 2 - draft_round) ?? undefined,
+          pass_block: getAdjustedValue(data, 'pass_block', -14 - draft_round) ?? undefined,
+          pass_block_power: getAdjustedValue(data, 'pass_block_power', -14 - draft_round) ?? undefined,
+          pass_block_finesse: getAdjustedValue(data, 'pass_block_finesse', -10 - draft_round) ?? undefined,
+          run_block: getAdjustedValue(data, 'run_block', -11 - draft_round) ?? undefined,
+          run_block_power: getAdjustedValue(data, 'run_block_power', -12 - draft_round) ?? undefined,
+          run_block_finesse: getAdjustedValue(data, 'run_block_finesse', -16 - draft_round) ?? undefined,
+          lead_block: getAdjustedValue(data, 'lead_blocking', -4 - draft_round) ?? undefined,
+          impact_block: getAdjustedValue(data, 'impact_blocking', 7 - draft_round) ?? undefined,
+          jumping: getAdjustedValue(data, 'jumping', 3) ?? undefined,
+          carrying: getAdjustedValue(data, 'carrying', -1 - draft_round) ?? undefined,
+          trucking: getAdjustedValue(data, 'trucking', 0 - draft_round) ?? undefined,
+          catching: getAdjustedValue(data, 'catching', 0 - draft_round) ?? undefined,
+          stiff_arm: getAdjustedValue(data, 'stiff_arm', 0 - draft_round) ?? undefined,
+          spin_move: getAdjustedValue(data, 'spin_move', -1 - draft_round) ?? undefined,
+          juke_move: getAdjustedValue(data, 'juke_move', -1 - draft_round) ?? undefined,
+          short_route_running: getAdjustedValue(data, 'short_route_running', -12 - draft_round) ?? undefined,
+          medium_route_running: getAdjustedValue(data, 'medium_route_running', -13 - draft_round) ?? undefined,
+          deep_route_running: getAdjustedValue(data, 'deep_route_running', -6 - draft_round) ?? undefined,
+          stamina: getAdjustedValue(data, 'stamina', -1) ?? undefined,
+          injury: getAdjustedValue(data, 'injury', -1) ?? undefined,
+        }
+
+        break
+      }
+
+      case POSTION_CODE.LeftTackle: {
+        const data = rawData as LeftTackleDto
+
+        adjustedData = {
+          ...adjustedData,
+          age: calculatedAge,
+          speed: getAdjustedValue(data, 'speed', -6) ?? undefined,
+          acceleration: getAdjustedValue(data, 'acceleration', -5) ?? undefined,
+          awareness: getAdjustedValue(data, 'awareness', -8 - draft_round) ?? undefined,
+          agility: getAdjustedValue(data, 'agility', -13) ?? undefined,
+          strength: getAdjustedValue(data, 'strength', 1) ?? undefined,
+          lead_block: getAdjustedValue(data, 'lead_block', -9 - draft_round) ?? undefined,
+          impact_block: getAdjustedValue(data, 'lead_block', -6 - draft_round) ?? undefined, // note: based on same 'lead_block' field as original
+          run_block: getAdjustedValue(data, 'run_block', -15 - draft_round) ?? undefined,
+          pass_block: getAdjustedValue(data, 'pass_block', -13 - draft_round) ?? undefined,
+          pass_block_finesse: getAdjustedValue(data, 'pass_block_finesse', -14 - draft_round) ?? undefined,
+          run_block_power: getAdjustedValue(data, 'run_block_power', -18 - draft_round) ?? undefined,
+          run_block_finesse: getAdjustedValue(data, 'run_block_finesse', -14 - draft_round) ?? undefined,
+          stamina: getAdjustedValue(data, 'stamina', -1) ?? undefined,
+          injury: getAdjustedValue(data, 'injury', -1) ?? undefined,
+        }
+
+        break
+      }
+      case POSTION_CODE.RightTackle: {
+        const data = rawData as RightTackleDto
+
+        adjustedData = {
+          ...adjustedData,
+          age: calculatedAge,
+          speed: getAdjustedValue(data, 'speed', -6) ?? undefined,
+          acceleration: getAdjustedValue(data, 'acceleration', -5) ?? undefined,
+          awareness: getAdjustedValue(data, 'awareness', -8 - draft_round) ?? undefined,
+          agility: getAdjustedValue(data, 'agility', -13) ?? undefined,
+          strength: getAdjustedValue(data, 'strength', 1) ?? undefined,
+          lead_block: getAdjustedValue(data, 'lead_block', -9 - draft_round) ?? undefined,
+          impact_block: getAdjustedValue(data, 'lead_block', -6 - draft_round) ?? undefined, // double-check if 'impact_block' should be separate
+          run_block: getAdjustedValue(data, 'run_block', -15 - draft_round) ?? undefined,
+          pass_block: getAdjustedValue(data, 'pass_block', -13 - draft_round) ?? undefined,
+          pass_block_finesse: getAdjustedValue(data, 'pass_block_finesse', -14 - draft_round) ?? undefined,
+          run_block_power: getAdjustedValue(data, 'run_block_power', -18 - draft_round) ?? undefined,
+          run_block_finesse: getAdjustedValue(data, 'run_block_finesse', -14 - draft_round) ?? undefined,
+          stamina: getAdjustedValue(data, 'stamina', -1) ?? undefined,
+          injury: getAdjustedValue(data, 'injury', -1) ?? undefined,
+        }
+
+        break
+      }
+
+      case POSTION_CODE.LeftGuard: {
+        const data = rawData as LeftGaurdDto
+
+        adjustedData = {
+          ...adjustedData,
+          age: calculatedAge,
+          speed: getAdjustedValue(data, 'speed', 0) ?? undefined,
+          acceleration: getAdjustedValue(data, 'acceleration', -3) ?? undefined,
+          awareness: getAdjustedValue(data, 'awareness', -9 - draft_round) ?? undefined,
+          agility: getAdjustedValue(data, 'agility', -12) ?? undefined,
+          lead_block: getAdjustedValue(data, 'lead_block', -8 - draft_round) ?? undefined,
+          impact_block: getAdjustedValue(data, 'impact_blocking', -3 - draft_round) ?? undefined,
+          run_block: getAdjustedValue(data, 'run_blocking', -16 - draft_round) ?? undefined,
+          pass_block: getAdjustedValue(data, 'pass_blocking', -12 - draft_round) ?? undefined,
+          pass_block_power: getAdjustedValue(data, 'pass_block_power', -15 - draft_round) ?? undefined,
+          pass_block_finesse: getAdjustedValue(data, 'pass_block_finesse', -16 - draft_round) ?? undefined,
+          run_block_power: getAdjustedValue(data, 'run_block_power', -16 - draft_round) ?? undefined,
+          run_block_finesse: getAdjustedValue(data, 'run_block_finesse', -16 - draft_round) ?? undefined,
+          stamina: getAdjustedValue(data, 'stamina', -1) ?? undefined,
+          injury: getAdjustedValue(data, 'injury', -1) ?? undefined,
+        }
+
+        break
+      }
+      case POSTION_CODE.RightGuard: {
+        const data = rawData as RightGaurdDto
+
+        adjustedData = {
+          ...adjustedData,
+          age: calculatedAge,
+          speed: getAdjustedValue(data, 'speed', 0) ?? undefined,
+          acceleration: getAdjustedValue(data, 'acceleration', -3) ?? undefined,
+          awareness: getAdjustedValue(data, 'awareness', -9 - draft_round) ?? undefined,
+          agility: getAdjustedValue(data, 'agility', -12) ?? undefined,
+          lead_block: getAdjustedValue(data, 'lead_block', -8 - draft_round) ?? undefined,
+          impact_block: getAdjustedValue(data, 'impact_blocking', -3 - draft_round) ?? undefined,
+          run_block: getAdjustedValue(data, 'run_blocking', -16 - draft_round) ?? undefined,
+          pass_block: getAdjustedValue(data, 'pass_blocking', -12 - draft_round) ?? undefined,
+          pass_block_power: getAdjustedValue(data, 'pass_block_power', -15 - draft_round) ?? undefined,
+          pass_block_finesse: getAdjustedValue(data, 'pass_block_finesse', -16 - draft_round) ?? undefined,
+          run_block_power: getAdjustedValue(data, 'run_block_power', -16 - draft_round) ?? undefined,
+          run_block_finesse: getAdjustedValue(data, 'run_block_finesse', -16 - draft_round) ?? undefined,
+          stamina: getAdjustedValue(data, 'stamina', -1) ?? undefined,
+          injury: getAdjustedValue(data, 'injury', -1) ?? undefined,
+        }
+
+        break
+      }
+      case POSTION_CODE.LeftEnd: {
+        const data = rawData as LeftEndDTO
+
+        adjustedData = {
+          ...adjustedData,
+          age: calculatedAge,
+          speed: getAdjustedValue(data, 'speed', -4) ?? undefined,
+          acceleration: getAdjustedValue(data, 'acceleration', -2) ?? undefined,
+          agility: getAdjustedValue(data, 'agility', -14) ?? undefined,
+          awareness: getAdjustedValue(data, 'awareness', -15 - draft_round) ?? undefined,
+          strength: getAdjustedValue(data, 'strength', -2) ?? undefined,
+          tackling: getAdjustedValue(data, 'tackling', -13 - draft_round) ?? undefined,
+          hit_power: getAdjustedValue(data, 'hit_power', -6) ?? undefined,
+          power_moves: getAdjustedValue(data, 'power_moves', -13 - draft_round) ?? undefined,
+          finesse_moves: getAdjustedValue(data, 'finesse_moves', -8 - draft_round) ?? undefined,
+          block_shedding: getAdjustedValue(data, 'block_shed', -16 - draft_round) ?? undefined,
+          pursuit: getAdjustedValue(data, 'pursuit', -16 - draft_round) ?? undefined,
+          play_recognition: getAdjustedValue(data, 'play_recognition', -24 - draft_round) ?? undefined,
+          stamina: getAdjustedValue(data, 'stamina', -1) ?? undefined,
+          injury: getAdjustedValue(data, 'injury', -1) ?? undefined,
+        }
+
+        break
+      }
+      case POSTION_CODE.RightEnd: {
+        const data = rawData as RightEndDTO
+
+        adjustedData = {
+          ...adjustedData,
+          age: calculatedAge,
+          speed: getAdjustedValue(data, 'speed', -4) ?? undefined,
+          acceleration: getAdjustedValue(data, 'acceleration', -2) ?? undefined,
+          agility: getAdjustedValue(data, 'agility', -14) ?? undefined,
+          awareness: getAdjustedValue(data, 'awareness', -15 - draft_round) ?? undefined,
+          strength: getAdjustedValue(data, 'strength', -2) ?? undefined,
+          tackling: getAdjustedValue(data, 'tackling', -13 - draft_round) ?? undefined,
+          hit_power: getAdjustedValue(data, 'hit_power', -6) ?? undefined,
+          power_moves: getAdjustedValue(data, 'power_moves', -13 - draft_round) ?? undefined,
+          finesse_moves: getAdjustedValue(data, 'finesse_moves', -8 - draft_round) ?? undefined,
+          block_shedding: getAdjustedValue(data, 'block_shed', -16 - draft_round) ?? undefined,
+          pursuit: getAdjustedValue(data, 'pursuit', -16 - draft_round) ?? undefined,
+          play_recognition: getAdjustedValue(data, 'play_recognition', -24 - draft_round) ?? undefined,
+          stamina: getAdjustedValue(data, 'stamina', -1) ?? undefined,
+          injury: getAdjustedValue(data, 'injury', -1) ?? undefined,
+        }
+
+        break
+      }
+      case POSTION_CODE.LeftOutside_linebacker_above_245_lbs: {
+        const data = rawData as Left_Outside_linebacker_above_245_lbsDTO
+
+        adjustedData = {
+          ...adjustedData,
+          age: calculatedAge,
+          speed: getAdjustedValue(data, 'speed', -4) ?? undefined,
+          acceleration: getAdjustedValue(data, 'acceleration', -2) ?? undefined,
+          agility: getAdjustedValue(data, 'agility', -14) ?? undefined,
+          awareness: getAdjustedValue(data, 'awareness', -15 - draft_round) ?? undefined,
+          strength: getAdjustedValue(data, 'strength', -2) ?? undefined,
+          tackling: getAdjustedValue(data, 'tackling', -13 - draft_round) ?? undefined,
+          hit_power: getAdjustedValue(data, 'hit_power', -6) ?? undefined,
+          power_moves: getAdjustedValue(data, 'power_moves', -13 - draft_round) ?? undefined,
+          finesse_moves: getAdjustedValue(data, 'finesse_moves', -8 - draft_round) ?? undefined,
+          block_shedding: getAdjustedValue(data, 'block_shed', -16 - draft_round) ?? undefined,
+          pursuit: getAdjustedValue(data, 'pursuit', -16 - draft_round) ?? undefined,
+          play_recognition: getAdjustedValue(data, 'play_recognition', -24 - draft_round) ?? undefined,
+          stamina: getAdjustedValue(data, 'stamina', -1) ?? undefined,
+          injury: getAdjustedValue(data, 'injury', -1) ?? undefined,
+        }
+
+        break
+      }
+      case POSTION_CODE.RightOutside_linebacker_above_245lbs: {
+        const data = rawData as Right_Outside_linebacker_above_245lbsDTO
+
+        adjustedData = {
+          ...adjustedData,
+          age: calculatedAge,
+          speed: getAdjustedValue(data, 'speed', -4) ?? undefined,
+          acceleration: getAdjustedValue(data, 'acceleration', -2) ?? undefined,
+          agility: getAdjustedValue(data, 'agility', -14) ?? undefined,
+          awareness: getAdjustedValue(data, 'awareness', -15 - draft_round) ?? undefined,
+          strength: getAdjustedValue(data, 'strength', -2) ?? undefined,
+          tackling: getAdjustedValue(data, 'tackling', -13 - draft_round) ?? undefined,
+          hit_power: getAdjustedValue(data, 'hit_power', -6) ?? undefined,
+          power_moves: getAdjustedValue(data, 'power_moves', -13 - draft_round) ?? undefined,
+          finesse_moves: getAdjustedValue(data, 'finesse_moves', -8 - draft_round) ?? undefined,
+          block_shedding: getAdjustedValue(data, 'block_shed', -16 - draft_round) ?? undefined,
+          pursuit: getAdjustedValue(data, 'pursuit', -16 - draft_round) ?? undefined,
+          play_recognition: getAdjustedValue(data, 'play_recognition', -24 - draft_round) ?? undefined,
+          stamina: getAdjustedValue(data, 'stamina', -1) ?? undefined,
+          injury: getAdjustedValue(data, 'injury', -1) ?? undefined,
+        }
+
+        break
+      }
+      case POSTION_CODE.DefensiveTackle: {
+        const data = rawData as DefensiveTackleDto
+
+        adjustedData = {
+          ...adjustedData,
+          age: calculatedAge,
+          speed: getAdjustedValue(data, 'speed', -1) ?? undefined,
+          acceleration: getAdjustedValue(data, 'acceleration', 0) ?? undefined,
+          agility: getAdjustedValue(data, 'agility', -5) ?? undefined,
+          awareness: getAdjustedValue(data, 'awareness', -13 - draft_round) ?? undefined,
+          strength: getAdjustedValue(data, 'strength', 0) ?? undefined,
+          tackling: getAdjustedValue(data, 'tackling', -11 - draft_round) ?? undefined,
+          hit_power: getAdjustedValue(data, 'hit_power', -11) ?? undefined,
+          power_moves: getAdjustedValue(data, 'power_moves', -8 - draft_round) ?? undefined,
+          finesse_moves: getAdjustedValue(data, 'finesse_moves', -9 - draft_round) ?? undefined,
+          block_shedding: getAdjustedValue(data, 'block_shedding', -10 - draft_round) ?? undefined,
+          pursuit: getAdjustedValue(data, 'pursuit', -15 - draft_round) ?? undefined,
+          play_recognition: getAdjustedValue(data, 'play_recognition', -18 - draft_round) ?? undefined,
+          stamina: getAdjustedValue(data, 'stamina', -3) ?? undefined,
+          injury: getAdjustedValue(data, 'injury', -2) ?? undefined,
+        }
+
+        break
+      }
+      case POSTION_CODE.LeftOutside_linebacker_below_245lbs: {
+        const data = rawData as LeftOutside_linebacker_below_245lbsDTO
+
+        adjustedData = {
+          ...adjustedData,
+          age: calculatedAge,
+          speed: getAdjustedValue(data, 'speed', -4) ?? undefined,
+          acceleration: getAdjustedValue(data, 'acceleration', -2) ?? undefined,
+          agility: getAdjustedValue(data, 'agility', -2) ?? undefined,
+          change_of_direction: 'change_of_direction' in data ? getAdjustedValue(data, 'change_of_direction', -4) : undefined,
+          awareness: getAdjustedValue(data, 'awareness', -9 - draft_round) ?? undefined,
+          strength: getAdjustedValue(data, 'strength', -7) ?? undefined,
+          jumping: 'jumping' in data ? getAdjustedValue(data, 'jumping', -12) : undefined,
+          tackling: getAdjustedValue(data, 'tackling', -7 - draft_round) ?? undefined,
+          hit_power: getAdjustedValue(data, 'hit_power', -3) ?? undefined,
+          power_moves: getAdjustedValue(data, 'power_moves', -21 - draft_round) ?? undefined,
+          finesse_moves: getAdjustedValue(data, 'finesse_moves', -25 - draft_round) ?? undefined,
+          block_shedding: getAdjustedValue(data, 'block_shedding', -6 - draft_round) ?? undefined,
+          pursuit: getAdjustedValue(data, 'pursuit', -6 - draft_round) ?? undefined,
+          play_recognition: getAdjustedValue(data, 'play_recognition', -18 - draft_round) ?? undefined,
+          man_coverage: 'man_coverage' in data ? getAdjustedValue(data, 'man_coverage', -25 - draft_round) : undefined,
+          zone_coverage: 'zone_coverage' in data ? getAdjustedValue(data, 'zone_coverage', -22 - draft_round) : undefined,
+          stamina: getAdjustedValue(data, 'stamina', -1) ?? undefined,
+          injury: getAdjustedValue(data, 'injury', -1) ?? undefined,
+        }
+
+        break
+      }
+      case POSTION_CODE.RightOutside_linebacker_below_245lbs: {
+        const data = rawData as RightOutside_linebacker_below_245lbsDTO;
+
+        adjustedData = {
+          ...adjustedData,
+          age: calculatedAge,
+          speed: getAdjustedValue(data, 'speed', -4) ?? undefined,
+          acceleration: getAdjustedValue(data, 'acceleration', -2) ?? undefined,
+          agility: getAdjustedValue(data, 'agility', -2) ?? undefined,
+          change_of_direction: 'change_of_direction' in data ? getAdjustedValue(data, 'change_of_direction', -4) : undefined,
+          awareness: getAdjustedValue(data, 'awareness', -9 - draft_round) ?? undefined,
+          strength: getAdjustedValue(data, 'strength', -7) ?? undefined,
+          jumping: 'jumping' in data ? getAdjustedValue(data, 'jumping', -12) : undefined,
+          tackling: getAdjustedValue(data, 'tackling', -7 - draft_round) ?? undefined,
+          hit_power: getAdjustedValue(data, 'hit_power', -3) ?? undefined,
+          power_moves: getAdjustedValue(data, 'power_moves', -21 - draft_round) ?? undefined,
+          finesse_moves: getAdjustedValue(data, 'finesse_moves', -25 - draft_round) ?? undefined,
+          block_shedding: getAdjustedValue(data, 'block_shedding', -6 - draft_round) ?? undefined,
+          pursuit: getAdjustedValue(data, 'pursuit', -6 - draft_round) ?? undefined,
+          play_recognition: getAdjustedValue(data, 'play_recognition', -18 - draft_round) ?? undefined,
+          man_coverage: 'man_coverage' in data ? getAdjustedValue(data, 'man_coverage', -25 - draft_round) : undefined,
+          zone_coverage: 'zone_coverage' in data ? getAdjustedValue(data, 'zone_coverage', -22 - draft_round) : undefined,
+          stamina: getAdjustedValue(data, 'stamina', -1) ?? undefined,
+          injury: getAdjustedValue(data, 'injury', -1) ?? undefined,
+        }
+
+        break;
+      }
+      case POSTION_CODE.CornerBack: {
+        const data = rawData as CornerBackDto;
+
+        adjustedData = {
+          ...adjustedData,
+          age: calculatedAge,
+          speed: getAdjustedValue(data, 'speed', -4) ?? undefined,
+          acceleration: getAdjustedValue(data, 'acceleration', 0) ?? undefined,
+          agility: getAdjustedValue(data, 'agility', 0) ?? undefined,
+          change_of_direction: getAdjustedValue(data, 'change_of_direction', -2) ?? undefined,
+          catching: 'catching' in data ? getAdjustedValue(data, 'catching', -19 - draft_round) : undefined,
+          awareness: getAdjustedValue(data, 'awareness', -7 - draft_round) ?? undefined,
+          strength: getAdjustedValue(data, 'strength', -8) ?? undefined,
+          jumping: getAdjustedValue(data, 'jumping', -1) ?? undefined,
+          tackling: 'tackling' in data ? getAdjustedValue(data, 'tackling', -8 - draft_round) : undefined,
+          hit_power: getAdjustedValue(data, 'hit_power', -10) ?? undefined,
+          pursuit: getAdjustedValue(data, 'pursuit', -13 - draft_round) ?? undefined,
+          play_recognition: getAdjustedValue(data, 'play_recognition', -15 - draft_round) ?? undefined,
+          man_coverage: getAdjustedValue(data, 'man_coverage', -13 - draft_round) ?? undefined,
+          zone_coverage: getAdjustedValue(data, 'zone_coverage', -13 - draft_round) ?? undefined,
+          press: getAdjustedValue(data, 'press', -10 - draft_round) ?? undefined,
+          return: getAdjustedValue(data, 'return', 0) ?? undefined,
+          stamina: getAdjustedValue(data, 'stamina', -1) ?? undefined,
+          injury: getAdjustedValue(data, 'injury', -1) ?? undefined,
+        }
+
+        break;
+      }
+      case POSTION_CODE.Safety: {
+        const data = rawData as SafetyDto;
+
+        adjustedData = {
+          ...adjustedData,
+          age: calculatedAge,
+          speed: getAdjustedValue(data, 'speed', -1) ?? undefined,
+          acceleration: getAdjustedValue(data, 'acceleration', -1) ?? undefined,
+          agility: getAdjustedValue(data, 'agility', 1) ?? undefined,
+          change_of_direction: getAdjustedValue(data, 'change_of_direction', -9) ?? undefined,
+          catching: getAdjustedValue(data, 'catching', -22 - draft_round) ?? undefined,
+          awareness: getAdjustedValue(data, 'awareness', -8 - draft_round) ?? undefined,
+          strength: getAdjustedValue(data, 'strength', -11) ?? undefined,
+          block_shedding: 'block_shed' in data ? getAdjustedValue(data, 'block_shed', -8 - draft_round) : undefined,
+          jumping: getAdjustedValue(data, 'jumping', -6) ?? undefined,
+          tackling: getAdjustedValue(data, 'tackling', -7 - draft_round) ?? undefined,
+          hit_power: getAdjustedValue(data, 'hit_power', -8) ?? undefined,
+          pursuit: getAdjustedValue(data, 'pursuit', -11 - draft_round) ?? undefined,
+          play_recognition: getAdjustedValue(data, 'play_recognition', -18 - draft_round) ?? undefined,
+          man_coverage: getAdjustedValue(data, 'man_coverage', -6 - draft_round) ?? undefined,
+          zone_coverage: getAdjustedValue(data, 'zone_coverage', -15 - draft_round) ?? undefined,
+          press: getAdjustedValue(data, 'press', -6 - draft_round) ?? undefined,
+          stamina: getAdjustedValue(data, 'stamina', -1) ?? undefined,
+          injury: getAdjustedValue(data, 'injury', -1) ?? undefined,
+        };
+
+        break;
+      }
+      //---- FB,PUNTER REAMINING
     }
 
     // Remove undefined values (but keep 0 values)
@@ -257,7 +697,7 @@ export class PlayerOcrService {
         messages: [
           {
             role: 'system',
-            content: 'Extract ONLY the player bio information visible in the image. Return ONLY as JSON with these exact keys: NAME, POS, OVR, CLASS, HEIGHT, WEIGHT, HOMETOWN, REASON. If information is not visible in the image, set those fields to null or empty string.'
+            content: 'Extract ONLY the player bio information visible in the image. Return ONLY as JSON with these exact keys: NAME (Only Extract Full Name), POS, OVR, CLASS, HEIGHT, WEIGHT, HOMETOWN, REASON. If information is not visible in the image, set those fields to null or empty string.'
           },
           {
             role: 'user',
@@ -287,13 +727,13 @@ export class PlayerOcrService {
   }
 
   private async identifyImageType(file: Express.Multer.File): Promise<{
-    type: 'bio' | 'attribute';
+    type: 'PLAYERS LEAVING' | 'Ratings';
     data: any;
   }> {
     const data = await this.extractStructuredPlayerData(file);
     const bioCriteria = data.NAME && data.POS && data.OVR &&
       (data.HEIGHT || data.WEIGHT || data.HOMETOWN || data.CLASS);
-    return bioCriteria ? { type: 'bio', data } : { type: 'attribute', data };
+    return bioCriteria ? { type: 'PLAYERS LEAVING', data } : { type: 'Ratings', data };
   }
 
   async processPlayerImage(files: Express.Multer.File[], userId: number): Promise<any> {
@@ -308,19 +748,23 @@ export class PlayerOcrService {
       })
     );
 
-    const bioImageResult = fileProcessingResults.find(result => result.type === 'bio');
+    const bioImageResult = fileProcessingResults.find(result => result.type === 'PLAYERS LEAVING');
     if (!bioImageResult) {
       throw new BadRequestException('Missing required player bio image');
     }
 
     const primaryFile = bioImageResult.file;
+
     const bioData = bioImageResult.data;
+
     const attributeFiles = fileProcessingResults
       .filter(result => result !== bioImageResult)
       .map(result => result.file);
 
     const queryRunner = this.playerRepo.manager.connection.createQueryRunner();
+
     await queryRunner.connect();
+
     await queryRunner.startTransaction();
 
     try {
@@ -396,7 +840,6 @@ export class PlayerOcrService {
 
       const queueResults = await Promise.allSettled(uploadPromises);
 
-      // Get the completed jobs
       const completedJobs = await Promise.all(
         queueResults
           .filter(r => r.status === 'fulfilled')
