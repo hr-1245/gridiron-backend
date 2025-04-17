@@ -95,6 +95,7 @@ export class RunningBackDto {
   @ApiProperty() @IsNumber() break_tackle: number;
   @ApiProperty() @IsNumber() carrying: number;
   @ApiProperty() @IsNumber() trucking: number;
+  @ApiProperty() @IsNumber() pass_block: number;
   @ApiProperty() @IsNumber() ball_carrier_vision: number;
   @ApiProperty() @IsNumber() catching: number;
   @ApiProperty() @IsNumber() stiff_arm: number;
@@ -311,6 +312,7 @@ export class LeftEndDTO {
   @ApiProperty() @IsNumber() stamina: number;
   @ApiProperty() @IsNumber() injury: number;
 }
+
 export class RightEndDTO {
   @ApiProperty() @IsNumber() age: number;
   @ApiProperty() @IsNumber() speed: number;
