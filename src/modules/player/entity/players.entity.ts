@@ -23,8 +23,8 @@ export class PlayerEntity extends baseEntity {
     @Column({ nullable: true, type: 'enum', enum: COLLAGE_AGE_ENUM })
     playerClass: COLLAGE_AGE_ENUM
 
-    @Column({ nullable: true, type: 'int' })
-    height: number | null
+    @Column({ nullable: true, type: 'text' })
+    height: string | null
 
     @Column({ nullable: true, type: 'int' })
     weight: number | null
