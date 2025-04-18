@@ -28,11 +28,8 @@ import { bullService } from '../bull/services/bull.service';
     ]),
     CloudinaryModule,
     BullModule.registerQueue({
-      name: 'AttributeProcessing',
+      name: 'imageProcessing',
     }),
-    BullModule.registerQueue({
-      name: 'PrimaryImageProcessing'
-    })
   ],
   controllers: [PlayerOcrController],
   providers: [playerService, PlayerOcrService, PlayerDataService, bullService],
