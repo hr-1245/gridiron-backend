@@ -25,7 +25,7 @@ export class PlayerOcrService {
     private readonly playerPositionRepo: Repository<PlayerPositionEntity>,
     @InjectRepository(PlayerAttributesEntity)
     private readonly playerAttrRepo: Repository<PlayerAttributesEntity>,
-    @InjectQueue('AttributeProcessing')
+    @InjectQueue('imageProcessing')
     private readonly imageQueue: Queue,
     private readonly cloudinaryService: CloudinaryService,
     private readonly configService: ConfigService,
