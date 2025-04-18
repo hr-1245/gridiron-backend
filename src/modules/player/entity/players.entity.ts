@@ -41,7 +41,7 @@ export class PlayerEntity extends baseEntity {
 
     @OneToMany(() => PlayerAttributesEntity, attr => attr.player, { cascade: true })
     attributes: PlayerAttributesEntity[];
- 
+
 }
 
 
@@ -127,6 +127,12 @@ export class PlayerAttributesEntity extends baseEntity {
 
     @Column({ nullable: true })
     spin_move: number; // 'SPM'
+
+    @Column({ nullable: true })
+    kick_power: number; // 'SPM'
+
+    @Column({ nullable: true })
+    kick_accuracy: number; // 'SPM'
 
     @Column({ nullable: true })
     juke_move: number; // 'JKM'

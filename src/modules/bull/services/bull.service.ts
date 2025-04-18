@@ -12,11 +12,10 @@ import { PlayerEntity, PlayerAttributesEntity } from 'src/modules/player/entity/
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { POSTION_CODE } from 'src/types/enums/roles';
-import { CloudinaryService } from 'src/modules/cloudinary/cloudinary.service';
 
 @Injectable()
 @Processor('imageProcessing')
-export class ProcessImageJob {
+export class bullService {
   private readonly positionPrompts = {
     [POSTION_CODE.QuarterBack]: `Extract ONLY these numeric QB attributes from the image and return in exact format:
     {
@@ -35,7 +34,7 @@ export class ProcessImageJob {
       "break_tackle": number,  // Also known as "Break Tackle" in image
       "trucking": number,
       "carrying": number,
-      "ball_carrier_vision": number,  // Also known as "BC Vision" in image
+      "ball_carrier_vision": number,  // Also known as "Ball Carrier Vision" in image
       "spin_move": number,  // Also known as "Spin Move" in image
       "juke_move": number,  // Also known as "Juke Move" in image
       "stamina": number,
@@ -55,13 +54,13 @@ export class ProcessImageJob {
       "break_tackle": number,  // Also known as "Break Tackle" in image
       "carrying": number,
       "trucking": number,
-      "ball_carrier_vision": number,  // Also known as "BC Vision" in image
+      "ball_carrier_vision": number,  // Also known as "Ball Carrier Vision" in image
       "catching": number,
       "stiff_arm": number,  // Also known as "Stiff Arm" in image
       "spin_move": number,  // Also known as "Spin Move" in image
       "juke_move": number,  // Also known as "Juke Move" in image
       "pass_blocking": number,  // Also known as "Pass Block" in image
-      "catch_in_traffic": number,  // Also known as "CIT" in image
+      "catch_in_traffic": number,  // Also known as "Catch In Traffic" in image
       "spectacular_catch": number,  // Also known as "Spectacular Catch" or "SPC" in image
       "short_route_running": number,  // Also known as "Short Route" in image
       "medium_route_running": number,  // Also known as "Medium Route" in image
@@ -82,13 +81,13 @@ export class ProcessImageJob {
       "strength": number,
       "awareness": number,
       "break_tackle": number,  // Also known as "Break Tackle" in image
-      "catch_in_traffic": number,  // Also known as "CIT" in image
+      "catch_in_traffic": number,  // Also known as "Catch In Traffic" in image
       "spectacular_catch": number,  // Also known as "Spectacular Catch" or "SPC" in image
       "release": number,
       "jumping": number,
       "carrying": number,
       "trucking": number,
-      "ball_carrier_vision": number,  // Also known as "BC Vision" in image
+      "ball_carrier_vision": number,  // Also known as "Ball Carrier Vision" in image
       "catching": number,
       "stiff_arm": number,  // Also known as "Stiff Arm" in image
       "spin_move": number,  // Also known as "Spin Move" in image
@@ -113,7 +112,7 @@ export class ProcessImageJob {
       "strength": number,
       "awareness": number,
       "break_tackle": number,  // Also known as "Break Tackle" in image
-      "catch_in_traffic": number,  // Also known as "CIT" in image
+      "catch_in_traffic": number,  // Also known as "Catch In Traffic" in image
       "spectacular_catch": number,  // Also known as "Spectacular Catch" or "SPC" in image
       "release": number,
       "pass_block": number,  // Also known as "Pass Block" in image
@@ -141,7 +140,7 @@ export class ProcessImageJob {
     // TE-specific attributes combining receiving skills with blocking abilities
     Return ONLY the JSON, no explanations or comments. Use the exact attribute names as shown. Only include attributes visible in the image with numeric values.`,
 
-   
+
 
     [POSTION_CODE.DefensiveTackle]: `Extract ONLY these numeric DT attributes in exact format:
     {
@@ -443,49 +442,60 @@ export class ProcessImageJob {
     }
     // ROLB> (heavy) attributes similar to LOLB> but for right side
     Return ONLY the JSON, no explanations or comments. Use the exact attribute names as shown. Only include attributes visible in the image with numeric values.`,
-
-    [POSTION_CODE.FullBack]: `Extract ONLY these numeric FB attributes in exact format:
-    {
-      "speed": number,
-      "acceleration": number,
-      "agility": number,
-      "strength": number,
-      "awareness": number,
-      "carrying": number,
-      "trucking": number,
-      "ball_carrier_vision": number,  // Also known as "BC Vision" in image
-      "catching": number,
-      "pass_blocking": number,  // Also known as "Pass Block" in image
-      "run_blocking": number,  // Also known as "Run Block" in image
-      "lead_blocking": number,  // Also known as "Lead Block" in image
-      "impact_blocking": number,  // Also known as "Impact Block" in image
-      "stamina": number,
-      "injury": number
-    }
-    // FB attributes combining blocking skills with limited rushing/receiving
-    Return ONLY the JSON, no explanations or comments. Use the exact attribute names as shown. Only include attributes visible in the image with numeric values.`,
-
     [POSTION_CODE.Kicker]: `Extract ONLY these numeric K attributes in exact format:
-    {
-      "kick_power": number,  // Also known as "Kick Power" in image
-      "kick_accuracy": number,  // Also known as "Kick Accuracy" in image
-      "awareness": number,
-      "stamina": number,
-      "injury": number
-    }
-    // Kicker-specific attributes focused on kicking skills
-    Return ONLY the JSON, no explanations or comments. Use the exact attribute names as shown. Only include attributes visible in the image with numeric values.`,
+{
+  "kick_power": number,  // Also known as "Kick power" in image
+  "awareness": number,  // Also known as "Awareness" in image
+  "kick_accuracy": number,  // Also known as "Kick accuracy" in image
+  "speed": number,  // Also known as "Speed" in image
+  "acceleration": number,  // Also known as "Acceleration" in image
+  "stamina": number,
+  "injury": number
+}
+// Kicker-specific attributes focused on kicking skills and athleticism
+Return ONLY the JSON, no explanations or comments. Use the exact attribute names as shown. Only include attributes visible in the image with numeric values.`,
 
     [POSTION_CODE.Punter]: `Extract ONLY these numeric P attributes in exact format:
-    {
-      "kick_power": number,  // Also known as "Kick Power" in image
-      "kick_accuracy": number,  // Also known as "Kick Accuracy" in image
-      "awareness": number,
-      "stamina": number,
-      "injury": number
-    }
-    // Punter-specific attributes focused on punting skills
-    Return ONLY the JSON, no explanations or comments. Use the exact attribute names as shown. Only include attributes visible in the image with numeric values.`
+{
+  "kick_power": number,  // Also known as "Kick power"  in image
+  "awareness": number,  // Also known as "Awareness"  in image
+  "kick_accuracy": number,  // Also known as "Kick accuracy"  in image
+  "speed": number,  // Also known as "Speed"  in image
+  "acceleration": number,  // Also known as "Acceleration"  in image
+  "stamina": number,
+  "injury": number
+}
+// Punter-specific attributes focused on punting skills and athleticism
+Return ONLY the JSON, no explanations or comments. Use the exact attribute names as shown. Only include attributes visible in the image with numeric values.`,
+
+    [POSTION_CODE.FullBack]: `Extract ONLY these numeric FB attributes in exact format:
+{
+  "speed": number,  // Also known as "Speed"  in image
+  "acceleration": number,  // Also known as "Acceleration"  in image
+  "agility": number,  // Also known as "Agility"  in image
+  "stamina": number,  // Also known as "Stamina"  in image
+  "change_of_direction": number,  // Also known as "Change of Direction" in image
+  "lead_block": number,  // Also known as "Lead Block" in image
+  "run_block": number,  // Also known as "Run Block" in image
+  "pass_block": number,  // Also known as "Pass Block" in image
+  "pass_block_power": number,  // Also known as "Pass block power" in image
+  "run_block_power": number,  // Also known as "Run block power" in image
+  "pass_block_finesse": number,  // Also known as "Pass block finesse" in image
+  "run_block_finesse": number,  // Also known as "Run block finesse" in image
+  "carrying": number,
+  "catching": number,
+  "catch_in_traffic": number,  // Also known as "Catch in Traffic" in image
+  "short_route_running": number,  // Also known as "Short route running" in image
+  "medium_route_running": number,  // Also known as "Medium route running" in image
+  "injury": number,
+  "strength": number,
+  "impact_blocking": number,  // Also known as "Impact blocking" in image
+  "stiff_arm": number,  // Also known as "Stiff arm" in image
+  "trucking": number,
+  "awareness": number  // Also known as "Awareness  in image
+}
+// Fullback attributes combining blocking skills with rushing/receiving capabilities
+Return ONLY the JSON, no explanations or comments. Use the exact attribute names as shown. Only include attributes visible in the image with numeric values.`
   };
 
   constructor(
@@ -494,10 +504,9 @@ export class ProcessImageJob {
     private readonly playerRepo: Repository<PlayerEntity>,
     @InjectRepository(PlayerAttributesEntity)
     private readonly playerAttrRepo: Repository<PlayerAttributesEntity>,
-    private readonly cloudinaryService: CloudinaryService
   ) { }
 
-  private readonly logger = new Logger(ProcessImageJob.name);
+  private readonly logger = new Logger(bullService.name);
 
   @OnQueueActive()
   onActive(job: Job) {

@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { All_Middle_LinebackersDTO, ConversionDto, ConverstionDataDto, CornerBackDto, DefensiveTackleDto, Left_Outside_linebacker_above_245_lbsDTO, LeftEndDTO, LeftGaurdDto, LeftOutside_linebacker_below_245lbsDTO, LeftTackleDto, QuarterBackDto, Right_Outside_linebacker_above_245lbsDTO, RightEndDTO, RightGaurdDto, RightOutside_linebacker_below_245lbsDTO, RightTackleDto, RunningBackDto, SafetyDto, TightEndDto, WideReceiverDto } from "../dto/convert-manually.dto"
+import { All_Middle_LinebackersDTO, ConversionDto, ConverstionDataDto, CornerBackDto, DefensiveTackleDto, FullBackDto, KickerDto, Left_Outside_linebacker_above_245_lbsDTO, LeftEndDTO, LeftGaurdDto, LeftOutside_linebacker_below_245lbsDTO, LeftTackleDto, PunterDto, QuarterBackDto, Right_Outside_linebacker_above_245lbsDTO, RightEndDTO, RightGaurdDto, RightOutside_linebacker_below_245lbsDTO, RightTackleDto, RunningBackDto, SafetyDto, TightEndDto, WideReceiverDto } from "../dto/convert-manually.dto"
 import { COLLAGE_AGE_ENUM, POSTION_CODE, CollageAgeMapping } from "src/types/enums/roles";
 import { PlayerPositionEntity } from "../entity/player-position.entity";
 import { PlayerAttributesEntity, PlayerEntity } from "../entity/players.entity";
@@ -1208,15 +1208,150 @@ export class playerService {
             message: `Conversion of ${positionCode} Successful`,
             result: cleanedResultS,
           };
+        case POSTION_CODE.Kicker:
 
+          dataobj = rawData as KickerDto
+
+          const convertedDataK = {
+            age: calculatedAge,
+            kick_power: dataobj.kick_power + 0,
+            awareness: dataobj.awareness - 19,
+            kick_accuracy: dataobj.kick_accuracy - 3,
+            speed: dataobj.speed - 8,
+            acceleration: dataobj.acceleration + 7,
+          }
+          const resultK = this.playerAttrRepo.create({
+            player: { id: player.id },
+            age: calculatedAge,
+            kick_power: convertedDataK.kick_power,
+            awareness: convertedDataK.awareness,
+            kick_accuracy: convertedDataK.kick_accuracy,
+            speed: convertedDataK.speed,
+            acceleration: convertedDataK.acceleration,
+          })
+          await this.playerAttrRepo.save(resultK)
+
+          const cleanedResultK = Object.keys(convertedDataK).reduce((acc, key) => {
+            if (resultK[key] !== null && resultK[key] !== undefined) {
+              acc[key] = resultK[key];
+            }
+            return acc;
+          }, {});
+
+          return {
+            message: `Conversion of ${positionCode} Successful`,
+            result: cleanedResultK,
+          }
+        case POSTION_CODE.Punter:
+
+          dataobj = rawData as PunterDto
+
+          const convertedDataP = {
+            age: calculatedAge,
+            kick_power: dataobj.kick_power + 0,
+            awareness: dataobj.awareness - 21,
+            kick_accuracy: dataobj.kick_accuracy - 3,
+            speed: dataobj.speed - 7,
+            acceleration: dataobj.acceleration - 7,
+          }
+          const resultP = this.playerAttrRepo.create({
+            player: { id: player.id },
+            age: calculatedAge,
+            kick_power: convertedDataP.kick_power,
+            awareness: convertedDataP.awareness,
+            kick_accuracy: convertedDataP.kick_accuracy,
+            speed: convertedDataP.speed,
+            acceleration: convertedDataP.acceleration,
+          })
+          await this.playerAttrRepo.save(resultP)
+
+          const cleanedResultP = Object.keys(convertedDataP).reduce((acc, key) => {
+            if (resultP[key] !== null && resultP[key] !== undefined) {
+              acc[key] = resultP[key];
+            }
+            return acc;
+          }, {});
+
+          return {
+            message: `Conversion of ${positionCode} Successful`,
+            result: cleanedResultP,
+          }
+        case POSTION_CODE.FullBack:
+
+          dataobj = rawData as FullBackDto
+
+          const convertedDataFB = {
+            age: calculatedAge,
+            speed: dataobj.speed + 5,
+            acceleration: dataobj.acceleration - 4,
+            agility: dataobj.agility + 3,
+            stamina: dataobj.stamina - 1,
+            change_of_direction: dataobj.change_of_direction + 1,
+            lead_block: dataobj.lead_block - 8,
+            run_block: dataobj.run_block - 12,
+            pass_block: dataobj.pass_block - 15,
+            pass_block_power: dataobj.pass_block_power - 6,
+            run_block_power: dataobj.run_block_power - 1,
+            pass_block_finesse: dataobj.pass_block_finesse - 8,
+            run_block_finesse: dataobj.run_block_finesse - 4,
+            carrying: dataobj.carrying - 7,
+            catching: dataobj.catching - 1,
+            catch_in_traffic: dataobj.catch_in_traffic + 19,
+            short_route_running: dataobj.short_route_running - 10,
+            medium_route_running: dataobj.medium_route_running - 10,
+            injury: dataobj.injury - 1,
+            strength: dataobj.strength + 4,
+            impact_block: dataobj.impact_blocking - 4,
+            stiff_arm: dataobj.stiff_arm + 8,
+            trucking: dataobj.trucking - 1,
+            awareness: dataobj.awareness - 3,
+          }
+          const ResultFB = this.playerAttrRepo.create({
+            player: { id: player.id },
+            age: calculatedAge,
+            speed: convertedDataFB.speed,
+            acceleration: convertedDataFB.acceleration,
+            agility: convertedDataFB.agility,
+            stamina: convertedDataFB.stamina,
+            change_of_direction: convertedDataFB.change_of_direction,
+            lead_block: convertedDataFB.lead_block,
+            run_block: convertedDataFB.run_block,
+            pass_block: convertedDataFB.pass_block,
+            pass_block_power: convertedDataFB.pass_block_power,
+            run_block_power: convertedDataFB.run_block_power,
+            pass_block_finesse: convertedDataFB.pass_block_finesse,
+            run_block_finesse: convertedDataFB.run_block_finesse,
+            carrying: convertedDataFB.carrying,
+            catching: convertedDataFB.catching,
+            catch_in_traffic: convertedDataFB.catch_in_traffic,
+            short_route_running: convertedDataFB.short_route_running,
+            medium_route_running: convertedDataFB.medium_route_running,
+            injury: convertedDataFB.injury,
+            strength: convertedDataFB.strength,
+            stiff_arm: convertedDataFB.stiff_arm,
+            trucking: convertedDataFB.trucking,
+            awareness: convertedDataFB.awareness,
+          })
+          await this.playerAttrRepo.save(ResultFB)
+
+          const cleanedResultFB = Object.keys(convertedDataFB).reduce((acc, key) => {
+            if (ResultFB[key] !== null && ResultFB[key] !== undefined) {
+              acc[key] = ResultFB[key];
+            }
+            return acc;
+          }, {});
+
+          return {
+            message: `Conversion of ${positionCode} Successful`,
+            result: cleanedResultFB,
+          }
         default:
-          throw new Error('Invalid Position Code')
+          throw new Error('Invalid Position Code');
+
       }
     }
-
     catch (error) {
       throw new Error(error.message)
     }
   }
-
 }
