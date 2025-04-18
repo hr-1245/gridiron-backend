@@ -19,15 +19,21 @@ export class PlayerOcrService {
   constructor(
     @InjectRepository(PlayerEntity)
     private readonly playerRepo: Repository<PlayerEntity>,
+
     @InjectRepository(PlayerImageEntity)
     private readonly playerImageRepo: Repository<PlayerImageEntity>,
+
     @InjectRepository(PlayerPositionEntity)
     private readonly playerPositionRepo: Repository<PlayerPositionEntity>,
+
     @InjectRepository(PlayerAttributesEntity)
     private readonly playerAttrRepo: Repository<PlayerAttributesEntity>,
+
     @InjectQueue('imageProcessing')
     private readonly imageQueue: Queue,
+
     private readonly cloudinaryService: CloudinaryService,
+
     private readonly configService: ConfigService,
   ) {
     this.openAI = new OpenAI({
@@ -35,13 +41,30 @@ export class PlayerOcrService {
     });
   }
 
-  private parseHeightString(heightStr: string): number | null {
+  private parseHeightString(heightStr: string): string | null {
     if (!heightStr) return null;
-    const match = heightStr.match(/(\d+)[']\s*(\d+)?/);
-    if (!match) return null;
-    const feet = parseInt(match[1], 10) || 0;
-    const inches = match[2] ? parseInt(match[2], 10) : 0;
-    return feet * 12 + inches;
+
+    const formattedMatch = heightStr.match(/^(\d+)'(\d+)?"?$/);
+    if (formattedMatch) {
+      const feet = formattedMatch[1];
+      const inches = formattedMatch[2] || '0';
+      return `${feet}'${inches}`;
+    }
+
+    const inches = parseInt(heightStr, 10);
+    if (!isNaN(inches)) {
+      return heightStr;
+    }
+
+    return null;
+  }
+
+
+  private formatHeightFromInches(totalInches: number): string {
+    if (totalInches === undefined || totalInches === null || totalInches < 0) return '';
+    const feet = Math.floor(totalInches / 12);
+    const inches = totalInches % 12;
+    return `${feet}'${inches}"`;
   }
 
   private parseWeightString(weightStr: string): number | null {
@@ -72,17 +95,38 @@ export class PlayerOcrService {
     };
     return map[normalized] ?? null;
   }
+  private areNamesEquivalent(name1: string, name2: string): boolean {
+    if (!name1 || !name2) return false;
 
+    const normalize = (name: string) => name.toLowerCase().trim().replace(/\s+/g, ' ');
+    const normName1 = normalize(name1);
+    const normName2 = normalize(name2);
+
+    if (normName1 === normName2) return true;
+
+    if (normName1.includes(normName2) || normName2.includes(normName1)) return true;
+
+    const parts1 = normName1.split(' ');
+    const parts2 = normName2.split(' ');
+
+    if (parts1.length >= 2 && parts2.length >= 2) {
+      if (parts1[0] === parts2[0] && parts1[parts1.length - 1] === parts2[parts2.length - 1]) {
+        return true;
+      }
+    }
+
+    return false;
+  }
   async callGptOcr(imageUrl: string, prompt?: string): Promise<any> {
     try {
       const strictPrompt = prompt ?
         `${prompt} ONLY return the requested JSON format with NUMERIC values. No explanations or extra text.` :
-        `Extract ONLY the player attributes visible in the image. Return ONLY a clean JSON object with attribute names exactly as they appear and numeric values.`;
+        `Extract ONLY the player attributes visible in the image AND the player name if visible. Return ONLY a clean JSON object with attribute names exactly as they appear, numeric values, and a "playerName" field if a name is visible in the image.`;
 
       const messages: any = [
         {
           role: 'system',
-          content: 'You are a precision football attribute extractor. Return only valid JSON with numeric values for attributes. No explanations or text outside the JSON.'
+          content: 'You are a precision football attribute extractor. Return only valid JSON with numeric values for attributes and player identification information when available. No explanations or text outside the JSON.'
         },
         {
           role: 'user',
@@ -818,131 +862,140 @@ export class PlayerOcrService {
     }
 
     const primaryFile = bioImageResult.file;
-
     const bioData = bioImageResult.data;
+    const primaryPlayerName = bioData.NAME
 
     const attributeFiles = fileProcessingResults
       .filter(result => result !== bioImageResult)
       .map(result => result.file);
-
-    const queryRunner = this.playerRepo.manager.connection.createQueryRunner();
-
-    await queryRunner.connect();
-
-    await queryRunner.startTransaction();
-
-    try {
-      const uploadResult = await this.cloudinaryService.uploadFile(primaryFile);
-      if (!uploadResult?.secure_url) {
-        throw new Error('Primary image upload failed');
+    for (const attrFile of attributeFiles) {
+      // Extract player name from attribute image
+      const imageUrl = `data:image/png;base64,${attrFile.buffer.toString('base64')}`;
+      const attributeData = await this.callGptOcr(imageUrl);
+      if (attributeData.playerName && !this.areNamesEquivalent(primaryPlayerName, attributeData.playerName)) {
+        throw new BadRequestException(
+          `Player mismatch: Primary player is "${primaryPlayerName}" but attribute image appears to be for "${attributeData.playerName}"`
+        );
       }
+      const queryRunner = this.playerRepo.manager.connection.createQueryRunner();
 
-      const { NAME, POS, OVR, CLASS, HEIGHT, WEIGHT, HOMETOWN, REASON } = bioData;
-      const position = await this.playerPositionRepo.findOne({ where: { code: POS } });
-      if (!position) {
-        throw new NotFoundException(`Position "${POS}" not found`);
-      }
+      await queryRunner.connect();
 
-      const draftRound = this.extractDraftRound(REASON);
-      const playerClass = this.normalizeClassString(CLASS || '');
+      await queryRunner.startTransaction();
 
-      const playerData: DeepPartial<PlayerEntity> = {
-        name: NAME,
-        overallRating: parseInt(OVR, 10) || undefined,
-        height: this.parseHeightString(HEIGHT),
-        weight: this.parseWeightString(WEIGHT),
-        homeTown: HOMETOWN ?? null,
-        playerClass: playerClass as any,
-        projectedReason: draftRound !== null ? draftRound.toString() : undefined,
-        user: { id: userId } as any,
-        position: { id: position.id } as any,
-      };
-
-      const player = await queryRunner.manager.save(
-        PlayerEntity,
-        this.playerRepo.create(playerData)
-      );
-
-      await queryRunner.manager.save(
-        PlayerImageEntity,
-        this.playerImageRepo.create({
-          url: uploadResult.secure_url,
-          player,
-        })
-      );
-      const uploadPromises = attributeFiles.map(async (file) => {
-        const result = await this.cloudinaryService.uploadFile(file);
-        if (!result?.secure_url) {
-          throw new Error('Attribute image upload failed');
+      try {
+        const uploadResult = await this.cloudinaryService.uploadFile(primaryFile);
+        if (!uploadResult?.secure_url) {
+          throw new Error('Primary image upload failed');
         }
 
-        const job = await this.imageQueue.add(
-          'processImage',
-          {
-            userId,
-            playerId: player.id,
-            imageUrl: result.secure_url,
-            originalName: file.originalname,
-            positionCode: POS,
-          },
-          {
-            delay: 1000,
-            attempts: 3,
-            backoff: {
-              type: 'exponential',
-              delay: 2000,
-            },
-          }
+        const { NAME, POS, OVR, CLASS, HEIGHT, WEIGHT, HOMETOWN, REASON } = bioData;
+        const position = await this.playerPositionRepo.findOne({ where: { code: POS } });
+        if (!position) {
+          throw new NotFoundException(`Position "${POS}" not found`);
+        }
+
+        const draftRound = this.extractDraftRound(REASON);
+        const playerClass = this.normalizeClassString(CLASS || '');
+
+        const playerData: DeepPartial<PlayerEntity> = {
+          name: NAME,
+          overallRating: parseInt(OVR, 10) || undefined,
+          height: this.parseHeightString(HEIGHT),
+          weight: this.parseWeightString(WEIGHT),
+          homeTown: HOMETOWN ?? null,
+          playerClass: playerClass as any,
+          projectedReason: draftRound !== null ? draftRound.toString() : undefined,
+          user: { id: userId } as any,
+          position: { id: position.id } as any,
+        };
+
+        const player = await queryRunner.manager.save(
+          PlayerEntity,
+          this.playerRepo.create(playerData)
         );
 
-        return {
-          file: file.originalname,
-          status: 'queued',
-          jobId: job.id
-        };
-      });
-
-      const queueResults = await Promise.allSettled(uploadPromises);
-
-      const completedJobs = await Promise.all(
-        queueResults
-          .filter(r => r.status === 'fulfilled')
-          .map(async r => {
-            const job = await this.imageQueue.getJob((r as PromiseFulfilledResult<any>).value.jobId);
-            return job;
+        await queryRunner.manager.save(
+          PlayerImageEntity,
+          this.playerImageRepo.create({
+            url: uploadResult.secure_url,
+            player,
           })
-      );
+        );
+        const uploadPromises = attributeFiles.map(async (file) => {
+          const result = await this.cloudinaryService.uploadFile(file);
+          if (!result?.secure_url) {
+            throw new Error('Attribute image upload failed');
+          }
 
-      await queryRunner.commitTransaction();
+          const job = await this.imageQueue.add(
+            'processImage',
+            {
+              userId,
+              playerId: player.id,
+              imageUrl: result.secure_url,
+              originalName: file.originalname,
+              positionCode: POS,
+            },
+            {
+              delay: 1000,
+              attempts: 3,
+              backoff: {
+                type: 'exponential',
+                delay: 2000,
+              },
+            }
+          );
 
-      return {
-        success: true,
-        player: {
-          id: player.id,
-          name: NAME,
-          position: POS,
-          overallRating: parseInt(OVR, 10) || null,
-          class: playerClass,
-          height: HEIGHT,
-          weight: WEIGHT,
-          homeTown: HOMETOWN,
-          draftProjection: REASON,
-          imageUrl: uploadResult.secure_url,
-        },
-        attributes: {
-          pending: attributeFiles.length - completedJobs.length,
-          processed: completedJobs.length,
-        },
-        queueStatus: queueResults.map(r =>
-          r.status === 'fulfilled' ? r.value : { error: (r.reason as Error).message }
-        ),
-      };
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      this.logger.error('Player creation failed:', error);
-      throw error;
-    } finally {
-      await queryRunner.release();
+          return {
+            file: file.originalname,
+            status: 'queued',
+            jobId: job.id
+          };
+        });
+
+        const queueResults = await Promise.allSettled(uploadPromises);
+
+        const completedJobs = await Promise.all(
+          queueResults
+            .filter(r => r.status === 'fulfilled')
+            .map(async r => {
+              const job = await this.imageQueue.getJob((r as PromiseFulfilledResult<any>).value.jobId);
+              return job;
+            })
+        );
+
+        await queryRunner.commitTransaction();
+
+        return {
+          message: `Player ${playerData.name} Converted Sucessfully`,
+          player: {
+            id: player.id,
+            name: NAME,
+            position: POS,
+            overallRating: parseInt(OVR, 10) || null,
+            class: playerClass,
+            height: HEIGHT,
+            weight: WEIGHT,
+            homeTown: HOMETOWN,
+            draftProjection: REASON,
+            imageUrl: uploadResult.secure_url,
+          },
+          attributes: {
+            pending: attributeFiles.length - completedJobs.length,
+            processed: completedJobs.length,
+          },
+          queueStatus: queueResults.map(r =>
+            r.status === 'fulfilled' ? r.value : { error: (r.reason as Error).message }
+          ),
+        };
+      } catch (error) {
+        await queryRunner.rollbackTransaction();
+        this.logger.error('Player creation failed:', error);
+        throw error;
+      } finally {
+        await queryRunner.release();
+      }
     }
   }
 }
