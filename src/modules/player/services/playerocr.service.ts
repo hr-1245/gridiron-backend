@@ -9,7 +9,7 @@ import { PlayerAttributesEntity, PlayerEntity, PlayerImageEntity } from '../enti
 import { PlayerPositionEntity } from '../entity/player-position.entity';
 import { COLLAGE_AGE_ENUM, POSTION_CODE, CollageAgeMapping } from 'src/types/enums/roles';
 import { OpenAI } from 'openai';
-import { All_Middle_LinebackersDTO, CornerBackDto, DefensiveTackleDto, Left_Outside_linebacker_above_245_lbsDTO, LeftEndDTO, LeftGaurdDto, LeftOutside_linebacker_below_245lbsDTO, LeftTackleDto, QuarterBackDto, Right_Outside_linebacker_above_245lbsDTO, RightEndDTO, RightGaurdDto, RightOutside_linebacker_below_245lbsDTO, RightTackleDto, RunningBackDto, SafetyDto, TightEndDto, WideReceiverDto } from '../dto/convert-manually.dto';
+import { All_Middle_LinebackersDTO, CornerBackDto, DefensiveTackleDto, FullBackDto, KickerDto, Left_Outside_linebacker_above_245_lbsDTO, LeftEndDTO, LeftGaurdDto, LeftOutside_linebacker_below_245lbsDTO, LeftTackleDto, PunterDto, QuarterBackDto, Right_Outside_linebacker_above_245lbsDTO, RightEndDTO, RightGaurdDto, RightOutside_linebacker_below_245lbsDTO, RightTackleDto, RunningBackDto, SafetyDto, TightEndDto, WideReceiverDto } from '../dto/convert-manually.dto';
 
 @Injectable()
 export class PlayerOcrService {
@@ -25,7 +25,7 @@ export class PlayerOcrService {
     private readonly playerPositionRepo: Repository<PlayerPositionEntity>,
     @InjectRepository(PlayerAttributesEntity)
     private readonly playerAttrRepo: Repository<PlayerAttributesEntity>,
-    @InjectQueue('imageProcessing')
+    @InjectQueue('AttributeProcessing')
     private readonly imageQueue: Queue,
     private readonly cloudinaryService: CloudinaryService,
     private readonly configService: ConfigService,
@@ -636,8 +636,72 @@ export class PlayerOcrService {
 
         break;
       }
-      //---- FB,PUNTER REAMINING
+      case POSTION_CODE.Kicker: {
+        const data = rawData as KickerDto
+
+        adjustedData = {
+          ...adjustedData,
+          age: calculatedAge,
+          kick_power: getAdjustedValue(data, 'kick_power', 0) ?? undefined,
+          awareness: getAdjustedValue(data, 'awareness', -19) ?? undefined,
+          kick_accuracy: getAdjustedValue(data, 'kick_accuracy', -3) ?? undefined,
+          speed: getAdjustedValue(data, 'speed', -8) ?? undefined,
+          acceleration: getAdjustedValue(data, 'acceleration', 7) ?? undefined,
+
+        }
+        break;
+      }
+      case POSTION_CODE.Punter: {
+        const data = rawData as PunterDto
+
+        adjustedData = {
+          ...adjustedData,
+          age: calculatedAge,
+          kick_power: getAdjustedValue(data, 'kick_power', 0) ?? undefined,
+          awareness: getAdjustedValue(data, 'awareness', -21) ?? undefined,
+          kick_accuracy: getAdjustedValue(data, 'kick_accuracy', -3) ?? undefined,
+          speed: getAdjustedValue(data, 'speed', -7) ?? undefined,
+          acceleration: getAdjustedValue(data, 'acceleration', -7) ?? undefined,
+
+        }
+        break;
+      }
+      case POSTION_CODE.FullBack: {
+        const data = rawData as FullBackDto
+
+        adjustedData = {
+          ...adjustedData,
+          age: calculatedAge,
+          speed: getAdjustedValue(data, 'speed', 5) ?? undefined,
+          acceleration: getAdjustedValue(data, 'acceleration', 4) ?? undefined,
+          agility: getAdjustedValue(data, 'agility', 3) ?? undefined,
+          stamina: getAdjustedValue(data, 'stamina', -1) ?? undefined,
+          change_of_direction: getAdjustedValue(data, 'change_of_direction', 1) ?? undefined,
+          lead_block: getAdjustedValue(data, 'lead_block', - 8) ?? undefined,
+          run_block: getAdjustedValue(data, 'run_block', - 12) ?? undefined,
+          pass_block: getAdjustedValue(data, 'pass_block', -  15) ?? undefined,
+          pass_block_power: getAdjustedValue(data, 'pass_block_power', - 6) ?? undefined,
+          run_block_power: getAdjustedValue(data, 'run_block_power', - 1) ?? undefined,
+          pass_block_finesse: getAdjustedValue(data, 'pass_block_finesse', - 8) ?? undefined,
+          run_block_finesse: getAdjustedValue(data, 'run_block_finesse', - 4) ?? undefined,
+          carrying: getAdjustedValue(data, 'carrying', - 7) ?? undefined,
+          catching: getAdjustedValue(data, 'catching', - 1) ?? undefined,
+          catch_in_traffic: getAdjustedValue(data, 'catch_in_traffic', 19) ?? undefined,
+          short_route_running: getAdjustedValue(data, 'short_route_running', - 10) ?? undefined,
+          medium_route_running: getAdjustedValue(data, 'medium_route_running', - 10) ?? undefined,
+          injury: getAdjustedValue(data, 'injury', - 1) ?? undefined,
+          strength: getAdjustedValue(data, 'strength', 4) ?? undefined,
+          impact_block: getAdjustedValue(data, 'impact_blocking', - 4) ?? undefined,
+          stiff_arm: getAdjustedValue(data, 'stiff_arm', 8) ?? undefined,
+          trucking: getAdjustedValue(data, 'trucking', - 1) ?? undefined,
+          awareness: getAdjustedValue(data, 'awareness', - 3) ?? undefined,
+
+        }
+        break;
+      }
     }
+
+
 
     // Remove undefined values (but keep 0 values)
     Object.keys(adjustedData).forEach(key => {

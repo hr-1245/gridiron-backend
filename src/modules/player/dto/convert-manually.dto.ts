@@ -428,7 +428,50 @@ export class All_Middle_LinebackersDTO {
   @ApiProperty() @IsNumber() injury: number;
 }
 
+export class KickerDto {
+  @ApiProperty() @IsNumber() age: number;
+  @ApiProperty() @IsNumber() kick_power: number;
+  @ApiProperty() @IsNumber() awareness: number;
+  @ApiProperty() @IsNumber() kick_accuracy: number;
+  @ApiProperty() @IsNumber() speed: number;
+  @ApiProperty() @IsNumber() acceleration: number;
 
+}
+export class PunterDto {
+  @ApiProperty() @IsNumber() age: number;
+  @ApiProperty() @IsNumber() kick_power: number;
+  @ApiProperty() @IsNumber() awareness: number;
+  @ApiProperty() @IsNumber() kick_accuracy: number;
+  @ApiProperty() @IsNumber() speed: number;
+  @ApiProperty() @IsNumber() acceleration: number;
+
+}
+export class FullBackDto {
+  @ApiProperty() @IsNumber() age: number;
+  @ApiProperty() @IsNumber() speed: number;
+  @ApiProperty() @IsNumber() acceleration: number;
+  @ApiProperty() @IsNumber() agility: number;
+  @ApiProperty() @IsNumber() stamina: number;
+  @ApiProperty() @IsNumber() change_of_direction: number;
+  @ApiProperty() @IsNumber() lead_block: number;
+  @ApiProperty() @IsNumber() run_block: number;
+  @ApiProperty() @IsNumber() pass_block: number;
+  @ApiProperty() @IsNumber() pass_block_power: number;
+  @ApiProperty() @IsNumber() run_block_power: number;
+  @ApiProperty() @IsNumber() pass_block_finesse: number;
+  @ApiProperty() @IsNumber() run_block_finesse: number;
+  @ApiProperty() @IsNumber() carrying: number;
+  @ApiProperty() @IsNumber() catching: number;
+  @ApiProperty() @IsNumber() catch_in_traffic: number;
+  @ApiProperty() @IsNumber() short_route_running: number;
+  @ApiProperty() @IsNumber() medium_route_running: number;
+  @ApiProperty() @IsNumber() injury: number;
+  @ApiProperty() @IsNumber() strength: number;
+  @ApiProperty() @IsNumber() impact_blocking: number;
+  @ApiProperty() @IsNumber() stiff_arm: number;
+  @ApiProperty() @IsNumber() trucking: number;
+  @ApiProperty() @IsNumber() awareness: number;
+}
 
 export type ConverstionDataDto =
   | TightEndDto
@@ -451,3 +494,6 @@ export type ConverstionDataDto =
   | LeftOutside_linebacker_below_245lbsDTO
   | RightOutside_linebacker_below_245lbsDTO
   | All_Middle_LinebackersDTO
+  | KickerDto
+  | FullBackDto
+  | PunterDto

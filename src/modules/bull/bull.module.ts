@@ -1,10 +1,7 @@
 import { Module } from '@nestjs/common';
-import { BullModule } from '@nestjs/bull';
+import { bullService } from './services/bull.service';
 
 @Module({
-  imports: [
-    BullModule.registerQueue({ name: 'imageProcessing' }),
-  ],
-  exports: [],
+  providers: [bullService]
 })
-export class BullBoardModule {}
+export class BullBoardModule { }

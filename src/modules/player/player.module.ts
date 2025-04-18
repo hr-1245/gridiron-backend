@@ -14,7 +14,7 @@ import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 import { PlayerOcrService } from './services/playerocr.service';
 import { PlayerDataService } from './services/playerdata.service';
 import { BullModule } from '@nestjs/bull';
-import { ProcessImageJob } from '../bull/services/bull.service';
+import { bullService } from '../bull/services/bull.service';
 
 @Module({
   imports: [
@@ -28,11 +28,14 @@ import { ProcessImageJob } from '../bull/services/bull.service';
     ]),
     CloudinaryModule,
     BullModule.registerQueue({
-      name: 'imageProcessing',
+      name: 'AttributeProcessing',
     }),
+    BullModule.registerQueue({
+      name: 'PrimaryImageProcessing'
+    })
   ],
   controllers: [PlayerOcrController],
-  providers: [playerService, PlayerOcrService, PlayerDataService, ProcessImageJob],
+  providers: [playerService, PlayerOcrService, PlayerDataService, bullService],
   exports: [playerService, PlayerOcrService, PlayerDataService],
 })
-export class PlayerModule {}
+export class PlayerModule { }
