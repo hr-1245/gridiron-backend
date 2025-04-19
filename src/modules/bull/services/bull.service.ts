@@ -11,7 +11,7 @@ import { PlayerOcrService } from 'src/modules/player/services/playerocr.service'
 import { PlayerEntity, PlayerAttributesEntity } from 'src/modules/player/entity/players.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { POSTION_CODE } from 'src/types/enums/roles';
+import { approvalStatusEnum, POSTION_CODE } from 'src/types/enums/roles';
 
 @Injectable()
 @Processor('imageProcessing')
@@ -510,17 +510,13 @@ Return ONLY the JSON, no explanations or comments. Use the exact attribute names
 
   @OnQueueActive()
   onActive(job: Job) {
-    this.logger.log(`Processing image: ${job.data.originalName} for player: ${job.data.playerId}`);
+    this.logger.log(`Processing job ${job.id}: ${job.data.originalName} for player ${job.data.playerId}`);
   }
 
   @OnQueueCompleted()
   onCompleted(job: Job, result: any) {
-    this.logger.log(`Job completed for player ${job.data.playerId}: ${JSON.stringify(result.status)}`);
-  }
-
-  @OnQueueFailed()
-  onFailed(job: Job, err: Error) {
-    this.logger.error(`Job failed for player ${job.data.playerId}: ${err.message}`);
+    this.logger.log(`Job ${job.id} completed for player ${job.data.playerId}`);
+    this.logger.debug(`Job result: ${JSON.stringify(result)}`);
   }
 
   @Process('processImage')
@@ -530,13 +526,14 @@ Return ONLY the JSON, no explanations or comments. Use the exact attribute names
     imageUrl: string;
     originalName: string;
     positionCode: string;
+    bulkJobId?: string;
   }>) {
-    const { playerId, imageUrl, positionCode, originalName } = job.data;
+    const { playerId, imageUrl, positionCode, originalName, bulkJobId } = job.data;
 
     try {
-      this.logger.log(`Starting attribute extraction for ${positionCode} player (ID: ${playerId})`);
-      this.logger.log(`Processing image: ${originalName} for player: ${playerId}`);
+      this.logger.log(`[${bulkJobId || 'single'}] Processing ${positionCode} attributes for player ${playerId}`);
 
+      // Verify player exists
       const player = await this.playerRepo.findOne({
         where: { id: playerId },
         relations: ['position'],
@@ -546,57 +543,153 @@ Return ONLY the JSON, no explanations or comments. Use the exact attribute names
         throw new Error(`Player with ID ${playerId} not found`);
       }
 
-      let gptResult;
-      const retryCount = 3;
-      let attempts = 0;
+      // Get the appropriate prompt for the position
+      const positionPrompt = this.positionPrompts[positionCode];
+      if (!positionPrompt) {
+        throw new Error(`No prompt defined for position ${positionCode}`);
+      }
 
-      while (attempts < retryCount) {
+      // Add retry with exponential backoff
+      let gptResult;
+      const maxRetries = 3;
+      let attempt = 0;
+
+      while (attempt < maxRetries) {
         try {
           gptResult = await this.ocrService.callGptOcr(
             imageUrl,
-            this.positionPrompts[positionCode]
+            positionPrompt
           );
           break;
         } catch (error) {
-          attempts++;
-          if (attempts >= retryCount) throw error;
-          await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
+          attempt++;
+          if (attempt >= maxRetries) throw error;
+
+          const delay = 1000 * Math.pow(2, attempt);
+          this.logger.warn(`[${bulkJobId}] Retry ${attempt} for player ${playerId} in ${delay}ms`);
+          await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
 
+      // Convert and save attributes
       const newAttributes = await this.ocrService.convertAttributes(
         gptResult,
         positionCode,
         player
       );
 
-      let existingAttrs = await this.playerAttrRepo.findOne({
-        where: { player: { id: playerId } },
+      await this.playerAttrRepo.manager.transaction(async (transactionalEntityManager) => {
+        let existingAttrs = await transactionalEntityManager.findOne(PlayerAttributesEntity, {
+          where: { player: { id: playerId } },
+        });
+
+        if (!existingAttrs) {
+          existingAttrs = transactionalEntityManager.create(PlayerAttributesEntity, {
+            ...newAttributes,
+            player: { id: playerId },
+          });
+        } else {
+          transactionalEntityManager.merge(PlayerAttributesEntity, existingAttrs, newAttributes);
+        }
+
+        await transactionalEntityManager.save(existingAttrs);
       });
 
-      if (!existingAttrs) {
-        existingAttrs = this.playerAttrRepo.create({
-          ...newAttributes,
-          player: { id: playerId },
-        });
-      } else {
-        Object.assign(existingAttrs, newAttributes);
-      }
-
-      await this.playerAttrRepo.save(existingAttrs);
-
-      this.logger.log(`Successfully processed attributes for player ${playerId}:`, newAttributes);
+      this.logger.log(`[${bulkJobId}] Successfully processed attributes for player ${playerId}`);
 
       return {
         status: 'success',
         playerId,
         positionCode,
-        attributes: newAttributes,
-        processedAt: new Date()
+        attributes: Object.keys(newAttributes).length,
+        processedAt: new Date(),
+        bulkJobId
       };
-    } catch (err) {
-      this.logger.error(`Processing failed for player ${playerId}: ${err.message}`, err.stack);
-      throw new InternalServerErrorException(`Failed to process player attributes: ${err.message}`);
+    } catch (error) {
+      this.logger.error(`[${bulkJobId}] Failed to process attributes for player ${playerId}: ${error.message}`);
+      throw new Error(`Attribute processing failed: ${error.message}`);
     }
+  }
+  @Process('processBulkAttributes')
+  async handleBulkImageProcessing(job: Job<{
+    bulkJobId: string;
+    playerId: number;
+    positionCode: string;
+    imageUrls: Array<{
+      url: string;
+      originalName: string;
+    }>;
+  }>) {
+    const { bulkJobId, playerId, positionCode, imageUrls } = job.data;
+    const results: Array<{
+      originalName: string;
+      status: string;
+      error?: string;
+      attempt?: number;
+    }> = [];
+
+    this.logger.log(`[${bulkJobId}] Starting bulk processing of ${imageUrls.length} images for player ${playerId}`);
+
+    for (const [index, image] of imageUrls.entries()) {
+      try {
+        const result = await this.handleImageProcessing({
+          ...job,
+          data: {
+            ...job.data,
+            imageUrl: image.url,
+            originalName: image.originalName,
+            bulkJobId
+          }
+        } as any);
+
+        results.push({
+          originalName: image.originalName,
+          ...result,
+          status: 'success',
+        });
+      } catch (error) {
+        results.push({
+          originalName: image.originalName,
+          status: 'failed',
+          error: error.message,
+          attempt: index + 1
+        });
+      }
+    }
+
+    return {
+      bulkJobId,
+      playerId,
+      positionCode,
+      totalImages: imageUrls.length,
+      successCount: results.filter(r => r.status === 'success').length,
+      failedCount: results.filter(r => r.status === 'failed').length,
+      results
+    };
+  }
+  private async handleFailedJob(job: Job, error: Error) {
+    const { playerId, originalName, bulkJobId } = job.data;
+
+    this.logger.error(`[${bulkJobId}] Job ${job.id} failed for player ${playerId} (${originalName}): ${error.message}`);
+
+    if (job.attemptsMade < (job.opts?.attempts || 0)) {
+      const delay = typeof job.opts?.backoff === 'object' ? job.opts.backoff.delay : 1000;
+      this.logger.warn(`[${bulkJobId}] Will retry job (attempt ${job.attemptsMade + 1}) in ${delay}ms`);
+      return;
+    }
+
+    // For final failures, you might want to update the player record
+    try {
+      await this.playerRepo.update(playerId, {
+        approvalStatus: approvalStatusEnum.REJECTED,
+      });
+    } catch (dbError) {
+      this.logger.error(`[${bulkJobId}] Failed to update player status: ${dbError.message}`);
+    }
+  }
+
+  @OnQueueFailed()
+  async onFailed(job: Job, err: Error) {
+    await this.handleFailedJob(job, err);
   }
 }
