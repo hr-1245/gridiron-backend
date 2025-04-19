@@ -10,7 +10,6 @@ import { PlayerPositionEntity } from '../entity/player-position.entity';
 import { COLLAGE_AGE_ENUM, POSTION_CODE, CollageAgeMapping } from 'src/types/enums/roles';
 import { OpenAI } from 'openai';
 import { All_Middle_LinebackersDTO, CornerBackDto, DefensiveTackleDto, FullBackDto, KickerDto, Left_Outside_linebacker_above_245_lbsDTO, LeftEndDTO, LeftGaurdDto, LeftOutside_linebacker_below_245lbsDTO, LeftTackleDto, PunterDto, QuarterBackDto, Right_Outside_linebacker_above_245lbsDTO, RightEndDTO, RightGaurdDto, RightOutside_linebacker_below_245lbsDTO, RightTackleDto, RunningBackDto, SafetyDto, TightEndDto, WideReceiverDto } from '../dto/convert-manually.dto';
-
 @Injectable()
 export class PlayerOcrService {
   private readonly openAI: OpenAI;
@@ -43,22 +42,18 @@ export class PlayerOcrService {
 
   private parseHeightString(heightStr: string): string | null {
     if (!heightStr) return null;
-
     const formattedMatch = heightStr.match(/^(\d+)'(\d+)?"?$/);
     if (formattedMatch) {
       const feet = formattedMatch[1];
       const inches = formattedMatch[2] || '0';
       return `${feet}'${inches}`;
     }
-
     const inches = parseInt(heightStr, 10);
     if (!isNaN(inches)) {
       return heightStr;
     }
-
     return null;
   }
-
 
   private formatHeightFromInches(totalInches: number): string {
     if (totalInches === undefined || totalInches === null || totalInches < 0) return '';
@@ -95,38 +90,34 @@ export class PlayerOcrService {
     };
     return map[normalized] ?? null;
   }
+
   private areNamesEquivalent(name1: string, name2: string): boolean {
     if (!name1 || !name2) return false;
-
     const normalize = (name: string) => name.toLowerCase().trim().replace(/\s+/g, ' ');
     const normName1 = normalize(name1);
     const normName2 = normalize(name2);
-
     if (normName1 === normName2) return true;
-
     if (normName1.includes(normName2) || normName2.includes(normName1)) return true;
-
     const parts1 = normName1.split(' ');
     const parts2 = normName2.split(' ');
-
     if (parts1.length >= 2 && parts2.length >= 2) {
-      if (parts1[0] === parts2[0] && parts1[parts1.length - 1] === parts2[parts2.length - 1]) {
+      if (parts1[0] === parts2[0] && parts1[parts1.length - 1] === parts2[parts1.length - 1]) {
         return true;
       }
     }
-
     return false;
   }
-  async callGptOcr(imageUrl: string, prompt?: string): Promise<any> {
+
+   async callGptOcr(imageUrl: string, prompt?: string): Promise<any> {
     try {
       const strictPrompt = prompt ?
         `${prompt} ONLY return the requested JSON format with NUMERIC values. No explanations or extra text.` :
-        `Extract ONLY the player attributes visible in the image AND the player name if visible. Return ONLY a clean JSON object with attribute names exactly as they appear, numeric values, and a "playerName" field if a name is visible in the image.`;
+        `Extract ONLY the player attributes visible in the image AND the player name if visible. Return ONLY a clean JSON object with attribute names exactly as they appear and numeric values. Include a "playerName" field if a name is visible in the image.`;
 
       const messages: any = [
         {
           role: 'system',
-          content: 'You are a precision football attribute extractor. Return only valid JSON with numeric values for attributes and player identification information when available. No explanations or text outside the JSON.'
+          content: 'You are a precision Collage football (EA) game attribute extractor. Return only valid JSON with numeric values for attributes and player identification information when available. No explanations or text outside the JSON.'
         },
         {
           role: 'user',
@@ -151,7 +142,7 @@ export class PlayerOcrService {
         response_format: { type: 'json_object' }
       });
 
-      const content = response.choices[0]?.message?.content ?? '';
+      const content = response.choices[0]?.message?.content ?? '{}';
       return JSON.parse(content);
     } catch (error) {
       this.logger.error('GPT Attribute OCR error:', error);
@@ -826,7 +817,7 @@ export class PlayerOcrService {
         response_format: { type: 'json_object' }
       });
 
-      const content = response.choices[0]?.message?.content ?? '';
+      const content = response.choices[0]?.message?.content ?? '{}';
       return JSON.parse(content);
     } catch (error) {
       this.logger.error('GPT-4o extraction error:', error);
@@ -837,165 +828,238 @@ export class PlayerOcrService {
   private async identifyImageType(file: Express.Multer.File): Promise<{
     type: 'PLAYERS LEAVING' | 'Ratings';
     data: any;
+    positionCode?: string;
+    error?: string;
   }> {
-    const data = await this.extractStructuredPlayerData(file);
-    const bioCriteria = data.NAME && data.POS && data.OVR &&
-      (data.HEIGHT || data.WEIGHT || data.HOMETOWN || data.CLASS);
-    return bioCriteria ? { type: 'PLAYERS LEAVING', data } : { type: 'Ratings', data };
+    try {
+      const base64Image = file.buffer.toString('base64');
+      const imageUrl = `data:image/png;base64,${base64Image}`;
+
+      // First try to extract as bio image
+      try {
+        const bioData = await this.extractStructuredPlayerData(file);
+        if (bioData.NAME && bioData.POS) {
+          return {
+            type: 'PLAYERS LEAVING',
+            data: bioData,
+            positionCode: bioData.POS
+          };
+        }
+      } catch (bioError) {
+        this.logger.debug('Image is not a bio image', bioError);
+      }
+
+      // Fall back to attribute extraction
+      const attributeData = await this.callGptOcr(imageUrl);
+
+      return {
+        type: 'Ratings',
+        data: attributeData,
+        positionCode: attributeData.position || null
+      };
+    } catch (error) {
+      this.logger.error(`Image identification failed for ${file.originalname}`, error);
+      return {
+        type: 'Ratings',
+        data: null,
+        error: `Image processing failed: ${error.message}`
+      };
+    }
   }
+
 
   async processPlayerImage(files: Express.Multer.File[], userId: number): Promise<any> {
     if (!files?.length) {
       throw new BadRequestException('No files uploaded');
     }
 
-    const fileProcessingResults = await Promise.all(
+    // Classify all images first
+    const classificationResults = await Promise.all(
       files.map(async file => {
-        const result = await this.identifyImageType(file);
-        return { file, ...result };
+        try {
+          const result = await this.identifyImageType(file);
+          return { file, ...result };
+        } catch (error) {
+          return {
+            file,
+            error: `Failed to classify image: ${error.message}`,
+            type: 'unknown',
+            data: null
+          };
+        }
       })
     );
 
-    const bioImageResult = fileProcessingResults.find(result => result.type === 'PLAYERS LEAVING');
+    // Find the primary bio image
+    const bioImageResult = classificationResults.find(r => r.type === 'PLAYERS LEAVING');
     if (!bioImageResult) {
       throw new BadRequestException('Missing required player bio image');
     }
 
+    const primaryPlayerName = bioImageResult.data.NAME;
+    const primaryPlayerPosition = 'positionCode' in bioImageResult ? bioImageResult.positionCode : undefined;
     const primaryFile = bioImageResult.file;
-    const bioData = bioImageResult.data;
-    const primaryPlayerName = bioData.NAME
 
-    const attributeFiles = fileProcessingResults
-      .filter(result => result !== bioImageResult)
-      .map(result => result.file);
-    for (const attrFile of attributeFiles) {
-      // Extract player name from attribute image
-      const imageUrl = `data:image/png;base64,${attrFile.buffer.toString('base64')}`;
-      const attributeData = await this.callGptOcr(imageUrl);
-      if (attributeData.playerName && !this.areNamesEquivalent(primaryPlayerName, attributeData.playerName)) {
-        throw new BadRequestException(
-          `Player mismatch: Primary player is "${primaryPlayerName}" but attribute image appears to be for "${attributeData.playerName}"`
-        );
-      }
-      const queryRunner = this.playerRepo.manager.connection.createQueryRunner();
+    // Separate attribute images and validate them
+    const attributeResults = classificationResults.filter(r => r !== bioImageResult);
+    const validAttributeFiles: Express.Multer.File[] = [];
+    const invalidAttributeFiles: { file: string; error: string }[] = [];
 
-      await queryRunner.connect();
-
-      await queryRunner.startTransaction();
-
-      try {
-        const uploadResult = await this.cloudinaryService.uploadFile(primaryFile);
-        if (!uploadResult?.secure_url) {
-          throw new Error('Primary image upload failed');
-        }
-
-        const { NAME, POS, OVR, CLASS, HEIGHT, WEIGHT, HOMETOWN, REASON } = bioData;
-        const position = await this.playerPositionRepo.findOne({ where: { code: POS } });
-        if (!position) {
-          throw new NotFoundException(`Position "${POS}" not found`);
-        }
-
-        const draftRound = this.extractDraftRound(REASON);
-        const playerClass = this.normalizeClassString(CLASS || '');
-
-        const playerData: DeepPartial<PlayerEntity> = {
-          name: NAME,
-          overallRating: parseInt(OVR, 10) || undefined,
-          height: this.parseHeightString(HEIGHT),
-          weight: this.parseWeightString(WEIGHT),
-          homeTown: HOMETOWN ?? null,
-          playerClass: playerClass as any,
-          projectedReason: draftRound !== null ? draftRound.toString() : undefined,
-          user: { id: userId } as any,
-          position: { id: position.id } as any,
-        };
-
-        const player = await queryRunner.manager.save(
-          PlayerEntity,
-          this.playerRepo.create(playerData)
-        );
-
-        await queryRunner.manager.save(
-          PlayerImageEntity,
-          this.playerImageRepo.create({
-            url: uploadResult.secure_url,
-            player,
-          })
-        );
-        const uploadPromises = attributeFiles.map(async (file) => {
-          const result = await this.cloudinaryService.uploadFile(file);
-          if (!result?.secure_url) {
-            throw new Error('Attribute image upload failed');
-          }
-
-          const job = await this.imageQueue.add(
-            'processImage',
-            {
-              userId,
-              playerId: player.id,
-              imageUrl: result.secure_url,
-              originalName: file.originalname,
-              positionCode: POS,
-            },
-            {
-              delay: 1000,
-              attempts: 3,
-              backoff: {
-                type: 'exponential',
-                delay: 2000,
-              },
-            }
-          );
-
-          return {
-            file: file.originalname,
-            status: 'queued',
-            jobId: job.id
-          };
+    for (const attrResult of attributeResults) {
+      if (attrResult.error) {
+        invalidAttributeFiles.push({
+          file: attrResult.file.originalname,
+          error: attrResult.error
         });
+        continue;
+      }
 
-        const queueResults = await Promise.allSettled(uploadPromises);
+      // Check name match if name is present in attribute image
+      const attrName = attrResult.data?.playerName;
+      if (attrName && !this.areNamesEquivalent(primaryPlayerName, attrName)) {
+        invalidAttributeFiles.push({
+          file: attrResult.file.originalname,
+          error: `Player name mismatch: Expected ${primaryPlayerName}, found ${attrName}`
+        });
+        continue;
+      }
 
-        const completedJobs = await Promise.all(
-          queueResults
-            .filter(r => r.status === 'fulfilled')
-            .map(async r => {
-              const job = await this.imageQueue.getJob((r as PromiseFulfilledResult<any>).value.jobId);
-              return job;
-            })
+      // Check position match if position is present in attribute image
+      const attrPosition = 'positionCode' in attrResult ? attrResult.positionCode : undefined;
+      if (attrPosition && attrPosition !== primaryPlayerPosition) {
+        invalidAttributeFiles.push({
+          file: attrResult.file.originalname,
+          error: `Position mismatch: Expected ${primaryPlayerPosition}, found ${attrPosition}`
+        });
+        continue;
+      }
+
+      validAttributeFiles.push(attrResult.file);
+    }
+
+    if (validAttributeFiles.length === 0) {
+      throw new BadRequestException({
+        message: 'No valid attribute images found',
+        errors: invalidAttributeFiles
+      });
+    }
+
+    const queryRunner = this.playerRepo.manager.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // Upload primary image
+      const uploadResult = await this.cloudinaryService.uploadFile(primaryFile);
+      if (!uploadResult?.secure_url) {
+        throw new Error('Primary image upload failed');
+      }
+
+      const { NAME, POS, OVR, CLASS, HEIGHT, WEIGHT, HOMETOWN, REASON } = bioImageResult.data;
+      const position = await this.playerPositionRepo.findOne({ where: { code: POS } });
+      if (!position) {
+        throw new NotFoundException(`Position "${POS}" not found`);
+      }
+
+      const draftRound = this.extractDraftRound(REASON);
+      const playerClass = this.normalizeClassString(CLASS || '');
+
+      const playerData: DeepPartial<PlayerEntity> = {
+        name: NAME,
+        overallRating: parseInt(OVR, 10) || undefined,
+        height: this.parseHeightString(HEIGHT),
+        weight: this.parseWeightString(WEIGHT),
+        homeTown: HOMETOWN ?? null,
+        playerClass: playerClass as any,
+        projectedReason: draftRound !== null ? draftRound.toString() : undefined,
+        user: { id: userId } as any,
+        position: { id: position.id } as any,
+      };
+
+      const player = await queryRunner.manager.save(
+        PlayerEntity,
+        this.playerRepo.create(playerData)
+      );
+
+      await queryRunner.manager.save(
+        PlayerImageEntity,
+        this.playerImageRepo.create({
+          url: uploadResult.secure_url,
+          player,
+        })
+      );
+
+      // Process valid attribute images
+      const uploadPromises = validAttributeFiles.map(async (file) => {
+        const result = await this.cloudinaryService.uploadFile(file);
+        if (!result?.secure_url) {
+          throw new Error('Attribute image upload failed');
+        }
+
+        const job = await this.imageQueue.add(
+          'processImage',
+          {
+            userId,
+            playerId: player.id,
+            imageUrl: result.secure_url,
+            originalName: file.originalname,
+            positionCode: POS,
+          },
+          {
+            delay: 1000,
+            attempts: 3,
+            backoff: {
+              type: 'exponential',
+              delay: 2000,
+            },
+          }
         );
-
-        await queryRunner.commitTransaction();
 
         return {
-          message: `Player ${playerData.name} Converted Sucessfully`,
-          player: {
-            id: player.id,
-            name: NAME,
-            position: POS,
-            overallRating: parseInt(OVR, 10) || null,
-            class: playerClass,
-            height: HEIGHT,
-            weight: WEIGHT,
-            homeTown: HOMETOWN,
-            draftProjection: REASON,
-            imageUrl: uploadResult.secure_url,
-          },
-          attributes: {
-            pending: attributeFiles.length - completedJobs.length,
-            processed: completedJobs.length,
-          },
-          queueStatus: queueResults.map(r =>
-            r.status === 'fulfilled' ? r.value : { error: (r.reason as Error).message }
-          ),
+          file: file.originalname,
+          status: 'queued',
+          jobId: job.id
         };
-      } catch (error) {
-        await queryRunner.rollbackTransaction();
-        this.logger.error('Player creation failed:', error);
-        throw error;
-      } finally {
-        await queryRunner.release();
-      }
+      });
+
+      const queueResults = await Promise.allSettled(uploadPromises);
+      const completedJobs = await Promise.all(
+        queueResults
+          .filter(r => r.status === 'fulfilled')
+          .map(async r => {
+            const job = await this.imageQueue.getJob((r as PromiseFulfilledResult<any>).value.jobId);
+            return job;
+          })
+      );
+
+      await queryRunner.commitTransaction();
+
+      return {
+        message: `Player ${playerData.name} converted successfully with ${completedJobs.length} valid attributes`,
+        player: {
+          id: player.id,
+          name: NAME,
+          position: POS,
+          overallRating: parseInt(OVR, 10) || null,
+          class: playerClass,
+          height: HEIGHT,
+          weight: WEIGHT,
+          homeTown: HOMETOWN,
+          draftProjection: REASON,
+          imageUrl: uploadResult.secure_url,
+        },
+        attributes: {
+          valid: completedJobs.length,
+          invalid: invalidAttributeFiles.length,
+          invalidDetails: invalidAttributeFiles,
+        },
+      };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      this.logger.error('Player creation failed:', error);
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
   }
 }
