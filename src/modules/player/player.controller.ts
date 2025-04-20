@@ -27,7 +27,6 @@ import { ConversionDto } from './dto/convert-manually.dto';
 import { User } from 'src/utils/user.decorator';
 import { userjwtInterface } from '../jwt/interface/jwt.interface';
 import { userjwtGuard } from 'src/providers/guards/user-guard/user.guard';
-import { BulkJobTrackerService } from '../bull/services/bull-job-tracker.service';
 
 @ApiTags('Player OCR')
 @ApiBearerAuth('jwt')
@@ -39,7 +38,6 @@ export class PlayerOcrController {
   constructor(
     private readonly playerOcrService: PlayerOcrService,
     private readonly playeService: playerService,
-    private readonly bullService: BulkJobTrackerService,
   ) { }
 
   @Get("dropdown")
@@ -103,9 +101,19 @@ export class PlayerOcrController {
     return this.playerOcrService.processPlayerImage(files, user.id);
   }
 
-  @Post('bulk-upload')
-  @UseInterceptors(FilesInterceptor('files'))
-  async bulkUpload(
+  @ApiResponse({
+    status: 400,
+    description: 'No files uploaded or invalid request',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - JWT token missing or invalid',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error during processing',
+  })
+  async processPlayers(
     @UploadedFiles() files: Express.Multer.File[],
     @User() user: userjwtInterface
   ) {
@@ -113,8 +121,6 @@ export class PlayerOcrController {
     try {
       const result = await this.playerOcrService.processBulkPlayers(files, user.id);
 
-      // Track the bulk job
-      this.bullService.createJob(result.bulkJobId, result.totalPlayers);
 
       return {
         success: true,
@@ -132,12 +138,4 @@ export class PlayerOcrController {
     }
   }
 
-  @Get('bulk-status/:jobId')
-  async getBulkStatus(@Param('jobId') jobId: string) {
-    const status = this.bullService.getJobStatus(jobId);
-    if (!status) {
-      throw new NotFoundException('Bulk job not found');
-    }
-    return status;
-  }
 }

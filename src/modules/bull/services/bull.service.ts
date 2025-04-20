@@ -39,6 +39,8 @@ export class bullService {
       "juke_move": number,  // Also known as "Juke Move" in image
       "stamina": number,
       "injury": number
+      "strength": number
+      "jumping": number
     }
     // QB-specific attributes focused on throwing accuracy, power, and mobility
     Return ONLY the JSON, no explanations or comments. Use the exact attribute names as shown. Only include attributes visible in the image with numeric values.`,
@@ -681,7 +683,6 @@ Return ONLY the JSON, no explanations or comments. Use the exact attribute names
     // For final failures, you might want to update the player record
     try {
       await this.playerRepo.update(playerId, {
-        approvalStatus: approvalStatusEnum.REJECTED,
       });
     } catch (dbError) {
       this.logger.error(`[${bulkJobId}] Failed to update player status: ${dbError.message}`);
