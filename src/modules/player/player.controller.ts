@@ -7,6 +7,10 @@ import {
   Body,
   Get,
   UseGuards,
+  Req,
+  InternalServerErrorException,
+  Param,
+  NotFoundException,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import {
@@ -29,6 +33,8 @@ import { userjwtGuard } from 'src/providers/guards/user-guard/user.guard';
 @Controller('players/ocr')
 @UseGuards(userjwtGuard)
 export class PlayerOcrController {
+
+  logger: any;
   constructor(
     private readonly playerOcrService: PlayerOcrService,
     private readonly playeService: playerService,
@@ -94,4 +100,42 @@ export class PlayerOcrController {
     }
     return this.playerOcrService.processPlayerImage(files, user.id);
   }
+
+  @ApiResponse({
+    status: 400,
+    description: 'No files uploaded or invalid request',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - JWT token missing or invalid',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error during processing',
+  })
+  async processPlayers(
+    @UploadedFiles() files: Express.Multer.File[],
+    @User() user: userjwtInterface
+  ) {
+
+    try {
+      const result = await this.playerOcrService.processBulkPlayers(files, user.id);
+
+
+      return {
+        success: true,
+        bulkJobId: result.bulkJobId,
+        message: `Bulk processing started for ${result.totalPlayers} players`,
+        summary: {
+          total: result.totalPlayers,
+          success: result.successCount,
+          failed: result.failedCount
+        }
+      };
+    } catch (error) {
+      this.logger.error('Bulk upload failed', error.stack);
+      throw new InternalServerErrorException('Failed to start bulk processing');
+    }
+  }
+
 }
