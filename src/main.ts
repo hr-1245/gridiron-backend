@@ -39,7 +39,6 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  // BULL BOARD SETUP
   const imageQueue = app.get<Queue>(getQueueToken('imageProcessing'));
   const serverAdapter = new ExpressAdapter();
   serverAdapter.setBasePath('/queues');

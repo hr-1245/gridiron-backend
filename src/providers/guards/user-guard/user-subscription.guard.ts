@@ -12,7 +12,7 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
-export class userSubscriptionGuard extends AuthGuard('jwt-user') {  // Changed from 'jwt-subscription-user' to 'jwt-user'
+export class userSubscriptionGuard extends AuthGuard('jwt-user-guard') {
   constructor(
     private readonly reflector: Reflector,
     @InjectRepository(userEntity)
@@ -22,7 +22,6 @@ export class userSubscriptionGuard extends AuthGuard('jwt-user') {  // Changed f
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    // First, execute the base JWT guard
     const canProceed = await super.canActivate(context);
     if (!canProceed) return false;
 
@@ -32,7 +31,6 @@ export class userSubscriptionGuard extends AuthGuard('jwt-user') {  // Changed f
       throw new UnauthorizedException();
     }
 
-    // Fetch the user with subscription details
     const userWithSubscription = await this.userRepo.findOne({
       where: { id: user.id },
       relations: ['subscription'],
@@ -44,7 +42,7 @@ export class userSubscriptionGuard extends AuthGuard('jwt-user') {  // Changed f
 
     const { planType } = userWithSubscription.subscription;
     if (planType !== subscriptionEnum.REGULAR) {
-      throw new ForbiddenException('You must have a valid subscription.');
+      throw new ForbiddenException('You must have a valid subscription to acess this');
     }
 
     return true;

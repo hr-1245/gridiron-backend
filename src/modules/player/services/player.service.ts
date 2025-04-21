@@ -81,7 +81,7 @@ export class playerService {
   async conversionLogic(obj: ConversionDto, userId: number): Promise<any> {
     //----------CONVERSION LOGIC --------------------------------
     try {
-      const { playerName, positionId, positionCode, data: rawData, draft_round } = obj
+      const { playerName, positionId, positionCode, data: rawData, draft_round, ovr, height, homeTown, weight } = obj
 
       const fetchData = await this.playerPositionRepo.findOne({
         where: { id: positionId, code: positionCode },
@@ -97,6 +97,10 @@ export class playerService {
           name: playerName,
           user: { id: userId },
           position: { id: positionId },
+          overallRating: ovr,
+          height: height,
+          homeTown: homeTown,
+          weight: weight,
         });
         player = await this.playerRepo.save(newPlayer)
       }

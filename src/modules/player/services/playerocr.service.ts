@@ -1,18 +1,34 @@
 import { Injectable, NotFoundException, InternalServerErrorException, BadRequestException, Logger } from '@nestjs/common';
+
 import { InjectRepository } from '@nestjs/typeorm';
+
 import { Repository, DeepPartial } from 'typeorm';
+
 import { InjectQueue } from '@nestjs/bull';
+
 import { Queue } from 'bull';
+
 import { ConfigService } from '@nestjs/config';
+
 import { CloudinaryService } from 'src/modules/cloudinary/cloudinary.service';
+
 import { PlayerAttributesEntity, PlayerEntity, PlayerImageEntity } from '../entity/players.entity';
+
 import { PlayerPositionEntity } from '../entity/player-position.entity';
-import { COLLAGE_AGE_ENUM, POSTION_CODE, CollageAgeMapping } from 'src/types/enums/roles';
+
+import { POSTION_CODE, CollageAgeMapping } from 'src/types/enums/roles';
+
 import { OpenAI } from 'openai';
+
 import { All_Middle_LinebackersDTO, CornerBackDto, DefensiveTackleDto, FullBackDto, KickerDto, Left_Outside_linebacker_above_245_lbsDTO, LeftEndDTO, LeftGaurdDto, LeftOutside_linebacker_below_245lbsDTO, LeftTackleDto, PunterDto, QuarterBackDto, Right_Outside_linebacker_above_245lbsDTO, RightEndDTO, RightGaurdDto, RightOutside_linebacker_below_245lbsDTO, RightTackleDto, RunningBackDto, SafetyDto, TightEndDto, WideReceiverDto } from '../dto/convert-manually.dto';
+
+import { extractDraftRound, findBestNameMatch, normalizeClassString, parseHeightString, parseWeightString } from 'src/utils/helpers/helpers';
+
 @Injectable()
 export class PlayerOcrService {
+
   private readonly openAI: OpenAI;
+
   private readonly logger = new Logger(PlayerOcrService.name);
 
   constructor(
@@ -39,100 +55,6 @@ export class PlayerOcrService {
       apiKey: this.configService.get<string>('OPENAI_KEY'),
     });
   }
-
-  private parseHeightString(heightStr: string): string | null {
-    if (!heightStr) return null;
-    const formattedMatch = heightStr.match(/^(\d+)'(\d+)?"?$/);
-    if (formattedMatch) {
-      const feet = formattedMatch[1];
-      const inches = formattedMatch[2] || '0';
-      return `${feet}'${inches}`;
-    }
-    const inches = parseInt(heightStr, 10);
-    if (!isNaN(inches)) {
-      return heightStr;
-    }
-    return null;
-  }
-
-  private formatHeightFromInches(totalInches: number): string {
-    if (totalInches === undefined || totalInches === null || totalInches < 0) return '';
-    const feet = Math.floor(totalInches / 12);
-    const inches = totalInches % 12;
-    return `${feet}'${inches}"`;
-  }
-
-  private parseWeightString(weightStr: string): number | null {
-    if (!weightStr) return null;
-    const num = parseInt(weightStr.replace(/[^\d]/g, ''), 10);
-    return isNaN(num) ? null : num;
-  }
-
-  private extractDraftRound(reason: string): number | null {
-    if (!reason) return null;
-    const match = reason.match(/(?:Projected Round|Round)\s*(\d+)/i) ||
-      reason.match(/Pro Draft \(Projected Round (\d+)\)/i);
-    return match ? parseInt(match[1], 10) : null;
-  }
-
-  private normalizeClassString(input: string): COLLAGE_AGE_ENUM | null {
-    if (!input) return null;
-    const normalized = input.toUpperCase().replace(/\s/g, '');
-    const map: Record<string, COLLAGE_AGE_ENUM> = {
-      'SO(RS)': COLLAGE_AGE_ENUM.SO_RS,
-      'SORS': COLLAGE_AGE_ENUM.SO_RS,
-      'JR': COLLAGE_AGE_ENUM.JR,
-      'JR(RS)': COLLAGE_AGE_ENUM.JR_RS,
-      'JRRS': COLLAGE_AGE_ENUM.JR_RS,
-      'SR': COLLAGE_AGE_ENUM.SR,
-      'SR(RS)': COLLAGE_AGE_ENUM.SR_RS,
-      'SRRS': COLLAGE_AGE_ENUM.SR_RS,
-    };
-    return map[normalized] ?? null;
-  }
-
-  private findBestNameMatch(attrName: string, bioNames: string[]): string | null {
-    if (!attrName) return null;
-
-    const normalizedAttrName = attrName.toLowerCase();
-
-    // First, try exact match
-    const exactMatch = bioNames.find(name => name === normalizedAttrName);
-    if (exactMatch) return exactMatch;
-
-    // Next, try if one name contains the other
-    for (const bioName of bioNames) {
-      if (bioName.includes(normalizedAttrName) || normalizedAttrName.includes(bioName)) {
-        return bioName;
-      }
-    }
-
-    // Try more flexible matching - last name match
-    const attrNameParts = normalizedAttrName.split(' ');
-    const attrLastName = attrNameParts[attrNameParts.length - 1];
-
-    for (const bioName of bioNames) {
-      const bioNameParts = bioName.split(' ');
-      const bioLastName = bioNameParts[bioNameParts.length - 1];
-
-      if (bioLastName === attrLastName) {
-        return bioName;
-      }
-    }
-
-    // If still no matches, try partial last name match
-    for (const bioName of bioNames) {
-      const bioNameParts = bioName.split(' ');
-      const bioLastName = bioNameParts[bioNameParts.length - 1];
-
-      if (bioLastName.includes(attrLastName) || attrLastName.includes(bioLastName)) {
-        return bioName;
-      }
-    }
-
-    return null;
-  }
-
 
   async callGptOcr(imageUrl: string, prompt?: string): Promise<any> {
     try {
@@ -857,7 +779,6 @@ export class PlayerOcrService {
       const base64Image = file.buffer.toString('base64');
       const imageUrl = `data:image/png;base64,${base64Image}`;
 
-      // First try to extract as bio image
       try {
         const bioData = await this.extractStructuredPlayerData(file);
         if (bioData.NAME && bioData.POS) {
@@ -871,7 +792,6 @@ export class PlayerOcrService {
         this.logger.debug('Image is not a bio image', bioError);
       }
 
-      // Fall back to attribute extraction
       const attributeData = await this.callGptOcr(imageUrl);
 
       return {
@@ -894,7 +814,6 @@ export class PlayerOcrService {
       throw new BadRequestException('No files uploaded');
     }
 
-    // Step 1: Classify all images
     const classificationResults = await Promise.all(
       files.map(async file => {
         try {
@@ -911,7 +830,6 @@ export class PlayerOcrService {
       })
     );
 
-    // Step 2: Group bio and attribute images
     const bioImages = classificationResults.filter(r => r.type === 'PLAYERS LEAVING' && !r.error);
     const attributeImages = classificationResults.filter(r => r.type === 'Ratings' && !r.error);
     const invalidImages = classificationResults.filter(r => r.error || r.type === 'unknown');
@@ -920,29 +838,24 @@ export class PlayerOcrService {
       throw new BadRequestException('No valid player bio images found');
     }
 
-    // Step 3: Create a map of bio names to use for attribute matching
     const bioNamesMap = new Map(
       bioImages.map(bio => [bio.data.NAME.toLowerCase(), bio])
     );
 
-    // Step 4: Try to match attributes to players
-    // Instead of flagging mismatches, we'll just use best-effort matching
+
     const attributesByBioName = new Map<string, Array<{ file: Express.Multer.File, data: any, positionCode?: string }>>();
 
-    // Initialize the map with empty arrays for each bio name
     bioNamesMap.forEach((_, name) => {
       attributesByBioName.set(name, []);
     });
 
-    // Group attribute images that we can positively match to a bio
     const unassignedAttributes: Array<{ file: Express.Multer.File, data: any, positionCode?: string }> = [];
 
     attributeImages.forEach(attrImage => {
       const attrName = attrImage.data?.playerName;
 
-      // If we have a name in the attribute, try to match it
       if (attrName) {
-        const matchedBioName = this.findBestNameMatch(attrName, Array.from(bioNamesMap.keys()));
+        const matchedBioName = findBestNameMatch(attrName, Array.from(bioNamesMap.keys()));
 
         if (matchedBioName) {
           const attributes = attributesByBioName.get(matchedBioName) || [];
@@ -951,34 +864,37 @@ export class PlayerOcrService {
           return;
         }
       }
-
-      // If no match by name, we'll collect it for position-based matching later
+      //maason later
       unassignedAttributes.push(attrImage);
     });
 
-    // Try to match remaining attributes by position
     unassignedAttributes.forEach(attrImage => {
       const attrPosition = attrImage.positionCode;
 
       if (attrPosition) {
-        // Find bios with matching position
         const matchingBios = Array.from(bioNamesMap.entries())
           .filter(([_, bio]) => 'positionCode' in bio && bio.positionCode === attrPosition);
 
         if (matchingBios.length === 1) {
-          // If exactly one bio matches the position, assign to it
           const [bioName] = matchingBios[0];
+
           const attributes = attributesByBioName.get(bioName) || [];
+
           attributes.push(attrImage);
+
           attributesByBioName.set(bioName, attributes);
         } else {
-          // Multiple matches or no matches - use the bio with fewest attributes
+
           let leastAttributesBioName = '';
+
           let leastAttributesCount = Infinity;
 
           for (const [bioName, _] of matchingBios) {
+
             const attributesCount = (attributesByBioName.get(bioName) || []).length;
+
             if (attributesCount < leastAttributesCount) {
+
               leastAttributesCount = attributesCount;
               leastAttributesBioName = bioName;
             }
@@ -993,7 +909,6 @@ export class PlayerOcrService {
       }
     });
 
-    // Step 5: Process each player with their matched attributes
     const processPromises = Array.from(bioNamesMap.entries()).map(([bioName, bioImage]) => {
       const matchedAttributes = attributesByBioName.get(bioName) || [];
       return this.processPlayerWithAttributes(bioImage, matchedAttributes, userId);
@@ -1001,7 +916,6 @@ export class PlayerOcrService {
 
     const results = await Promise.allSettled(processPromises);
 
-    // Step 6: Compile results
     const successfulPlayers = results
       .filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled')
       .map(r => ({ status: 'success', ...r.value }));
@@ -1027,8 +941,6 @@ export class PlayerOcrService {
     matchedAttributes: Array<{ file: Express.Multer.File, data: any, positionCode?: string }>,
     userId: number
   ): Promise<any> {
-    const primaryPlayerName = bioImage.data.NAME;
-    const primaryPlayerPosition = bioImage.positionCode;
     const primaryFile = bioImage.file;
 
     const queryRunner = this.playerRepo.manager.connection.createQueryRunner();
@@ -1036,7 +948,6 @@ export class PlayerOcrService {
     await queryRunner.startTransaction();
 
     try {
-      // Upload primary image
       const uploadResult = await this.cloudinaryService.uploadFile(primaryFile);
       if (!uploadResult?.secure_url) {
         throw new Error('Primary image upload failed');
@@ -1048,14 +959,14 @@ export class PlayerOcrService {
         throw new NotFoundException(`Position "${POS}" not found`);
       }
 
-      const draftRound = this.extractDraftRound(REASON);
-      const playerClass = this.normalizeClassString(CLASS || '');
+      const draftRound = extractDraftRound(REASON);
+      const playerClass = normalizeClassString(CLASS || '');
 
       const playerData: DeepPartial<PlayerEntity> = {
         name: NAME,
         overallRating: parseInt(OVR, 10) || undefined,
-        height: this.parseHeightString(HEIGHT),
-        weight: this.parseWeightString(WEIGHT),
+        height: parseHeightString(HEIGHT),
+        weight: parseWeightString(WEIGHT),
         homeTown: HOMETOWN ?? null,
         playerClass: playerClass as any,
         projectedReason: draftRound !== null ? draftRound.toString() : undefined,
@@ -1076,10 +987,8 @@ export class PlayerOcrService {
         })
       );
 
-      // Generate a unique batch ID for this player's attribute processing
       const bulkJobId = `bulk-${player.id}-${Date.now()}`;
 
-      // Process matching attribute images - no need to report mismatches now
       const attributeFiles = matchedAttributes.map(attr => attr.file);
       const uploadPromises = attributeFiles.map(async (file) => {
         const result = await this.cloudinaryService.uploadFile(file);

@@ -20,19 +20,16 @@ import { BullBoardModule } from './modules/bull/bull.module';
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync(forDatabasePostgresAsyncConfig),
 
-    // Register Bull with Redis
     BullModule.forRoot({
       redis: {
         host: '127.0.0.1',
         port: 6379,
       },
-      // 🔥 Important: prevents the error you're seeing
       defaultJobOptions: {
         removeOnComplete: true,
         removeOnFail: true,
       },
     }),
-    
 
     AuthModule,
     JwtModule,
@@ -46,4 +43,4 @@ import { BullBoardModule } from './modules/bull/bull.module';
   ],
   providers: [adminjwtStrategy, userjwtStrategy],
 })
-export class AppModule {}
+export class AppModule { }

@@ -10,7 +10,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import {  FilesInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
@@ -25,22 +25,25 @@ import { ConversionDto } from './dto/convert-manually.dto';
 import { User } from 'src/utils/user.decorator';
 import { userjwtInterface } from '../jwt/interface/jwt.interface';
 import { userjwtGuard } from 'src/providers/guards/user-guard/user.guard';
-import { bullService } from '../bull/services/bull.service';
+import { userConversionLimitGuard } from 'src/providers/guards/user-guard/playerConversionlimitGuard.guard';
 
 @ApiTags('Player OCR')
 @ApiBearerAuth('jwt')
 @Controller('players/ocr')
-@UseGuards(userjwtGuard)
 export class PlayerOcrController {
 
   logger: any;
   constructor(
+
     private readonly playerOcrService: PlayerOcrService,
-    private readonly bullService: bullService,
+
     private readonly playeService: playerService,
   ) { }
 
+
+  //--------GET DROPWDOWN ---------
   @Get("dropdown")
+  @UseGuards(userjwtGuard)
   @ApiResponse({
     status: 200,
     description: "Dropdown Position",
@@ -49,7 +52,10 @@ export class PlayerOcrController {
     return this.playeService.getAllPositionDropDown();
   }
 
+
+  //------------------CONVERT MANUALLY----------
   @Post("convert")
+  @UseGuards(userjwtGuard)
   @ApiOperation({ summary: "Convert player attributes based on position" })
   @ApiResponse({
     status: 200,
@@ -62,7 +68,10 @@ export class PlayerOcrController {
     return this.playeService.conversionLogic(conversionDto, user.id);
   }
 
+
+  //------BULK CONVERT WITH AI MODEL----
   @Post('upload')
+  @UseGuards(userConversionLimitGuard)
   @UseInterceptors(FilesInterceptor('files', 10))
   @ApiOperation({
     summary: 'Process uploaded player images (bio image + attributes).'

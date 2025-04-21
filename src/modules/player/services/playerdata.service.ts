@@ -16,12 +16,6 @@ export class PlayerDataService {
   constructor(
     @InjectRepository(PlayerEntity)
     private readonly playerRepo: Repository<PlayerEntity>,
-
-    @InjectRepository(PlayerAttributesEntity)
-    private readonly playerAttrRepo: Repository<PlayerAttributesEntity>,
-
-    @InjectRepository(PlayerPositionEntity)
-    private readonly playerPosRepo: Repository<PlayerPositionEntity>,
   ) { }
 
   private removeNulls<T extends Record<string, any>>(obj: T): Partial<T> {
@@ -85,7 +79,7 @@ export class PlayerDataService {
   async deletePlayerCard(playerId: number, userId: number): Promise<{ message: string }> {
     try {
       const player = await this.playerRepo.findOne({
-        where: { id: playerId, user: { id: userId }   }, 
+        where: { id: playerId, user: { id: userId } },
       });
       if (!player) {
         throw new Error('Player not found or you do not have permission to delete this player');
@@ -98,4 +92,6 @@ export class PlayerDataService {
       throw new InternalServerErrorException('Player not Found');
     }
   }
+
+  //--------------Update AND EDIT LATER -
 }
