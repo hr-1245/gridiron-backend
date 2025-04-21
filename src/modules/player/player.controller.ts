@@ -7,13 +7,10 @@ import {
   Body,
   Get,
   UseGuards,
-  Req,
   InternalServerErrorException,
-  Param,
   NotFoundException,
-  UploadedFile,
 } from '@nestjs/common';
-import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import {  FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
