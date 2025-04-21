@@ -7,4 +7,4 @@ import { BullModule } from '@nestjs/bull';
   ],
   exports: [],
 })
-export class BullBoardModule {}
+export class BullBoardModule { }
