@@ -91,22 +91,48 @@ export class PlayerOcrService {
     return map[normalized] ?? null;
   }
 
-  private areNamesEquivalent(name1: string, name2: string): boolean {
-    if (!name1 || !name2) return false;
-    const normalize = (name: string) => name.toLowerCase().trim().replace(/\s+/g, ' ');
-    const normName1 = normalize(name1);
-    const normName2 = normalize(name2);
-    if (normName1 === normName2) return true;
-    if (normName1.includes(normName2) || normName2.includes(normName1)) return true;
-    const parts1 = normName1.split(' ');
-    const parts2 = normName2.split(' ');
-    if (parts1.length >= 2 && parts2.length >= 2) {
-      if (parts1[0] === parts2[0] && parts1[parts1.length - 1] === parts2[parts1.length - 1]) {
-        return true;
+  private findBestNameMatch(attrName: string, bioNames: string[]): string | null {
+    if (!attrName) return null;
+
+    const normalizedAttrName = attrName.toLowerCase();
+
+    // First, try exact match
+    const exactMatch = bioNames.find(name => name === normalizedAttrName);
+    if (exactMatch) return exactMatch;
+
+    // Next, try if one name contains the other
+    for (const bioName of bioNames) {
+      if (bioName.includes(normalizedAttrName) || normalizedAttrName.includes(bioName)) {
+        return bioName;
       }
     }
-    return false;
+
+    // Try more flexible matching - last name match
+    const attrNameParts = normalizedAttrName.split(' ');
+    const attrLastName = attrNameParts[attrNameParts.length - 1];
+
+    for (const bioName of bioNames) {
+      const bioNameParts = bioName.split(' ');
+      const bioLastName = bioNameParts[bioNameParts.length - 1];
+
+      if (bioLastName === attrLastName) {
+        return bioName;
+      }
+    }
+
+    // If still no matches, try partial last name match
+    for (const bioName of bioNames) {
+      const bioNameParts = bioName.split(' ');
+      const bioLastName = bioNameParts[bioNameParts.length - 1];
+
+      if (bioLastName.includes(attrLastName) || attrLastName.includes(bioLastName)) {
+        return bioName;
+      }
+    }
+
+    return null;
   }
+
 
   async callGptOcr(imageUrl: string, prompt?: string): Promise<any> {
     try {
@@ -155,7 +181,6 @@ export class PlayerOcrService {
     positionCode: string,
     player: PlayerEntity
   ): Promise<Partial<PlayerAttributesEntity>> {
-    this.logger.log(`Converting attributes for ${player.name} (${positionCode})`, rawData);
 
     const draft_round = player.projectedReason ? parseInt(player.projectedReason, 10) || 1 : 1;
     const collegeYearKey = player.playerClass;
@@ -189,7 +214,7 @@ export class PlayerOcrService {
           acceleration: getAdjustedValue(data, 'acceleration', 0) ?? undefined,
           agility: getAdjustedValue(data, 'agility', 0) ?? undefined,
           change_of_direction: getAdjustedValue(data, 'change_of_direction', -1) ?? undefined,
-          strength: getAdjustedValue(data, 'strength', -9) ?? undefined,
+          strength: getAdjustedValue(data, 'strength', - 7) ?? undefined,
           awareness: getAdjustedValue(data, 'awareness', -15 - draft_round) ?? undefined,
           break_tackle: getAdjustedValue(data, 'break_tackle', -3 - draft_round) ?? undefined,
           catch_in_traffic: getAdjustedValue(data, 'catch_in_traffic', -10 - draft_round) ?? undefined,
@@ -886,7 +911,7 @@ export class PlayerOcrService {
       })
     );
 
-    // Step 2: Group bio images
+    // Step 2: Group bio and attribute images
     const bioImages = classificationResults.filter(r => r.type === 'PLAYERS LEAVING' && !r.error);
     const attributeImages = classificationResults.filter(r => r.type === 'Ratings' && !r.error);
     const invalidImages = classificationResults.filter(r => r.error || r.type === 'unknown');
@@ -895,14 +920,88 @@ export class PlayerOcrService {
       throw new BadRequestException('No valid player bio images found');
     }
 
-    // Step 3: Process each player
-    const processPromises = bioImages.map(bioImage =>
-      this.processPlayerFromBioImage(bioImage, attributeImages, userId)
+    // Step 3: Create a map of bio names to use for attribute matching
+    const bioNamesMap = new Map(
+      bioImages.map(bio => [bio.data.NAME.toLowerCase(), bio])
     );
+
+    // Step 4: Try to match attributes to players
+    // Instead of flagging mismatches, we'll just use best-effort matching
+    const attributesByBioName = new Map<string, Array<{ file: Express.Multer.File, data: any, positionCode?: string }>>();
+
+    // Initialize the map with empty arrays for each bio name
+    bioNamesMap.forEach((_, name) => {
+      attributesByBioName.set(name, []);
+    });
+
+    // Group attribute images that we can positively match to a bio
+    const unassignedAttributes: Array<{ file: Express.Multer.File, data: any, positionCode?: string }> = [];
+
+    attributeImages.forEach(attrImage => {
+      const attrName = attrImage.data?.playerName;
+
+      // If we have a name in the attribute, try to match it
+      if (attrName) {
+        const matchedBioName = this.findBestNameMatch(attrName, Array.from(bioNamesMap.keys()));
+
+        if (matchedBioName) {
+          const attributes = attributesByBioName.get(matchedBioName) || [];
+          attributes.push(attrImage);
+          attributesByBioName.set(matchedBioName, attributes);
+          return;
+        }
+      }
+
+      // If no match by name, we'll collect it for position-based matching later
+      unassignedAttributes.push(attrImage);
+    });
+
+    // Try to match remaining attributes by position
+    unassignedAttributes.forEach(attrImage => {
+      const attrPosition = attrImage.positionCode;
+
+      if (attrPosition) {
+        // Find bios with matching position
+        const matchingBios = Array.from(bioNamesMap.entries())
+          .filter(([_, bio]) => 'positionCode' in bio && bio.positionCode === attrPosition);
+
+        if (matchingBios.length === 1) {
+          // If exactly one bio matches the position, assign to it
+          const [bioName] = matchingBios[0];
+          const attributes = attributesByBioName.get(bioName) || [];
+          attributes.push(attrImage);
+          attributesByBioName.set(bioName, attributes);
+        } else {
+          // Multiple matches or no matches - use the bio with fewest attributes
+          let leastAttributesBioName = '';
+          let leastAttributesCount = Infinity;
+
+          for (const [bioName, _] of matchingBios) {
+            const attributesCount = (attributesByBioName.get(bioName) || []).length;
+            if (attributesCount < leastAttributesCount) {
+              leastAttributesCount = attributesCount;
+              leastAttributesBioName = bioName;
+            }
+          }
+
+          if (leastAttributesBioName) {
+            const attributes = attributesByBioName.get(leastAttributesBioName) || [];
+            attributes.push(attrImage);
+            attributesByBioName.set(leastAttributesBioName, attributes);
+          }
+        }
+      }
+    });
+
+    // Step 5: Process each player with their matched attributes
+    const processPromises = Array.from(bioNamesMap.entries()).map(([bioName, bioImage]) => {
+      const matchedAttributes = attributesByBioName.get(bioName) || [];
+      return this.processPlayerWithAttributes(bioImage, matchedAttributes, userId);
+    });
 
     const results = await Promise.allSettled(processPromises);
 
-    // Step 4: Compile results
+    // Step 6: Compile results
     const successfulPlayers = results
       .filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled')
       .map(r => ({ status: 'success', ...r.value }));
@@ -923,44 +1022,14 @@ export class PlayerOcrService {
     };
   }
 
-  private async processPlayerFromBioImage(
+  private async processPlayerWithAttributes(
     bioImage: { file: Express.Multer.File, data: any, positionCode?: string },
-    allAttributeImages: Array<{ file: Express.Multer.File, data: any, positionCode?: string }>,
+    matchedAttributes: Array<{ file: Express.Multer.File, data: any, positionCode?: string }>,
     userId: number
   ): Promise<any> {
     const primaryPlayerName = bioImage.data.NAME;
     const primaryPlayerPosition = bioImage.positionCode;
     const primaryFile = bioImage.file;
-
-    // Find matching attribute images for this player
-    const matchingAttributeImages: Express.Multer.File[] = [];
-    const mismatchedAttributeImages: { file: string; error: string }[] = [];
-
-    for (const attrImage of allAttributeImages) {
-      const attrName = attrImage.data?.playerName;
-      const attrPosition = attrImage.positionCode;
-
-      // Match by name if available
-      if (attrName && !this.areNamesEquivalent(primaryPlayerName, attrName)) {
-        mismatchedAttributeImages.push({
-          file: attrImage.file.originalname,
-          error: `Player name mismatch: Expected ${primaryPlayerName}, found ${attrName}`
-        });
-        continue;
-      }
-
-      // Match by position if available
-      if (attrPosition && attrPosition !== primaryPlayerPosition) {
-        mismatchedAttributeImages.push({
-          file: attrImage.file.originalname,
-          error: `Position mismatch: Expected ${primaryPlayerPosition}, found ${attrPosition}`
-        });
-        continue;
-      }
-
-      // If it passed all checks, it's a match
-      matchingAttributeImages.push(attrImage.file);
-    }
 
     const queryRunner = this.playerRepo.manager.connection.createQueryRunner();
     await queryRunner.connect();
@@ -1010,8 +1079,9 @@ export class PlayerOcrService {
       // Generate a unique batch ID for this player's attribute processing
       const bulkJobId = `bulk-${player.id}-${Date.now()}`;
 
-      // Process matching attribute images
-      const uploadPromises = matchingAttributeImages.map(async (file) => {
+      // Process matching attribute images - no need to report mismatches now
+      const attributeFiles = matchedAttributes.map(attr => attr.file);
+      const uploadPromises = attributeFiles.map(async (file) => {
         const result = await this.cloudinaryService.uploadFile(file);
         if (!result?.secure_url) {
           throw new Error('Attribute image upload failed');
@@ -1066,8 +1136,7 @@ export class PlayerOcrService {
         },
         attributes: {
           valid: completedJobs.length,
-          invalid: mismatchedAttributeImages.length,
-          invalidDetails: mismatchedAttributeImages,
+          queued: completedJobs.length,
           bulkJobId
         },
       };
