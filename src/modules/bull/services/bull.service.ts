@@ -6,12 +6,12 @@ import {
   OnQueueFailed,
 } from '@nestjs/bull';
 import { Job } from 'bull';
-import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PlayerOcrService } from 'src/modules/player/services/playerocr.service';
 import { PlayerEntity, PlayerAttributesEntity } from 'src/modules/player/entity/players.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { approvalStatusEnum, POSTION_CODE } from 'src/types/enums/roles';
+import { POSTION_CODE } from 'src/types/enums/roles';
 
 @Injectable()
 @Processor('imageProcessing')
@@ -64,8 +64,8 @@ export class bullService {
       "pass_blocking": number,  // Also known as "Pass Block" in image
       "catch_in_traffic": number,  // Also known as "Catch In Traffic" in image
       "spectacular_catch": number,  // Also known as "Spectacular Catch" or "SPC" in image
-      "short_route_running": number,  // Also known as "Short Route" in image
-      "medium_route_running": number,  // Also known as "Medium Route" in image
+      "short_route_running": number,  // Also known as "Short Route Running" in image
+      "medium_route_running": number,  // Also known as "Medium Route Running" in image
       "release": number,
       "stamina": number,
       "return": number,  // Also known as "Kick Return" in image
@@ -94,9 +94,9 @@ export class bullService {
       "stiff_arm": number,  // Also known as "Stiff Arm" in image
       "spin_move": number,  // Also known as "Spin Move" in image
       "juke_move": number,  // Also known as "Juke Move" in image
-      "short_route_running": number,  // Also known as "Short Route" in image
-      "medium_route_running": number,  // Also known as "Medium Route" in image
-      "deep_route_running": number,  // Also known as "Deep Route" in image
+      "short_route_running": number,  // Also known as "Short Route Running" in image
+      "medium_route_running": number,  // Also known as "Medium Route Running" in image
+      "deep_route_running": number,  // Also known as "Deep Route Running" in image
       "jumping": number,
       "stamina": number,
       "return": number,  // Also known as "Kick Return" in image
@@ -132,9 +132,9 @@ export class bullService {
       "stiff_arm": number,  // Also known as "Stiff Arm" in image
       "spin_move": number,  // Also known as "Spin Move" in image
       "juke_move": number,  // Also known as "Juke Move" in image
-      "short_route_running": number,  // Also known as "Short Route" in image
-      "medium_route_running": number,  // Also known as "Medium Route" in image
-      "deep_route_running": number,  // Also known as "Deep Route" in image
+      "short_route_running": number,  // Also known as "Short Route Running" in image
+      "medium_route_running": number,  // Also known as "Medium Route Running" in image
+      "deep_route_running": number,  // Also known as "Deep Route Running" in image
       "jumping": number,
       "stamina": number,
       "injury": number
@@ -531,12 +531,17 @@ Return ONLY the JSON, no explanations or comments. Use the exact attribute names
     positionCode: string;
     bulkJobId?: string;
   }>) {
-    const { playerId, imageUrl, positionCode, originalName, bulkJobId } = job.data;
+    const { playerId, imageUrl, positionCode, bulkJobId } = job.data;
 
     try {
       this.logger.log(`[${bulkJobId || 'single'}] Processing ${positionCode} attributes for player ${playerId}`);
 
       const player = await this.fetchPlayer(playerId);
+
+      if (player.position.code !== positionCode) {
+        this.logger.warn(`Position mismatch: Player ${player.name} has position ${player.position.code}, but processing ${positionCode} attributes`);
+      }
+
       const positionPrompt = this.positionPrompts[positionCode];
 
       if (!positionPrompt) {
@@ -545,9 +550,11 @@ Return ONLY the JSON, no explanations or comments. Use the exact attribute names
 
       const gptResult = await this.getGptResultWithRetry(imageUrl, positionPrompt, bulkJobId);
 
+      this.logger.debug(`[${bulkJobId}] GPT result for player ${playerId} (${player.name}): ${JSON.stringify(gptResult)}`);
+
       const newAttributes = await this.ocrService.convertAttributes(gptResult, positionCode, player);
 
-      await this.savePlayerAttributes(playerId, newAttributes);
+      await this.savePlayerAttributes(playerId, newAttributes, player.name);
 
       this.logger.log(`[${bulkJobId}] Successfully processed attributes for player ${playerId}`);
 
@@ -557,6 +564,7 @@ Return ONLY the JSON, no explanations or comments. Use the exact attribute names
       throw new Error(`Attribute processing failed: ${error.message}`);
     }
   }
+
 
   private async fetchPlayer(playerId: number): Promise<PlayerEntity> {
     const player = await this.playerRepo.findOne({
@@ -595,23 +603,34 @@ Return ONLY the JSON, no explanations or comments. Use the exact attribute names
     await new Promise(resolve => setTimeout(resolve, delay));
   }
 
-  private async savePlayerAttributes(playerId: number, newAttributes: any): Promise<void> {
-    await this.playerAttrRepo.manager.transaction(async (transactionalEntityManager) => {
-      let existingAttrs = await transactionalEntityManager.findOne(PlayerAttributesEntity, {
-        where: { player: { id: playerId } },
-      });
+  private async savePlayerAttributes(playerId: number, newAttributes: any, playerName: string): Promise<void> {
+    try {
+      await this.playerAttrRepo.manager.transaction(async (transactionalEntityManager) => {
+        // Add debug log to track the transaction
+        this.logger.debug(`Starting transaction to save attributes for player ${playerId} (${playerName})`);
 
-      if (!existingAttrs) {
-        existingAttrs = transactionalEntityManager.create(PlayerAttributesEntity, {
-          ...newAttributes,
-          player: { id: playerId },
+        let existingAttrs = await transactionalEntityManager.findOne(PlayerAttributesEntity, {
+          where: { player: { id: playerId } },
         });
-      } else {
-        transactionalEntityManager.merge(PlayerAttributesEntity, existingAttrs, newAttributes);
-      }
 
-      await transactionalEntityManager.save(existingAttrs);
-    });
+        if (!existingAttrs) {
+          this.logger.debug(`Creating new attributes for player ${playerId} (${playerName})`);
+          existingAttrs = transactionalEntityManager.create(PlayerAttributesEntity, {
+            ...newAttributes,
+            player: { id: playerId },
+          });
+        } else {
+          this.logger.debug(`Updating existing attributes for player ${playerId} (${playerName})`);
+          transactionalEntityManager.merge(PlayerAttributesEntity, existingAttrs, newAttributes);
+        }
+
+        const savedResult = await transactionalEntityManager.save(existingAttrs);
+        this.logger.debug(`Successfully saved attributes for player ${playerId} (${playerName}): ${JSON.stringify(savedResult)}`);
+      });
+    } catch (error) {
+      this.logger.error(`Failed to save attributes for player ${playerId} (${playerName}): ${error.message}`);
+      throw error;
+    }
   }
 
   private createProcessingResponse(newAttributes: any, playerId: number, positionCode: string, bulkJobId?: string) {
@@ -635,9 +654,8 @@ Return ONLY the JSON, no explanations or comments. Use the exact attribute names
       originalName: string;
     }>;
   }>) {
-    const { userIds, files } = job.data;
+    const { files } = job.data;
 
-    // Group files by player ID
     const filesByPlayer = files.reduce((acc, file) => {
       if (!acc[file.playerId]) {
         acc[file.playerId] = [];
@@ -646,22 +664,18 @@ Return ONLY the JSON, no explanations or comments. Use the exact attribute names
       return acc;
     }, {} as Record<number, typeof files>);
 
-    // Process each player's files
     const results = await Promise.all(
       Object.entries(filesByPlayer).map(async ([playerIdStr, playerFiles]) => {
         const playerId = parseInt(playerIdStr, 10);
-        const positionCode = playerFiles[0].positionCode; // Assume all files for a player have same position
+        const positionCode = playerFiles[0].positionCode;
 
-        // Create a bulk job ID for this player
         const bulkJobId = `bulk-${playerId}-${Date.now()}`;
 
-        // Queue all images for this player
         const imageUrls = playerFiles.map(file => ({
           url: file.url,
           originalName: file.originalName
         }));
 
-        // Process the player's images
         const result = await this.handleBulkImageProcessing({
           data: {
             bulkJobId,
