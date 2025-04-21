@@ -11,8 +11,9 @@ import {
   InternalServerErrorException,
   Param,
   NotFoundException,
+  UploadedFile,
 } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
@@ -27,6 +28,7 @@ import { ConversionDto } from './dto/convert-manually.dto';
 import { User } from 'src/utils/user.decorator';
 import { userjwtInterface } from '../jwt/interface/jwt.interface';
 import { userjwtGuard } from 'src/providers/guards/user-guard/user.guard';
+import { bullService } from '../bull/services/bull.service';
 
 @ApiTags('Player OCR')
 @ApiBearerAuth('jwt')
@@ -37,6 +39,7 @@ export class PlayerOcrController {
   logger: any;
   constructor(
     private readonly playerOcrService: PlayerOcrService,
+    private readonly bullService: bullService,
     private readonly playeService: playerService,
   ) { }
 
@@ -62,11 +65,10 @@ export class PlayerOcrController {
     return this.playeService.conversionLogic(conversionDto, user.id);
   }
 
-  @Post('ConvertWithImage')
+  @Post('upload')
   @UseInterceptors(FilesInterceptor('files', 10))
   @ApiOperation({
-    summary:
-      'Process uploaded player images (first image is primary, rest are attributes).',
+    summary: 'Process uploaded player images (bio image + attributes).'
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -81,61 +83,31 @@ export class PlayerOcrController {
             format: 'binary',
           },
         },
+
       },
-      required: ['files'],
+      required: ['files']
     },
   })
   @ApiResponse({
-    status: 200,
-    description: 'Player processed successfully',
-  })
-  async processPlayerImage(
-    @UploadedFiles() files: Express.Multer.File[],
-
-    @User() user: userjwtInterface,
-  ) {
-
-    if (!files || files.length === 0) {
-      throw new BadRequestException('No files uploaded');
-    }
-    return this.playerOcrService.processPlayerImage(files, user.id);
-  }
-
-  @ApiResponse({
     status: 400,
-    description: 'No files uploaded or invalid request',
+    description: 'Bad request - missing files or invalid data'
   })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - JWT token missing or invalid',
-  })
-  @ApiResponse({
-    status: 500,
-    description: 'Internal server error during processing',
-  })
-  async processPlayers(
+  async uploadPlayerImages(
     @UploadedFiles() files: Express.Multer.File[],
     @User() user: userjwtInterface
   ) {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('No files uploaded');
+    }
 
     try {
-      const result = await this.playerOcrService.processBulkPlayers(files, user.id);
-
-
-      return {
-        success: true,
-        bulkJobId: result.bulkJobId,
-        message: `Bulk processing started for ${result.totalPlayers} players`,
-        summary: {
-          total: result.totalPlayers,
-          success: result.successCount,
-          failed: result.failedCount
-        }
-      };
+      return await this.playerOcrService.processBulkPlayerImages(files, user.id);
     } catch (error) {
-      this.logger.error('Bulk upload failed', error.stack);
-      throw new InternalServerErrorException('Failed to start bulk processing');
+      this.logger.error(`Failed to process player images: ${error.message}`, error.stack);
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to process player images');
     }
   }
-
 }
