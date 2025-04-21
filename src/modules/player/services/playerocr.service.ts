@@ -736,9 +736,6 @@ export class PlayerOcrService {
       }
     }
 
-
-
-    // Remove undefined values (but keep 0 values)
     Object.keys(adjustedData).forEach(key => {
       if (adjustedData[key as keyof PlayerAttributesEntity] === undefined) {
         delete adjustedData[key as keyof PlayerAttributesEntity];
@@ -866,414 +863,13 @@ export class PlayerOcrService {
       };
     }
   }
-  private createPlayerClusters(results: any[]) {
-    const validResults = results.filter(r => !r.error);
-    const clusters: Record<string, any> = {};
 
-    validResults.forEach(result => {
-      try {
-        // For bio images, create new cluster
-        if (result.type === 'PLAYERS LEAVING') {
-          const playerKey = `${result.data.NAME}_${result.data.POS}`.toLowerCase();
-          clusters[playerKey] = {
-            bioImage: result,
-            attributeImages: [],
-            positionCode: result.data.POS,
-            playerName: result.data.NAME
-          };
-        }
-        // For attribute images, try to match to existing cluster
-        else if (result.type === 'Ratings') {
-          const attrName = result.data.playerName;
-          const attrPos = result.positionCode;
-
-          // Find matching cluster by name + position
-          const matchingCluster = Object.values(clusters).find(cluster =>
-            this.areNamesEquivalent(cluster.playerName, attrName) &&
-            cluster.positionCode === attrPos
-          );
-
-          if (matchingCluster) {
-            matchingCluster.attributeImages.push(result);
-          } else {
-            // If no match but we have position, create incomplete cluster
-            if (attrPos) {
-              const fallbackKey = `${attrName || 'unknown'}_${attrPos}`.toLowerCase();
-              if (!clusters[fallbackKey]) {
-                clusters[fallbackKey] = {
-                  bioImage: null,
-                  attributeImages: [result],
-                  positionCode: attrPos,
-                  playerName: attrName || 'Unknown'
-                };
-              } else {
-                clusters[fallbackKey].attributeImages.push(result);
-              }
-            }
-          }
-        }
-      } catch (error) {
-        this.logger.error('Error clustering image', error);
-      }
-    });
-
-    return Object.values(clusters);
-  }
-
-  /**
-   * Process each player cluster independently
-   */
-  private async processPlayerClusters(clusters: any[], userId: number) {
-    const results: Array<{
-      success: boolean;
-      playerName?: string;
-      position?: string;
-      message: string;
-      error?: string;
-    }> = [];
-
-    for (const cluster of clusters) {
-      try {
-        // Skip clusters without bio image
-        if (!cluster.bioImage) {
-          results.push({
-            success: false,
-            playerName: cluster.playerName,
-            position: cluster.positionCode,
-            message: 'Missing primary bio image',
-            error: 'Cannot create player without bio information'
-          });
-          continue;
-        }
-
-        // Process the player with their attributes
-        const playerResult = await this.processSinglePlayer(
-          cluster.bioImage,
-          cluster.attributeImages,
-          userId
-        );
-
-        results.push({
-          success: true,
-          ...playerResult
-        });
-      } catch (error) {
-        results.push({
-          success: false,
-          playerName: cluster.playerName,
-          position: cluster.positionCode,
-          message: 'Player processing failed',
-          error: error.message
-        });
-      }
-    }
-
-    return results;
-  }
-  private async classifyAllImages(files: Express.Multer.File[]) {
-    return Promise.all(
-      files.map(async (file) => {
-        try {
-          const result = await this.identifyImageType(file);
-          return { file, ...result, error: null };
-        } catch (error) {
-          return {
-            file,
-            error: `Classification failed: ${error.message}`,
-            type: 'unknown',
-            data: null
-          };
-        }
-      })
-    );
-  }
-  async processBulkPlayers(files: Express.Multer.File[], userId: number) {
+  async processBulkPlayerImages(files: Express.Multer.File[], userId: number): Promise<any> {
     if (!files?.length) {
       throw new BadRequestException('No files uploaded');
     }
-  
-    // Create a unique bulk job ID for tracking
-    const bulkJobId = `bulk-${Date.now()}`;
-    this.logger.log(`Starting bulk processing job ${bulkJobId} with ${files.length} files`);
-  
+
     // Step 1: Classify all images
-    const classificationResults = await this.classifyAllImages(files);
-  
-    // Step 2: Group into player clusters
-    const playerClusters = this.createPlayerClusters(classificationResults);
-  
-    // Step 3: Process each player cluster as separate jobs
-    const processingPromises = playerClusters.map(cluster => 
-      this.processPlayerClusterAsJob(cluster, userId, bulkJobId)
-    );
-  
-    const results = await Promise.allSettled(processingPromises);
-  
-    return {
-      bulkJobId,
-      totalPlayers: playerClusters.length,
-      successCount: results.filter(r => r.status === 'fulfilled').length,
-      failedCount: results.filter(r => r.status === 'rejected').length,
-      results: results.map(result => 
-        result.status === 'fulfilled' ? 
-          { status: 'success', data: result.value } : 
-          { status: 'failed', error: result.reason.message }
-      )
-    };
-  }
-  
-  private async processPlayerClusterAsJob(cluster: any, userId: number, bulkJobId: string) {
-    // Skip clusters without bio image
-    if (!cluster.bioImage) {
-      throw new Error(`Missing primary bio image for ${cluster.playerName}`);
-    }
-  
-    // Process the player with their attributes
-    return this.processSinglePlayerWithQueue(
-      cluster.bioImage,
-      cluster.attributeImages,
-      userId,
-      bulkJobId
-    );
-  }
-  
-  private async processSinglePlayerWithQueue(
-    bioImage: any,
-    attributeImages: any[],
-    userId: number,
-    bulkJobId: string
-  ) {
-    const queryRunner = this.playerRepo.manager.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-  
-    try {
-      // Upload bio image
-      const uploadResult = await this.cloudinaryService.uploadFile(bioImage.file);
-      if (!uploadResult?.secure_url) {
-        throw new Error('Primary image upload failed');
-      }
-  
-      const { NAME, POS, OVR, CLASS, HEIGHT, WEIGHT, HOMETOWN, REASON } = bioImage.data;
-      const position = await this.playerPositionRepo.findOne({ where: { code: POS } });
-      if (!position) {
-        throw new NotFoundException(`Position "${POS}" not found`);
-      }
-  
-      // Create player entity
-      const player = await queryRunner.manager.save(
-        PlayerEntity,
-        this.playerRepo.create({
-          name: NAME,
-          overallRating: parseInt(OVR, 10) || undefined,
-          height: this.parseHeightString(HEIGHT),
-          weight: this.parseWeightString(WEIGHT),
-          homeTown: HOMETOWN ?? null,
-          playerClass: this.normalizeClassString(CLASS || '') ?? undefined,
-          projectedReason: this.extractDraftRound(REASON)?.toString(),
-          user: { id: userId } as any,
-          position: { id: position.id } as any,
-        })
-      );
-  
-      // Save player image
-      await queryRunner.manager.save(
-        PlayerImageEntity,
-        this.playerImageRepo.create({
-          url: uploadResult.secure_url,
-          player,
-        })
-      );
-  
-      // Process attribute images as separate queue jobs
-      const attributeJobs = await Promise.all(
-        attributeImages.map(async (attrImage) => {
-          try {
-            const attrUploadResult = await this.cloudinaryService.uploadFile(attrImage.file);
-            if (!attrUploadResult?.secure_url) {
-              throw new Error('Attribute image upload failed');
-            }
-  
-            const job = await this.imageQueue.add(
-              'processImage',
-              {
-                userId,
-                playerId: player.id,
-                imageUrl: attrUploadResult.secure_url,
-                originalName: attrImage.file.originalname,
-                positionCode: POS,
-                bulkJobId
-              },
-              {
-                attempts: 3,
-                backoff: { type: 'exponential', delay: 2000 },
-                removeOnComplete: true,
-                removeOnFail: true
-              }
-            );
-  
-            return { 
-              status: 'queued',
-              jobId: job.id,
-              originalName: attrImage.file.originalname 
-            };
-          } catch (error) {
-            return {
-              status: 'failed',
-              originalName: attrImage.file.originalname,
-              error: error.message
-            };
-          }
-        })
-      );
-  
-      await queryRunner.commitTransaction();
-  
-      return {
-        playerId: player.id,
-        playerName: NAME,
-        position: POS,
-        bioImage: uploadResult.secure_url,
-        attributeJobs: attributeJobs,
-        message: `Player ${NAME} queued for processing with ${attributeImages.length} attributes`
-      };
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
-  }
-  private async processAttributeImages(attributeImages: any[], playerId: number, positionCode: string, queryRunner: any) {
-    const results: {
-      validCount: number;
-      invalidCount: number;
-      invalidDetails: { file: string; error: string }[];
-    } = {
-      validCount: 0,
-      invalidCount: 0,
-      invalidDetails: []
-    };
-
-    for (const attrImage of attributeImages) {
-      try {
-        // Upload attribute image
-        const uploadResult = await this.cloudinaryService.uploadFile(attrImage.file);
-        if (!uploadResult?.secure_url) {
-          throw new Error('Attribute image upload failed');
-        }
-
-        // Queue for processing
-        await this.imageQueue.add(
-          'processAttributes',
-          {
-            playerId,
-            imageUrl: uploadResult.secure_url,
-            positionCode,
-            originalName: attrImage.file.originalname
-          },
-          { removeOnComplete: true }
-        );
-
-        results.validCount++;
-      } catch (error) {
-        results.invalidCount++;
-        results.invalidDetails.push({
-          file: attrImage.file.originalname,
-          error: error.message
-        });
-      }
-    }
-
-    return results;
-  }
-  private async processSinglePlayer(bioImage: any, attributeImages: any[], userId: number) {
-    const queryRunner = this.playerRepo.manager.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      // Upload bio image
-      const uploadResult = await this.cloudinaryService.uploadFile(bioImage.file);
-      if (!uploadResult?.secure_url) {
-        throw new Error('Primary image upload failed');
-      }
-
-      const { NAME, POS, OVR, CLASS, HEIGHT, WEIGHT, HOMETOWN, REASON } = bioImage.data;
-      const position = await this.playerPositionRepo.findOne({ where: { code: POS } });
-      if (!position) {
-        throw new NotFoundException(`Position "${POS}" not found`);
-      }
-
-      // Create player entity
-      const player = await queryRunner.manager.save(
-        PlayerEntity,
-        this.playerRepo.create({
-          name: NAME,
-          overallRating: parseInt(OVR, 10) || undefined,
-          height: this.parseHeightString(HEIGHT),
-          weight: this.parseWeightString(WEIGHT),
-          homeTown: HOMETOWN ?? null,
-          playerClass: this.normalizeClassString(CLASS || '') ?? undefined,
-          projectedReason: this.extractDraftRound(REASON)?.toString(),
-          user: { id: userId } as any,
-          position: { id: position.id } as any,
-        })
-      );
-
-      // Save player image
-      await queryRunner.manager.save(
-        PlayerImageEntity,
-        this.playerImageRepo.create({
-          url: uploadResult.secure_url,
-          player,
-        })
-      );
-
-      // Process attribute images
-      const attributeResults = await this.processAttributeImages(
-        attributeImages,
-        player.id,
-        POS,
-        queryRunner
-      );
-
-      await queryRunner.commitTransaction();
-
-      return {
-        player: {
-          id: player.id,
-          name: NAME,
-          position: POS,
-          overallRating: parseInt(OVR, 10) || null,
-          class: CLASS,
-          height: HEIGHT,
-          weight: WEIGHT,
-          homeTown: HOMETOWN,
-          draftProjection: REASON,
-          imageUrl: uploadResult.secure_url,
-        },
-        attributes: {
-          valid: attributeResults.validCount,
-          invalid: attributeResults.invalidCount,
-          invalidDetails: attributeResults.invalidDetails
-        },
-        message: `Player ${NAME} converted successfully with ${attributeResults.validCount} valid attributes`
-      };
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
-  }
-
-  async processPlayerImage(files: Express.Multer.File[], userId: number): Promise<any> {
-    if (!files?.length) {
-      throw new BadRequestException('No files uploaded');
-    }
-
-    // Classify all images first
     const classificationResults = await Promise.all(
       files.map(async file => {
         try {
@@ -1290,58 +886,80 @@ export class PlayerOcrService {
       })
     );
 
-    // Find the primary bio image
-    const bioImageResult = classificationResults.find(r => r.type === 'PLAYERS LEAVING');
-    if (!bioImageResult) {
-      throw new BadRequestException('Missing required player bio image');
+    // Step 2: Group bio images
+    const bioImages = classificationResults.filter(r => r.type === 'PLAYERS LEAVING' && !r.error);
+    const attributeImages = classificationResults.filter(r => r.type === 'Ratings' && !r.error);
+    const invalidImages = classificationResults.filter(r => r.error || r.type === 'unknown');
+
+    if (bioImages.length === 0) {
+      throw new BadRequestException('No valid player bio images found');
     }
 
-    const primaryPlayerName = bioImageResult.data.NAME;
-    const primaryPlayerPosition = 'positionCode' in bioImageResult ? bioImageResult.positionCode : undefined;
-    const primaryFile = bioImageResult.file;
+    // Step 3: Process each player
+    const processPromises = bioImages.map(bioImage =>
+      this.processPlayerFromBioImage(bioImage, attributeImages, userId)
+    );
 
-    // Separate attribute images and validate them
-    const attributeResults = classificationResults.filter(r => r !== bioImageResult);
-    const validAttributeFiles: Express.Multer.File[] = [];
-    const invalidAttributeFiles: { file: string; error: string }[] = [];
+    const results = await Promise.allSettled(processPromises);
 
-    for (const attrResult of attributeResults) {
-      if (attrResult.error) {
-        invalidAttributeFiles.push({
-          file: attrResult.file.originalname,
-          error: attrResult.error
-        });
-        continue;
-      }
+    // Step 4: Compile results
+    const successfulPlayers = results
+      .filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled')
+      .map(r => ({ status: 'success', ...r.value }));
 
-      // Check name match if name is present in attribute image
-      const attrName = attrResult.data?.playerName;
+    const failedPlayers = results
+      .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+      .map(r => ({ status: 'failed', error: r.reason.message }));
+
+    return {
+      message: `Processed ${bioImages.length} players with ${attributeImages.length} attribute images`,
+      successCount: successfulPlayers.length,
+      failedCount: failedPlayers.length,
+      players: [...successfulPlayers, ...failedPlayers],
+      invalidImages: invalidImages.map(img => ({
+        filename: img.file.originalname,
+        error: img.error
+      }))
+    };
+  }
+
+  private async processPlayerFromBioImage(
+    bioImage: { file: Express.Multer.File, data: any, positionCode?: string },
+    allAttributeImages: Array<{ file: Express.Multer.File, data: any, positionCode?: string }>,
+    userId: number
+  ): Promise<any> {
+    const primaryPlayerName = bioImage.data.NAME;
+    const primaryPlayerPosition = bioImage.positionCode;
+    const primaryFile = bioImage.file;
+
+    // Find matching attribute images for this player
+    const matchingAttributeImages: Express.Multer.File[] = [];
+    const mismatchedAttributeImages: { file: string; error: string }[] = [];
+
+    for (const attrImage of allAttributeImages) {
+      const attrName = attrImage.data?.playerName;
+      const attrPosition = attrImage.positionCode;
+
+      // Match by name if available
       if (attrName && !this.areNamesEquivalent(primaryPlayerName, attrName)) {
-        invalidAttributeFiles.push({
-          file: attrResult.file.originalname,
+        mismatchedAttributeImages.push({
+          file: attrImage.file.originalname,
           error: `Player name mismatch: Expected ${primaryPlayerName}, found ${attrName}`
         });
         continue;
       }
 
-      // Check position match if position is present in attribute image
-      const attrPosition = 'positionCode' in attrResult ? attrResult.positionCode : undefined;
+      // Match by position if available
       if (attrPosition && attrPosition !== primaryPlayerPosition) {
-        invalidAttributeFiles.push({
-          file: attrResult.file.originalname,
+        mismatchedAttributeImages.push({
+          file: attrImage.file.originalname,
           error: `Position mismatch: Expected ${primaryPlayerPosition}, found ${attrPosition}`
         });
         continue;
       }
 
-      validAttributeFiles.push(attrResult.file);
-    }
-
-    if (validAttributeFiles.length === 0) {
-      throw new BadRequestException({
-        message: 'No valid attribute images found',
-        errors: invalidAttributeFiles
-      });
+      // If it passed all checks, it's a match
+      matchingAttributeImages.push(attrImage.file);
     }
 
     const queryRunner = this.playerRepo.manager.connection.createQueryRunner();
@@ -1355,7 +973,7 @@ export class PlayerOcrService {
         throw new Error('Primary image upload failed');
       }
 
-      const { NAME, POS, OVR, CLASS, HEIGHT, WEIGHT, HOMETOWN, REASON } = bioImageResult.data;
+      const { NAME, POS, OVR, CLASS, HEIGHT, WEIGHT, HOMETOWN, REASON } = bioImage.data;
       const position = await this.playerPositionRepo.findOne({ where: { code: POS } });
       if (!position) {
         throw new NotFoundException(`Position "${POS}" not found`);
@@ -1389,8 +1007,11 @@ export class PlayerOcrService {
         })
       );
 
-      // Process valid attribute images
-      const uploadPromises = validAttributeFiles.map(async (file) => {
+      // Generate a unique batch ID for this player's attribute processing
+      const bulkJobId = `bulk-${player.id}-${Date.now()}`;
+
+      // Process matching attribute images
+      const uploadPromises = matchingAttributeImages.map(async (file) => {
         const result = await this.cloudinaryService.uploadFile(file);
         if (!result?.secure_url) {
           throw new Error('Attribute image upload failed');
@@ -1404,6 +1025,7 @@ export class PlayerOcrService {
             imageUrl: result.secure_url,
             originalName: file.originalname,
             positionCode: POS,
+            bulkJobId
           },
           {
             delay: 1000,
@@ -1423,19 +1045,13 @@ export class PlayerOcrService {
       });
 
       const queueResults = await Promise.allSettled(uploadPromises);
-      const completedJobs = await Promise.all(
-        queueResults
-          .filter(r => r.status === 'fulfilled')
-          .map(async r => {
-            const job = await this.imageQueue.getJob((r as PromiseFulfilledResult<any>).value.jobId);
-            return job;
-          })
-      );
+      const completedJobs = queueResults
+        .filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled')
+        .map(r => r.value);
 
       await queryRunner.commitTransaction();
 
       return {
-        message: `Player ${playerData.name} converted successfully with ${completedJobs.length} valid attributes`,
         player: {
           id: player.id,
           name: NAME,
@@ -1450,16 +1066,18 @@ export class PlayerOcrService {
         },
         attributes: {
           valid: completedJobs.length,
-          invalid: invalidAttributeFiles.length,
-          invalidDetails: invalidAttributeFiles,
+          invalid: mismatchedAttributeImages.length,
+          invalidDetails: mismatchedAttributeImages,
+          bulkJobId
         },
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      this.logger.error('Player creation failed:', error);
+      this.logger.error(`Player creation failed for ${bioImage.data.NAME}:`, error);
       throw error;
     } finally {
       await queryRunner.release();
     }
   }
+
 }

@@ -510,6 +510,7 @@ Return ONLY the JSON, no explanations or comments. Use the exact attribute names
 
   private readonly logger = new Logger(bullService.name);
 
+
   @OnQueueActive()
   onActive(job: Job) {
     this.logger.log(`Processing job ${job.id}: ${job.data.originalName} for player ${job.data.playerId}`);
@@ -535,140 +536,161 @@ Return ONLY the JSON, no explanations or comments. Use the exact attribute names
     try {
       this.logger.log(`[${bulkJobId || 'single'}] Processing ${positionCode} attributes for player ${playerId}`);
 
-      // Verify player exists
-      const player = await this.playerRepo.findOne({
-        where: { id: playerId },
-        relations: ['position'],
-      });
-
-      if (!player) {
-        throw new Error(`Player with ID ${playerId} not found`);
-      }
-
-      // Get the appropriate prompt for the position
+      const player = await this.fetchPlayer(playerId);
       const positionPrompt = this.positionPrompts[positionCode];
+
       if (!positionPrompt) {
         throw new Error(`No prompt defined for position ${positionCode}`);
       }
 
-      // Add retry with exponential backoff
-      let gptResult;
-      const maxRetries = 3;
-      let attempt = 0;
+      const gptResult = await this.getGptResultWithRetry(imageUrl, positionPrompt, bulkJobId);
 
-      while (attempt < maxRetries) {
-        try {
-          gptResult = await this.ocrService.callGptOcr(
-            imageUrl,
-            positionPrompt
-          );
-          break;
-        } catch (error) {
-          attempt++;
-          if (attempt >= maxRetries) throw error;
+      const newAttributes = await this.ocrService.convertAttributes(gptResult, positionCode, player);
 
-          const delay = 1000 * Math.pow(2, attempt);
-          this.logger.warn(`[${bulkJobId}] Retry ${attempt} for player ${playerId} in ${delay}ms`);
-          await new Promise(resolve => setTimeout(resolve, delay));
-        }
-      }
-
-      // Convert and save attributes
-      const newAttributes = await this.ocrService.convertAttributes(
-        gptResult,
-        positionCode,
-        player
-      );
-
-      await this.playerAttrRepo.manager.transaction(async (transactionalEntityManager) => {
-        let existingAttrs = await transactionalEntityManager.findOne(PlayerAttributesEntity, {
-          where: { player: { id: playerId } },
-        });
-
-        if (!existingAttrs) {
-          existingAttrs = transactionalEntityManager.create(PlayerAttributesEntity, {
-            ...newAttributes,
-            player: { id: playerId },
-          });
-        } else {
-          transactionalEntityManager.merge(PlayerAttributesEntity, existingAttrs, newAttributes);
-        }
-
-        await transactionalEntityManager.save(existingAttrs);
-      });
+      await this.savePlayerAttributes(playerId, newAttributes);
 
       this.logger.log(`[${bulkJobId}] Successfully processed attributes for player ${playerId}`);
 
-      return {
-        status: 'success',
-        playerId,
-        positionCode,
-        attributes: Object.keys(newAttributes).length,
-        processedAt: new Date(),
-        bulkJobId
-      };
+      return this.createProcessingResponse(newAttributes, playerId, positionCode, bulkJobId);
     } catch (error) {
       this.logger.error(`[${bulkJobId}] Failed to process attributes for player ${playerId}: ${error.message}`);
       throw new Error(`Attribute processing failed: ${error.message}`);
     }
   }
+
+  private async fetchPlayer(playerId: number): Promise<PlayerEntity> {
+    const player = await this.playerRepo.findOne({
+      where: { id: playerId },
+      relations: ['position'],
+    });
+
+    if (!player) {
+      throw new Error(`Player with ID ${playerId} not found`);
+    }
+    return player;
+  }
+
+  private async getGptResultWithRetry(imageUrl: string, positionPrompt: string, bulkJobId?: string): Promise<any> {
+    let gptResult;
+    const maxRetries = 3;
+    let attempt = 0;
+
+    while (attempt < maxRetries) {
+      try {
+        gptResult = await this.ocrService.callGptOcr(imageUrl, positionPrompt);
+        break;
+      } catch (error) {
+        attempt++;
+        if (attempt >= maxRetries) throw error;
+        await this.retryDelay(attempt, bulkJobId);
+      }
+    }
+
+    return gptResult;
+  }
+
+  private async retryDelay(attempt: number, bulkJobId?: string): Promise<void> {
+    const delay = 1000 * Math.pow(2, attempt);
+    this.logger.warn(`[${bulkJobId}] Retry ${attempt} in ${delay}ms`);
+    await new Promise(resolve => setTimeout(resolve, delay));
+  }
+
+  private async savePlayerAttributes(playerId: number, newAttributes: any): Promise<void> {
+    await this.playerAttrRepo.manager.transaction(async (transactionalEntityManager) => {
+      let existingAttrs = await transactionalEntityManager.findOne(PlayerAttributesEntity, {
+        where: { player: { id: playerId } },
+      });
+
+      if (!existingAttrs) {
+        existingAttrs = transactionalEntityManager.create(PlayerAttributesEntity, {
+          ...newAttributes,
+          player: { id: playerId },
+        });
+      } else {
+        transactionalEntityManager.merge(PlayerAttributesEntity, existingAttrs, newAttributes);
+      }
+
+      await transactionalEntityManager.save(existingAttrs);
+    });
+  }
+
+  private createProcessingResponse(newAttributes: any, playerId: number, positionCode: string, bulkJobId?: string) {
+    return {
+      status: 'success',
+      playerId,
+      positionCode,
+      attributes: Object.keys(newAttributes).length,
+      processedAt: new Date(),
+      bulkJobId
+    };
+  }
+
   @Process('processBulkAttributes')
   async handleBulkImageProcessing(job: Job<{
-    bulkJobId: string;
-    playerId: number;
-    positionCode: string;
-    imageUrls: Array<{
+    userIds: number[];
+    files: Array<{
+      playerId: number;
+      positionCode: string;
       url: string;
       originalName: string;
     }>;
   }>) {
-    const { bulkJobId, playerId, positionCode, imageUrls } = job.data;
-    const results: Array<{
-      originalName: string;
-      status: string;
-      error?: string;
-      attempt?: number;
-    }> = [];
+    const { userIds, files } = job.data;
 
-    this.logger.log(`[${bulkJobId}] Starting bulk processing of ${imageUrls.length} images for player ${playerId}`);
-
-    for (const [index, image] of imageUrls.entries()) {
-      try {
-        const result = await this.handleImageProcessing({
-          ...job,
-          data: {
-            ...job.data,
-            imageUrl: image.url,
-            originalName: image.originalName,
-            bulkJobId
-          }
-        } as any);
-
-        results.push({
-          originalName: image.originalName,
-          ...result,
-          status: 'success',
-        });
-      } catch (error) {
-        results.push({
-          originalName: image.originalName,
-          status: 'failed',
-          error: error.message,
-          attempt: index + 1
-        });
+    // Group files by player ID
+    const filesByPlayer = files.reduce((acc, file) => {
+      if (!acc[file.playerId]) {
+        acc[file.playerId] = [];
       }
-    }
+      acc[file.playerId].push(file);
+      return acc;
+    }, {} as Record<number, typeof files>);
+
+    // Process each player's files
+    const results = await Promise.all(
+      Object.entries(filesByPlayer).map(async ([playerIdStr, playerFiles]) => {
+        const playerId = parseInt(playerIdStr, 10);
+        const positionCode = playerFiles[0].positionCode; // Assume all files for a player have same position
+
+        // Create a bulk job ID for this player
+        const bulkJobId = `bulk-${playerId}-${Date.now()}`;
+
+        // Queue all images for this player
+        const imageUrls = playerFiles.map(file => ({
+          url: file.url,
+          originalName: file.originalName
+        }));
+
+        // Process the player's images
+        const result = await this.handleBulkImageProcessing({
+          data: {
+            bulkJobId,
+            playerId,
+            positionCode,
+            imageUrls
+          }
+        } as Job);
+
+        return {
+          playerId,
+          ...result
+        };
+      })
+    );
 
     return {
-      bulkJobId,
-      playerId,
-      positionCode,
-      totalImages: imageUrls.length,
-      successCount: results.filter(r => r.status === 'success').length,
-      failedCount: results.filter(r => r.status === 'failed').length,
+      totalPlayers: Object.keys(filesByPlayer).length,
+      processedAt: new Date(),
       results
     };
   }
+
+
+  @OnQueueFailed()
+  async onFailed(job: Job, err: Error) {
+    await this.handleFailedJob(job, err);
+  }
+
   private async handleFailedJob(job: Job, error: Error) {
     const { playerId, originalName, bulkJobId } = job.data;
 
@@ -680,17 +702,10 @@ Return ONLY the JSON, no explanations or comments. Use the exact attribute names
       return;
     }
 
-    // For final failures, you might want to update the player record
     try {
-      await this.playerRepo.update(playerId, {
-      });
+      await this.playerRepo.update(playerId, { /* any updates on failure */ });
     } catch (dbError) {
       this.logger.error(`[${bulkJobId}] Failed to update player status: ${dbError.message}`);
     }
-  }
-
-  @OnQueueFailed()
-  async onFailed(job: Job, err: Error) {
-    await this.handleFailedJob(job, err);
   }
 }
