@@ -1,3 +1,4 @@
+import { IsOptional } from "@nestjs/class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 import { IsNotEmpty, IsNumber, IsString, } from "class-validator";
 
@@ -22,6 +23,23 @@ export class ConversionDto {
   @ApiProperty() @IsNumber()
   draft_round: number;
 
+  @ApiProperty() @IsNumber() @IsOptional()
+  ovr: number;
+
+  @ApiProperty() @IsNumber() @IsOptional()
+  weight: number
+
+  @ApiProperty() @IsString() @IsOptional()
+  height: string
+
+  @ApiProperty() @IsString() @IsOptional()
+  homeTown: string
+
+  @ApiProperty() @IsString() @IsOptional()
+  player_class: string
+
+  @ApiProperty() @IsNumber() @IsOptional()
+  projected_Reason: number
 }
 
 export class TightEndDto {

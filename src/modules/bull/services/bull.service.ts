@@ -498,7 +498,7 @@ Return ONLY the JSON, no explanations or comments. Use the exact attribute names
 }
 // Fullback attributes combining blocking skills with rushing/receiving capabilities
 Return ONLY the JSON, no explanations or comments. Use the exact attribute names as shown. Only include attributes visible in the image with numeric values.`
-  };
+  };//need some kind of work maybe later
 
   constructor(
     private readonly ocrService: PlayerOcrService,
@@ -526,21 +526,19 @@ Return ONLY the JSON, no explanations or comments. Use the exact attribute names
   async handleImageProcessing(job: Job<{
     userId: number;
     playerId: number;
+
     imageUrl: string;
+
     originalName: string;
+
     positionCode: string;
     bulkJobId?: string;
   }>) {
     const { playerId, imageUrl, positionCode, bulkJobId } = job.data;
 
     try {
-      this.logger.log(`[${bulkJobId || 'single'}] Processing ${positionCode} attributes for player ${playerId}`);
 
       const player = await this.fetchPlayer(playerId);
-
-      if (player.position.code !== positionCode) {
-        this.logger.warn(`Position mismatch: Player ${player.name} has position ${player.position.code}, but processing ${positionCode} attributes`);
-      }
 
       const positionPrompt = this.positionPrompts[positionCode];
 
@@ -550,13 +548,11 @@ Return ONLY the JSON, no explanations or comments. Use the exact attribute names
 
       const gptResult = await this.getGptResultWithRetry(imageUrl, positionPrompt, bulkJobId);
 
-      this.logger.debug(`[${bulkJobId}] GPT result for player ${playerId} (${player.name}): ${JSON.stringify(gptResult)}`);
 
       const newAttributes = await this.ocrService.convertAttributes(gptResult, positionCode, player);
 
       await this.savePlayerAttributes(playerId, newAttributes, player.name);
 
-      this.logger.log(`[${bulkJobId}] Successfully processed attributes for player ${playerId}`);
 
       return this.createProcessingResponse(newAttributes, playerId, positionCode, bulkJobId);
     } catch (error) {
@@ -606,29 +602,22 @@ Return ONLY the JSON, no explanations or comments. Use the exact attribute names
   private async savePlayerAttributes(playerId: number, newAttributes: any, playerName: string): Promise<void> {
     try {
       await this.playerAttrRepo.manager.transaction(async (transactionalEntityManager) => {
-        // Add debug log to track the transaction
-        this.logger.debug(`Starting transaction to save attributes for player ${playerId} (${playerName})`);
 
         let existingAttrs = await transactionalEntityManager.findOne(PlayerAttributesEntity, {
           where: { player: { id: playerId } },
         });
 
         if (!existingAttrs) {
-          this.logger.debug(`Creating new attributes for player ${playerId} (${playerName})`);
           existingAttrs = transactionalEntityManager.create(PlayerAttributesEntity, {
             ...newAttributes,
             player: { id: playerId },
           });
         } else {
-          this.logger.debug(`Updating existing attributes for player ${playerId} (${playerName})`);
           transactionalEntityManager.merge(PlayerAttributesEntity, existingAttrs, newAttributes);
         }
 
-        const savedResult = await transactionalEntityManager.save(existingAttrs);
-        this.logger.debug(`Successfully saved attributes for player ${playerId} (${playerName}): ${JSON.stringify(savedResult)}`);
       });
     } catch (error) {
-      this.logger.error(`Failed to save attributes for player ${playerId} (${playerName}): ${error.message}`);
       throw error;
     }
   }
@@ -717,7 +706,7 @@ Return ONLY the JSON, no explanations or comments. Use the exact attribute names
     }
 
     try {
-      await this.playerRepo.update(playerId, { /* any updates on failure */ });
+      await this.playerRepo.update(playerId, {});
     } catch (dbError) {
       this.logger.error(`[${bulkJobId}] Failed to update player status: ${dbError.message}`);
     }

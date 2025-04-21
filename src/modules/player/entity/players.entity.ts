@@ -1,6 +1,6 @@
 import { Entity, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { PlayerPositionEntity } from './player-position.entity';
-import { approvalStatusEnum, COLLAGE_AGE_ENUM, POSTION_CODE } from 'src/types/enums/roles';
+import { COLLAGE_AGE_ENUM } from 'src/types/enums/roles';
 import { baseEntity } from 'src/entities/base.entity';
 import { userEntity } from 'src/modules/user/entity/user.entity';
 
@@ -75,7 +75,6 @@ export class PlayerAttributesEntity extends baseEntity {
     @Column({ nullable: true })
     toughness: number; // 'TGH'
 
-    // Additional position-specific attributes:
     @Column({ nullable: true })
     throw_power: number; // 'THP'
 
@@ -229,9 +228,6 @@ export class PlayerAttributesEntity extends baseEntity {
 
     @Column({ nullable: true })
     press: number; // 'PRS'
-
-    // @Column('decimal', { nullable: true })
-    // value: number;
 
     @Column({ nullable: true })
     draft_round: number
