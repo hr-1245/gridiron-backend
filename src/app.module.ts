@@ -14,6 +14,7 @@ import { OtpModule } from './modules/otp/otp.module';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { BullModule } from '@nestjs/bull';
 import { BullBoardModule } from './modules/bull/bull.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { BullBoardModule } from './modules/bull/bull.module';
     OtpModule,
     CloudinaryModule,
     BullBoardModule,
+    AdminModule
   ],
   providers: [adminjwtStrategy, userjwtStrategy],
 })

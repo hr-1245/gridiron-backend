@@ -108,6 +108,7 @@ export class playerService {
       let dataobj: ConverstionDataDto
 
 
+
       const randomAge = Math.floor(Math.random() * 2) + 17;
       const collegeYearKey = rawData.age as unknown as COLLAGE_AGE_ENUM;
       const collegeYearAge = CollageAgeMapping[collegeYearKey];
@@ -189,6 +190,7 @@ export class playerService {
             deep_route_running: convertedData.deepRouteRunning,
             stamina: convertedData.stamina,
             injury: convertedData.injury
+
           })
           await this.playerAttrRepo.save(resultTE)
           const cleanedResultTE = Object.keys(resultTE).reduce((acc, key) => {
@@ -199,7 +201,11 @@ export class playerService {
           }, {});
           return {
             message: `Conversion of ${positionCode} Sucessfull`,
-            resultTE: cleanedResultTE
+            resultTE: cleanedResultTE,
+            overallRating: ovr,
+            height: height,
+            homeTown: homeTown,
+            weight: weight,
           }
 
         ///////////////////////////----------------QB CONVERISON=========================
@@ -270,6 +276,10 @@ export class playerService {
           return {
             message: `Conversion of ${positionCode} Successful`,
             result: cleanedResultQB,
+            overallRating: ovr,
+            height: height,
+            homeTown: homeTown,
+            weight: weight,
           }
 
         //------------------------------RB CONVERSION
@@ -343,6 +353,10 @@ export class playerService {
           return {
             message: `Conversion of ${positionCode} Successful`,
             result: cleanedResultRB,
+            overallRating: ovr,
+            height: height,
+            homeTown: homeTown,
+            weight: weight,
           }
 
 
@@ -417,6 +431,10 @@ export class playerService {
           return {
             message: `Conversion of ${positionCode} Successful`,
             result: cleanedResultWR,
+            overallRating: ovr,
+            height: height,
+            homeTown: homeTown,
+            weight: weight,
           }
 
         //-----------------------LT Conversion ------------------------
@@ -470,6 +488,10 @@ export class playerService {
           return {
             message: `Conversion of ${positionCode} Successful`,
             result: cleanedResultLT,
+            overallRating: ovr,
+            height: height,
+            homeTown: homeTown,
+            weight: weight,
           }
 
         //---------------RT CONVERSION=-----------------
@@ -524,6 +546,10 @@ export class playerService {
           return {
             message: `Conversion of ${positionCode} Successful`,
             result: cleanedResultRT,
+            overallRating: ovr,
+            height: height,
+            homeTown: homeTown,
+            weight: weight,
           }
 
 
@@ -580,6 +606,10 @@ export class playerService {
           return {
             message: `Conversion of ${positionCode} Successful`,
             result: cleanedResultLG,
+            overallRating: ovr,
+            height: height,
+            homeTown: homeTown,
+            weight: weight,
           }
 
         //---------------------LG CONVERSION ---------------
@@ -635,6 +665,10 @@ export class playerService {
           return {
             message: `Conversion of ${positionCode} Successful`,
             result: cleanedResultRG,
+            overallRating: ovr,
+            height: height,
+            homeTown: homeTown,
+            weight: weight,
           }
 
         //----------------------------LE CONVERSION ------------------------------
@@ -689,6 +723,10 @@ export class playerService {
           return {
             message: `Conversion of ${positionCode} Successful`,
             result: cleanedResultLE,
+            overallRating: ovr,
+            height: height,
+            homeTown: homeTown,
+            weight: weight,
           }
         //----------------------------RE CONVERSION ------------------------------
         case POSTION_CODE.RightEnd:
@@ -742,6 +780,10 @@ export class playerService {
           return {
             message: `Conversion of ${positionCode} Successful`,
             result: cleanedResultRE,
+            overallRating: ovr,
+            height: height,
+            homeTown: homeTown,
+            weight: weight,
           }
 
 
@@ -797,6 +839,10 @@ export class playerService {
           return {
             message: `Conversion of ${positionCode} Successful`,
             result: cleanedResultLOLB,
+            overallRating: ovr,
+            height: height,
+            homeTown: homeTown,
+            weight: weight,
           }
 
 
@@ -852,6 +898,10 @@ export class playerService {
           return {
             message: `Conversion of ${positionCode} Successful`,
             result: cleanedResultROLB,
+            overallRating: ovr,
+            height: height,
+            homeTown: homeTown,
+            weight: weight,
           }
 
         //-------------- DT CONVERSION -----------
@@ -907,6 +957,10 @@ export class playerService {
           return {
             message: `Conversion of ${positionCode} Successful`,
             result: cleanedResultDE,
+            overallRating: ovr,
+            height: height,
+            homeTown: homeTown,
+            weight: weight,
           }
 
         //------------------------------ LOLB CONVERSION ================
@@ -965,6 +1019,10 @@ export class playerService {
           return {
             message: `Conversion of ${positionCode} Successful`,
             result: cleanedResultLOLBG,
+            overallRating: ovr,
+            height: height,
+            homeTown: homeTown,
+            weight: weight,
           };
         //------------------------------ ROLB CONVERSION ================
         case POSTION_CODE.RightOutside_linebacker_below_245lbs:
@@ -1022,6 +1080,10 @@ export class playerService {
           return {
             message: `Conversion of ${positionCode} Successful`,
             result: cleanedResultLOLBB,
+            overallRating: ovr,
+            height: height,
+            homeTown: homeTown,
+            weight: weight
           };
 
 
@@ -1081,6 +1143,10 @@ export class playerService {
           return {
             message: `Conversion of ${positionCode} Successful`,
             result: cleanedResultMLB,
+            overallRating: ovr,
+            height: height,
+            homeTown: homeTown,
+            weight: weight
           };
 
         //--FULLBACK CONVERSION
@@ -1148,6 +1214,10 @@ export class playerService {
           return {
             message: `Conversion of ${positionCode} Successful`,
             result: cleanedResultCB,
+            overallRating: ovr,
+            height: height,
+            homeTown: homeTown,
+            weight: weight,
           };
 
 
@@ -1211,6 +1281,11 @@ export class playerService {
           return {
             message: `Conversion of ${positionCode} Successful`,
             result: cleanedResultS,
+
+            overallRating: ovr,
+            height: height,
+            homeTown: homeTown,
+            weight: weight,
           };
         case POSTION_CODE.Kicker:
 
@@ -1245,6 +1320,11 @@ export class playerService {
           return {
             message: `Conversion of ${positionCode} Successful`,
             result: cleanedResultK,
+
+            overallRating: ovr,
+            height: height,
+            homeTown: homeTown,
+            weight: weight,
           }
         case POSTION_CODE.Punter:
 
@@ -1279,6 +1359,11 @@ export class playerService {
           return {
             message: `Conversion of ${positionCode} Successful`,
             result: cleanedResultP,
+
+            overallRating: ovr,
+            height: height,
+            homeTown: homeTown,
+            weight: weight,
           }
         case POSTION_CODE.FullBack:
 
@@ -1348,6 +1433,10 @@ export class playerService {
           return {
             message: `Conversion of ${positionCode} Successful`,
             result: cleanedResultFB,
+            overallRating: ovr,
+            height: height,
+            homeTown: homeTown,
+            weight: weight,
           }
         default:
           throw new Error('Invalid Position Code');
