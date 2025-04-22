@@ -6,34 +6,34 @@ import * as streamifier from 'streamifier';
 export class CloudinaryService {
   private readonly logger = new Logger(CloudinaryService.name);
 
-async uploadFile(file: Express.Multer.File): Promise<UploadApiResponse> {
-  return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      this.logger.error('Cloudinary upload timed out');
-      reject(new Error('Cloudinary upload timed out'));
-    }, 50000); // 15 seconds timeout
+  async uploadFile(file: Express.Multer.File): Promise<UploadApiResponse> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        this.logger.error('Cloudinary upload timed out');
+        reject(new Error('Cloudinary upload timed out'));
+      }, 50000); // 15 seconds timeout
 
-    const uploadStream = v2.uploader.upload_stream(
-      { resource_type: 'auto' },
-      (error, result) => {
-        clearTimeout(timeout);
-        if (error) {
-          this.logger.error('Cloudinary upload error', error);
-          reject(error);
-        } else if (result) {
-          this.logger.log(`File uploaded successfully: ${result.public_id}`);
-          resolve(result);
-        } else {
-          const err = new Error('Undefined upload result');
-          this.logger.error(err);
-          reject(err);
+      const uploadStream = v2.uploader.upload_stream(
+        { resource_type: 'auto' },
+        (error, result) => {
+          clearTimeout(timeout);
+          if (error) {
+            this.logger.error('Cloudinary upload error', error);
+            reject(error);
+          } else if (result) {
+            this.logger.log(`File uploaded successfully: ${result.public_id}`);
+            resolve(result);
+          } else {
+            const err = new Error('Undefined upload result');
+            this.logger.error(err);
+            reject(err);
+          }
         }
-      }
-    );
+      );
 
-    streamifier.createReadStream(file.buffer).pipe(uploadStream);
-  });
-}
+      streamifier.createReadStream(file.buffer).pipe(uploadStream);
+    });
+  }
 
   async deleteFile(publicId: string): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -73,4 +73,35 @@ async uploadFile(file: Express.Multer.File): Promise<UploadApiResponse> {
       throw error;
     }
   }
+  async deleteAllFiles(): Promise<void> {
+    try {
+      const allPublicIds: string[] = [];
+
+      const fetchAllResources = async (nextCursor?: string): Promise<void> => {
+        const response = await v2.api.resources({
+          type: 'upload',
+          max_results: 500,
+          next_cursor: nextCursor,
+        });
+
+        const publicIds = response.resources.map((res: any) => res.public_id);
+        allPublicIds.push(...publicIds);
+
+        if (response.next_cursor) {
+          await fetchAllResources(response.next_cursor);
+        }
+      };
+
+      await fetchAllResources();
+
+      this.logger.log(`Found ${allPublicIds.length} files to delete`);
+
+      await this.deleteMultipleFiles(allPublicIds);
+      this.logger.log('All files deleted successfully');
+    } catch (error) {
+      this.logger.error('Failed to delete all files', error);
+      throw new Error('Failed to delete all files');
+    }
+  }
+
 }

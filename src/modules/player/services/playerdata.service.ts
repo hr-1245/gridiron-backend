@@ -1,14 +1,9 @@
-import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { PlayerEntity, PlayerAttributesEntity } from '../entity/players.entity';
-import { PlayerPositionEntity } from '../entity/player-position.entity';
+import { PlayerEntity } from '../entity/players.entity';
 import { Repository } from 'typeorm';
+import { PaginatedPlayers } from 'src/types/enums/otp';
 
-export interface PaginatedPlayers {
-  data: any[];
-  totalCount: number;
-  totalPages: number;
-}
 
 
 @Injectable()
@@ -66,11 +61,17 @@ export class PlayerDataService {
 
       }));
 
+      const message = totalCount === 0
+        ? 'No converted players found'
+        : 'Players retrieved successfully';
+
       return {
+        message,
         data: cleanedPlayers,
         totalCount,
         totalPages,
       };
+
     } catch (error) {
       throw new Error('Error retrieving converted players');
     }

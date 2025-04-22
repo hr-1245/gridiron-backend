@@ -2,10 +2,10 @@ import { Module } from "@nestjs/common";
 import { StripeService } from "./stripe.service";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { userEntity } from "../user/entity/user.entity";
-import { userPlanEntity } from "../user/entity/userPlan.entity";
+import { discountConfigEntity, userPlanEntity } from "../user/entity/userPlan.entity";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([userEntity, userPlanEntity])],
+  imports: [TypeOrmModule.forFeature([userEntity, userPlanEntity, discountConfigEntity, ])],
   providers: [StripeService],
   exports: [StripeService],
 })

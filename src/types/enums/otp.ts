@@ -11,3 +11,11 @@ export interface GenerateOTPOptions {
   upperCaseAlphabets: boolean;
   specialChars: boolean;
 }
+
+
+export interface PaginatedPlayers {
+  data: any[];
+  message: string
+  totalCount: number;
+  totalPages: number;
+}
