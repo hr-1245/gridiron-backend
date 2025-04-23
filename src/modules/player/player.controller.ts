@@ -72,7 +72,7 @@ export class PlayerOcrController {
   //------BULK CONVERT WITH AI MODEL----
   @Post('upload')
   @UseGuards(userConversionLimitGuard)
-  @UseInterceptors(FilesInterceptor('files', 10))
+  @UseInterceptors(FilesInterceptor('files'))
   @ApiOperation({
     summary: 'Process uploaded player images (bio image + attributes).'
   })
@@ -89,7 +89,6 @@ export class PlayerOcrController {
             format: 'binary',
           },
         },
-
       },
       required: ['files']
     },
@@ -109,11 +108,10 @@ export class PlayerOcrController {
     try {
       return await this.playerOcrService.processBulkPlayerImages(files, user.id);
     } catch (error) {
-      this.logger.error(`Failed to process player images: ${error.message}`, error.stack);
       if (error instanceof BadRequestException || error instanceof NotFoundException) {
         throw error;
       }
-      throw new InternalServerErrorException('Failed to process player images');
+      throw new NotFoundException('Failed to process image upload. Please ensure you have included at least one player bio image.');
     }
   }
 }
