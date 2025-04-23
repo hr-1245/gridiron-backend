@@ -45,44 +45,56 @@ export function normalizeClassString(input: string): COLLAGE_AGE_ENUM | null {
 }
 
 
-export function findBestNameMatch(attrName: string, bioNames: string[]): string | null {
-  if (!attrName) return null;
+export function findBestNameMatch(name: string, existingNames: string[]): string | null {
+  if (!name) return null;
 
-  const normalizedAttrName = attrName.toLowerCase();
+  const normalize = (str: string) => str.toLowerCase().trim();
+  const nameNorm = normalize(name);
 
-  // First, try exact match
-  const exactMatch = bioNames.find(name => name === normalizedAttrName);
+  const exactMatch = existingNames.find(n => normalize(n) === nameNorm);
   if (exactMatch) return exactMatch;
 
-  // Next, try if one name contains the other
-  for (const bioName of bioNames) {
-    if (bioName.includes(normalizedAttrName) || normalizedAttrName.includes(bioName)) {
-      return bioName;
+  for (const existingName of existingNames) {
+    const normExisting = normalize(existingName);
+    if (normExisting.includes(nameNorm) || nameNorm.includes(normExisting)) {
+      return existingName;
     }
   }
 
-  // Try more flexible matching - last name match
-  const attrNameParts = normalizedAttrName.split(' ');
-  const attrLastName = attrNameParts[attrNameParts.length - 1];
+  const nameParts = nameNorm.split(' ');
+  if (nameParts.length >= 2) {
+    const firstName = nameParts[0];
+    const lastName = nameParts[nameParts.length - 1];
 
-  for (const bioName of bioNames) {
-    const bioNameParts = bioName.split(' ');
-    const bioLastName = bioNameParts[bioNameParts.length - 1];
+    for (const existingName of existingNames) {
+      const existingParts = normalize(existingName).split(' ');
+      if (existingParts.length >= 2) {
+        const existingFirst = existingParts[0];
+        const existingLast = existingParts[existingParts.length - 1];
 
-    if (bioLastName === attrLastName) {
-      return bioName;
-    }
-  }
-
-  // If still no matches, try partial last name match
-  for (const bioName of bioNames) {
-    const bioNameParts = bioName.split(' ');
-    const bioLastName = bioNameParts[bioNameParts.length - 1];
-
-    if (bioLastName.includes(attrLastName) || attrLastName.includes(bioLastName)) {
-      return bioName;
+        if (firstName === existingFirst && lastName === existingLast) {
+          return existingName;
+        }
+      }
     }
   }
 
   return null;
+}
+
+export function areNamesEquivalent(name1: string, name2: string): boolean {
+  if (!name1 || !name2) return false;
+  const normalize = (name: string) => name.toLowerCase().trim().replace(/\s+/g, ' ');
+  const normName1 = normalize(name1);
+  const normName2 = normalize(name2);
+  if (normName1 === normName2) return true;
+  if (normName1.includes(normName2) || normName2.includes(normName1)) return true;
+  const parts1 = normName1.split(' ');
+  const parts2 = normName2.split(' ');
+  if (parts1.length >= 2 && parts2.length >= 2) {
+    if (parts1[0] === parts2[0] && parts1[parts1.length - 1] === parts2[parts1.length - 1]) {
+      return true;
+    }
+  }
+  return false;
 }

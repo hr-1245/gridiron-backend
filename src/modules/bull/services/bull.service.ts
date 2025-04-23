@@ -513,54 +513,66 @@ Return ONLY the JSON, no explanations or comments. Use the exact attribute names
 
   @OnQueueActive()
   onActive(job: Job) {
-    this.logger.log(`Processing job ${job.id}: ${job.data.originalName} for player ${job.data.playerId}`);
+    const { playerId, originalName } = job.data || {};
+    this.logger.log(`Processing job ${job.id}: ${originalName ?? 'Unknown'} for player ${playerId ?? 'N/A'}`);
   }
 
   @OnQueueCompleted()
   onCompleted(job: Job, result: any) {
-    this.logger.log(`Job ${job.id} completed for player ${job.data.playerId}`);
+    const { playerId } = job.data || {};
+    this.logger.log(`Job ${job.id} completed for player ${playerId}`);
     this.logger.debug(`Job result: ${JSON.stringify(result)}`);
+  }
+
+  @OnQueueFailed()
+  async onFailed(job: Job, err: Error) {
+    const { playerId, originalName, bulkJobId } = job.data || {};
+    this.logger.error(`[${bulkJobId}] Job ${job.id} failed for player ${playerId} (${originalName}): ${err.message}`);
+
+    if (job.attemptsMade < (job.opts?.attempts || 0)) {
+      const delay = typeof job.opts?.backoff === 'object' ? job.opts.backoff.delay : 1000;
+      this.logger.warn(`[${bulkJobId}] Will retry job (attempt ${job.attemptsMade + 1}) in ${delay}ms`);
+      return;
+    }
+
+    try {
+      await this.playerRepo.update(playerId, {});
+    } catch (dbError) {
+      this.logger.error(`[${bulkJobId}] Failed to update player status: ${dbError.message}`);
+    }
   }
 
   @Process('processImage')
   async handleImageProcessing(job: Job<{
     userId: number;
     playerId: number;
-
     imageUrl: string;
-
     originalName: string;
-
     positionCode: string;
     bulkJobId?: string;
   }>) {
     const { playerId, imageUrl, positionCode, bulkJobId } = job.data;
 
     try {
-
       const player = await this.fetchPlayer(playerId);
 
       const positionPrompt = this.positionPrompts[positionCode];
-
       if (!positionPrompt) {
         throw new Error(`No prompt defined for position ${positionCode}`);
       }
 
       const gptResult = await this.getGptResultWithRetry(imageUrl, positionPrompt, bulkJobId);
-
-
       const newAttributes = await this.ocrService.convertAttributes(gptResult, positionCode, player);
 
       await this.savePlayerAttributes(playerId, newAttributes, player.name);
 
-
+      this.logger.log(`[${bulkJobId}] Finished processing for player ${playerId} (${player.name})`);
       return this.createProcessingResponse(newAttributes, playerId, positionCode, bulkJobId);
     } catch (error) {
       this.logger.error(`[${bulkJobId}] Failed to process attributes for player ${playerId}: ${error.message}`);
       throw new Error(`Attribute processing failed: ${error.message}`);
     }
   }
-
 
   private async fetchPlayer(playerId: number): Promise<PlayerEntity> {
     const player = await this.playerRepo.findOne({
@@ -571,26 +583,23 @@ Return ONLY the JSON, no explanations or comments. Use the exact attribute names
     if (!player) {
       throw new Error(`Player with ID ${playerId} not found`);
     }
+
     return player;
   }
 
   private async getGptResultWithRetry(imageUrl: string, positionPrompt: string, bulkJobId?: string): Promise<any> {
-    let gptResult;
     const maxRetries = 3;
     let attempt = 0;
 
     while (attempt < maxRetries) {
       try {
-        gptResult = await this.ocrService.callGptOcr(imageUrl, positionPrompt);
-        break;
+        return await this.ocrService.callGptOcr(imageUrl, positionPrompt);
       } catch (error) {
         attempt++;
         if (attempt >= maxRetries) throw error;
         await this.retryDelay(attempt, bulkJobId);
       }
     }
-
-    return gptResult;
   }
 
   private async retryDelay(attempt: number, bulkJobId?: string): Promise<void> {
@@ -600,26 +609,22 @@ Return ONLY the JSON, no explanations or comments. Use the exact attribute names
   }
 
   private async savePlayerAttributes(playerId: number, newAttributes: any, playerName: string): Promise<void> {
-    try {
-      await this.playerAttrRepo.manager.transaction(async (transactionalEntityManager) => {
-
-        let existingAttrs = await transactionalEntityManager.findOne(PlayerAttributesEntity, {
-          where: { player: { id: playerId } },
-        });
-
-        if (!existingAttrs) {
-          existingAttrs = transactionalEntityManager.create(PlayerAttributesEntity, {
-            ...newAttributes,
-            player: { id: playerId },
-          });
-        } else {
-          transactionalEntityManager.merge(PlayerAttributesEntity, existingAttrs, newAttributes);
-        }
-
+    await this.playerAttrRepo.manager.transaction(async (em) => {
+      let existingAttrs = await em.findOne(PlayerAttributesEntity, {
+        where: { player: { id: playerId } },
       });
-    } catch (error) {
-      throw error;
-    }
+
+      if (!existingAttrs) {
+        const created = em.create(PlayerAttributesEntity, {
+          ...newAttributes,
+          player: { id: playerId },
+        });
+        await em.save(created);
+      } else {
+        em.merge(PlayerAttributesEntity, existingAttrs, newAttributes);
+        await em.save(existingAttrs);
+      }
+    });
   }
 
   private createProcessingResponse(newAttributes: any, playerId: number, positionCode: string, bulkJobId?: string) {
@@ -629,7 +634,7 @@ Return ONLY the JSON, no explanations or comments. Use the exact attribute names
       positionCode,
       attributes: Object.keys(newAttributes).length,
       processedAt: new Date(),
-      bulkJobId
+      bulkJobId,
     };
   }
 
@@ -657,58 +662,34 @@ Return ONLY the JSON, no explanations or comments. Use the exact attribute names
       Object.entries(filesByPlayer).map(async ([playerIdStr, playerFiles]) => {
         const playerId = parseInt(playerIdStr, 10);
         const positionCode = playerFiles[0].positionCode;
-
         const bulkJobId = `bulk-${playerId}-${Date.now()}`;
 
-        const imageUrls = playerFiles.map(file => ({
-          url: file.url,
-          originalName: file.originalName
-        }));
-
-        const result = await this.handleBulkImageProcessing({
-          data: {
-            bulkJobId,
-            playerId,
-            positionCode,
-            imageUrls
-          }
-        } as Job);
+        for (const file of playerFiles) {
+          await this.handleImageProcessing({
+            data: {
+              userId: 0, // Replace with real user ID if needed
+              playerId,
+              imageUrl: file.url,
+              originalName: file.originalName,
+              positionCode,
+              bulkJobId,
+            },
+          } as Job);
+        }
 
         return {
           playerId,
-          ...result
+          bulkJobId,
+          status: 'completed',
+          processedAt: new Date(),
         };
       })
     );
 
     return {
-      totalPlayers: Object.keys(filesByPlayer).length,
+      totalPlayers: results.length,
       processedAt: new Date(),
-      results
+      results,
     };
-  }
-
-
-  @OnQueueFailed()
-  async onFailed(job: Job, err: Error) {
-    await this.handleFailedJob(job, err);
-  }
-
-  private async handleFailedJob(job: Job, error: Error) {
-    const { playerId, originalName, bulkJobId } = job.data;
-
-    this.logger.error(`[${bulkJobId}] Job ${job.id} failed for player ${playerId} (${originalName}): ${error.message}`);
-
-    if (job.attemptsMade < (job.opts?.attempts || 0)) {
-      const delay = typeof job.opts?.backoff === 'object' ? job.opts.backoff.delay : 1000;
-      this.logger.warn(`[${bulkJobId}] Will retry job (attempt ${job.attemptsMade + 1}) in ${delay}ms`);
-      return;
-    }
-
-    try {
-      await this.playerRepo.update(playerId, {});
-    } catch (dbError) {
-      this.logger.error(`[${bulkJobId}] Failed to update player status: ${dbError.message}`);
-    }
   }
 }
