@@ -32,6 +32,9 @@ export class PlayerEntity extends baseEntity {
     @Column({ nullable: true })
     projectedReason?: string;
 
+    @Column({ nullable: true })
+    jerseyNumber?: string;
+
     @ManyToOne(() => PlayerPositionEntity, position => position.players, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn()
     position: PlayerPositionEntity;

@@ -81,7 +81,7 @@ export class playerService {
   async conversionLogic(obj: ConversionDto, userId: number): Promise<any> {
     //----------CONVERSION LOGIC --------------------------------
     try {
-      const { playerName, positionId, positionCode, data: rawData, draft_round, ovr, height, homeTown, weight } = obj
+      const { playerName, positionId, positionCode, data: rawData, draft_round, ovr, height, homeTown, weight, jerseyNumber } = obj
 
       const fetchData = await this.playerPositionRepo.findOne({
         where: { id: positionId, code: positionCode },
@@ -101,13 +101,12 @@ export class playerService {
           height: height,
           homeTown: homeTown,
           weight: weight,
+          jerseyNumber: jerseyNumber as unknown as string
         });
         player = await this.playerRepo.save(newPlayer)
       }
 
       let dataobj: ConverstionDataDto
-
-
 
       const randomAge = Math.floor(Math.random() * 2) + 17;
       const collegeYearKey = rawData.age as unknown as COLLAGE_AGE_ENUM;
@@ -206,6 +205,7 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
+            jerseyNumber: jerseyNumber
           }
 
         ///////////////////////////----------------QB CONVERISON=========================
@@ -280,6 +280,7 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
+            jerseyNumber: jerseyNumber
           }
 
         //------------------------------RB CONVERSION
@@ -357,6 +358,7 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
+            jerseyNumber: jerseyNumber
           }
 
 
@@ -435,6 +437,7 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
+            jerseyNumber: jerseyNumber
           }
 
         //-----------------------LT Conversion ------------------------
@@ -492,6 +495,7 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
+            jerseyNumber: jerseyNumber
           }
 
         //---------------RT CONVERSION=-----------------
@@ -550,6 +554,7 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
+            jerseyNumber: jerseyNumber
           }
 
 
@@ -610,6 +615,7 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
+            jerseyNumber: jerseyNumber
           }
 
         //---------------------LG CONVERSION ---------------
@@ -669,6 +675,7 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
+            jerseyNumber: jerseyNumber
           }
 
         //----------------------------LE CONVERSION ------------------------------
@@ -727,6 +734,7 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
+            jerseyNumber: jerseyNumber
           }
         //----------------------------RE CONVERSION ------------------------------
         case POSTION_CODE.RightEnd:
@@ -784,6 +792,7 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
+            jerseyNumber: jerseyNumber
           }
 
 
@@ -843,6 +852,7 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
+            jerseyNumber: jerseyNumber
           }
 
 
@@ -902,6 +912,7 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
+            jerseyNumber: jerseyNumber
           }
 
         //-------------- DT CONVERSION -----------
@@ -961,6 +972,7 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
+            jerseyNumber: jerseyNumber
           }
 
         //------------------------------ LOLB CONVERSION ================
@@ -1023,6 +1035,7 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
+            jerseyNumber: jerseyNumber
           };
         //------------------------------ ROLB CONVERSION ================
         case POSTION_CODE.RightOutside_linebacker_below_245lbs:
@@ -1218,6 +1231,7 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
+            jerseyNumber: jerseyNumber
           };
 
 
@@ -1286,6 +1300,7 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
+            jerseyNumber: jerseyNumber
           };
         case POSTION_CODE.Kicker:
 
@@ -1325,6 +1340,7 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
+            jerseyNumber: jerseyNumber
           }
         case POSTION_CODE.Punter:
 
@@ -1364,6 +1380,7 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
+            jerseyNumber: jerseyNumber
           }
         case POSTION_CODE.FullBack:
 
@@ -1437,6 +1454,7 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
+            jerseyNumber: jerseyNumber
           }
         default:
           throw new Error('Invalid Position Code');

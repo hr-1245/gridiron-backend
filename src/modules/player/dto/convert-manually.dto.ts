@@ -40,6 +40,9 @@ export class ConversionDto {
 
   @ApiProperty() @IsNumber() @IsOptional()
   projected_Reason: number
+  
+  @ApiProperty() @IsString() @IsOptional()
+  jerseyNumber: number
 }
 
 export class TightEndDto {

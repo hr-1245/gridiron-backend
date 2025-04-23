@@ -22,7 +22,7 @@ import { OpenAI } from 'openai';
 
 import { All_Middle_LinebackersDTO, CornerBackDto, DefensiveTackleDto, FullBackDto, KickerDto, Left_Outside_linebacker_above_245_lbsDTO, LeftEndDTO, LeftGaurdDto, LeftOutside_linebacker_below_245lbsDTO, LeftTackleDto, PunterDto, QuarterBackDto, Right_Outside_linebacker_above_245lbsDTO, RightEndDTO, RightGaurdDto, RightOutside_linebacker_below_245lbsDTO, RightTackleDto, RunningBackDto, SafetyDto, TightEndDto, WideReceiverDto } from '../dto/convert-manually.dto';
 
-import { extractDraftRound, findBestNameMatch, normalizeClassString, parseHeightString, parseWeightString } from 'src/utils/helpers/helpers';
+import { areNamesEquivalent, extractDraftRound, findBestNameMatch, normalizeClassString, parseHeightString, parseWeightString } from 'src/utils/helpers/helpers';
 
 @Injectable()
 export class PlayerOcrService {
@@ -740,7 +740,12 @@ export class PlayerOcrService {
         messages: [
           {
             role: 'system',
-            content: 'Extract ONLY the player bio information visible in the image. Return ONLY as JSON with these exact keys: NAME (Only Extract Full Name), POS, OVR, CLASS, HEIGHT, WEIGHT, HOMETOWN, REASON. If information is not visible in the image, set those fields to null or empty string.'
+            content: `Extract ONLY the player bio information visible in the image. 
+          Return ONLY as JSON with these exact keys: NAME, POS, OVR, CLASS, HEIGHT, WEIGHT, HOMETOWN, REASON, JERSEY_NUMBER, isPlayerBioScreen. 
+          JERSEY_NUMBER should be extracted from the POSITION field if it contains a value like "#19". 
+          Set isPlayerBioScreen to true ONLY if this appears to be a "PLAYERS LEAVING" or roster bio screen showing full player details, not an attributes/ratings screen. 
+          An attributes/ratings screen typically shows detailed skill ratings, while a bio screen shows personal information like hometown.
+          If a value is not visible, return null or an empty string. Do NOT return any explanation or additional formatting.`
           },
           {
             role: 'user',
@@ -779,28 +784,80 @@ export class PlayerOcrService {
       const base64Image = file.buffer.toString('base64');
       const imageUrl = `data:image/png;base64,${base64Image}`;
 
+      let attributeData: any = null;
+      let bioData: any = null;
+      let attributeError: any = null;
+      let bioError: any = null;
+
       try {
-        const bioData = await this.extractStructuredPlayerData(file);
-        if (bioData.NAME && bioData.POS) {
+        attributeData = await this.callGptOcr(imageUrl);
+      } catch (error) {
+        attributeError = error;
+      }
+
+      try {
+        bioData = await this.extractStructuredPlayerData(file);
+      } catch (error) {
+        bioError = error;
+      }
+
+      if (bioData && bioData.NAME && bioData.POS &&
+        (bioData.HEIGHT || bioData.WEIGHT || bioData.HOMETOWN || bioData.REASON)) {
+        return {
+          type: 'PLAYERS LEAVING',
+          data: bioData,
+          positionCode: bioData.POS
+        };
+      }
+
+      if (attributeData && attributeData.playerName) {
+        const hasRatingsIndicators =
+          attributeData.ratings?.length > 0 ||
+          (typeof attributeData.attributes === 'object' && Object.keys(attributeData.attributes).length > 0) ||
+          (attributeData.speed !== undefined || attributeData.acceleration !== undefined) ||
+          (attributeData.position && attributeData.overallRating);
+
+        if (hasRatingsIndicators) {
           return {
-            type: 'PLAYERS LEAVING',
-            data: bioData,
+            type: 'Ratings',
+            data: attributeData,
+            positionCode: attributeData.position || null
+          };
+        }
+      }
+
+      if (bioData && bioData.NAME && bioData.POS) {
+        if (bioData.OVR && !(bioData.HEIGHT || bioData.WEIGHT || bioData.HOMETOWN)) {
+          return {
+            type: 'Ratings',
+            data: {
+              playerName: bioData.NAME,
+              position: bioData.POS,
+              overallRating: bioData.OVR
+            },
             positionCode: bioData.POS
           };
         }
-      } catch (bioError) {
-        this.logger.debug('Image is not a bio image', bioError);
+
+        return {
+          type: 'PLAYERS LEAVING',
+          data: bioData,
+          positionCode: bioData.POS
+        };
       }
 
-      const attributeData = await this.callGptOcr(imageUrl);
+      if (attributeData && attributeData.playerName) {
+        return {
+          type: 'Ratings',
+          data: attributeData,
+          positionCode: attributeData.position || null
+        };
+      }
 
-      return {
-        type: 'Ratings',
-        data: attributeData,
-        positionCode: attributeData.position || null
-      };
+      throw new Error('Could not reliably identify image type. Missing key information in the image.');
+
     } catch (error) {
-      this.logger.error(`Image identification failed for ${file.originalname}`, error);
+      this.logger.error(`Image identification failed for ${file.originalname}:`, error);
       return {
         type: 'Ratings',
         data: null,
@@ -818,10 +875,11 @@ export class PlayerOcrService {
       files.map(async file => {
         try {
           const result = await this.identifyImageType(file);
-          return { file, ...result };
+          return { file, ...result, originalName: file.originalname };
         } catch (error) {
           return {
             file,
+            originalName: file.originalname,
             error: `Failed to classify image: ${error.message}`,
             type: 'unknown',
             data: null
@@ -835,21 +893,33 @@ export class PlayerOcrService {
     const invalidImages = classificationResults.filter(r => r.error || r.type === 'unknown');
 
     if (bioImages.length === 0) {
-      throw new BadRequestException('No valid player bio images found');
+      const orphanedAttributes = attributeImages.map(img => ({
+        filename: img.originalName,
+        error: 'No player bio images found - attribute images must be uploaded with matching player bio images'
+      }));
+
+      throw new BadRequestException({
+        message: 'No valid player bio images found in the uploaded files',
+        invalidImages: [
+          ...invalidImages.map(img => ({
+            filename: img.originalName,
+            error: img.error
+          })),
+          ...orphanedAttributes
+        ]
+      });
     }
 
     const bioNamesMap = new Map(
       bioImages.map(bio => [bio.data.NAME.toLowerCase(), bio])
     );
 
-
-    const attributesByBioName = new Map<string, Array<{ file: Express.Multer.File, data: any, positionCode?: string }>>();
-
+    const attributesByBioName = new Map<string, Array<{ file: Express.Multer.File, data: any, positionCode?: string, originalName: string }>>();
     bioNamesMap.forEach((_, name) => {
       attributesByBioName.set(name, []);
     });
 
-    const unassignedAttributes: Array<{ file: Express.Multer.File, data: any, positionCode?: string }> = [];
+    const unassignedAttributes: Array<{ file: Express.Multer.File, data: any, positionCode?: string, originalName: string }> = [];
 
     attributeImages.forEach(attrImage => {
       const attrName = attrImage.data?.playerName;
@@ -859,23 +929,29 @@ export class PlayerOcrService {
 
         if (matchedBioName) {
           const attributes = attributesByBioName.get(matchedBioName) || [];
-          attributes.push(attrImage);
+          attributes.push({ ...attrImage, originalName: attrImage.file.originalname });
           attributesByBioName.set(matchedBioName, attributes);
           return;
         }
       }
-      //maason later
-      unassignedAttributes.push(attrImage);
+
+      unassignedAttributes.push({ ...attrImage, originalName: attrImage.file.originalname });
     });
 
+    const stillUnassignedAttributes: typeof unassignedAttributes = [];
+
     unassignedAttributes.forEach(attrImage => {
-      const attrPosition = attrImage.positionCode;
+      const attrPosition = attrImage.positionCode || attrImage.data?.position;
 
       if (attrPosition) {
         const matchingBios = Array.from(bioNamesMap.entries())
-          .filter(([_, bio]) => 'positionCode' in bio && bio.positionCode === attrPosition);
+          .filter(([_, bio]) => {
+            const bioPosition = 'positionCode' in bio ? bio.positionCode : bio.data?.POS;
+            return bioPosition === attrPosition;
+          });
 
         if (matchingBios.length === 1) {
+
           const [bioName] = matchingBios[0];
 
           const attributes = attributesByBioName.get(bioName) || [];
@@ -883,10 +959,8 @@ export class PlayerOcrService {
           attributes.push(attrImage);
 
           attributesByBioName.set(bioName, attributes);
-        } else {
-
+        } else if (matchingBios.length > 1) {
           let leastAttributesBioName = '';
-
           let leastAttributesCount = Infinity;
 
           for (const [bioName, _] of matchingBios) {
@@ -896,6 +970,7 @@ export class PlayerOcrService {
             if (attributesCount < leastAttributesCount) {
 
               leastAttributesCount = attributesCount;
+
               leastAttributesBioName = bioName;
             }
           }
@@ -904,10 +979,21 @@ export class PlayerOcrService {
             const attributes = attributesByBioName.get(leastAttributesBioName) || [];
             attributes.push(attrImage);
             attributesByBioName.set(leastAttributesBioName, attributes);
+          } else {
+            stillUnassignedAttributes.push(attrImage);
           }
+        } else {
+          stillUnassignedAttributes.push(attrImage);
         }
+      } else {
+        stillUnassignedAttributes.push(attrImage);
       }
     });
+
+    const orphanedAttributeDetails = stillUnassignedAttributes.map(attr => ({
+      filename: attr.originalName,
+      error: `Could not match to any player bio. No matching name or position found.`
+    }));
 
     const processPromises = Array.from(bioNamesMap.entries()).map(([bioName, bioImage]) => {
       const matchedAttributes = attributesByBioName.get(bioName) || [];
@@ -922,26 +1008,78 @@ export class PlayerOcrService {
 
     const failedPlayers = results
       .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
-      .map(r => ({ status: 'failed', error: r.reason.message }));
+      .map((r, index) => {
+        const bioName = Array.from(bioNamesMap.keys())[index];
+        const bioImage = bioNamesMap.get(bioName);
+        return {
+          status: 'failed',
+          name: bioImage?.data.NAME || 'Unknown Player',
+          error: r.reason.message
+        };
+      });
+
+    const allInvalidImages = [
+      ...invalidImages.map(img => ({
+        filename: img.originalName,
+        error: img.error
+      })),
+      ...orphanedAttributeDetails
+    ];
 
     return {
-      message: `Processed ${bioImages.length} players with ${attributeImages.length} attribute images`,
+      message: `Processed ${successfulPlayers.length} players with ${attributeImages.length - stillUnassignedAttributes.length} attribute images`,
       successCount: successfulPlayers.length,
       failedCount: failedPlayers.length,
       players: [...successfulPlayers, ...failedPlayers],
-      invalidImages: invalidImages.map(img => ({
-        filename: img.file.originalname,
-        error: img.error
-      }))
+      invalidImages: allInvalidImages,
+      orphanedAttributes: stillUnassignedAttributes.length,
+      totalFiles: files.length,
+      bioImagesFound: bioImages.length,
+      attributeImagesFound: attributeImages.length,
+      invalidImagesFound: invalidImages.length
     };
   }
 
   private async processPlayerWithAttributes(
     bioImage: { file: Express.Multer.File, data: any, positionCode?: string },
-    matchedAttributes: Array<{ file: Express.Multer.File, data: any, positionCode?: string }>,
+    matchedAttributes: Array<{ file: Express.Multer.File, data: any, positionCode?: string, originalName: string }>,
     userId: number
   ): Promise<any> {
+    const { NAME, POS, OVR, CLASS, HEIGHT, WEIGHT, HOMETOWN, REASON, JERSEY_NUMBER } = bioImage.data;
+
+    if (!NAME || !POS) {
+      throw new BadRequestException(`Invalid player bio data: Missing required fields (Name: ${NAME}, Position: ${POS})`);
+    }
+
     const primaryFile = bioImage.file;
+    const validAttributeFiles: Array<{ file: Express.Multer.File, originalName: string }> = [];
+    const invalidAttributeFiles: Array<{ filename: string, error: string }> = [];
+
+    for (const attrImage of matchedAttributes) {
+      const attrName = attrImage.data?.playerName;
+      const attrPosition = attrImage.positionCode || attrImage.data?.position;
+
+      if (attrName && !areNamesEquivalent(NAME, attrName)) {
+        invalidAttributeFiles.push({
+          filename: attrImage.originalName,
+          error: `Player name mismatch: Expected ${NAME}, found ${attrName}`
+        });
+        continue;
+      }
+
+      if (attrPosition && attrPosition !== POS) {
+        invalidAttributeFiles.push({
+          filename: attrImage.originalName,
+          error: `Position mismatch: Expected ${POS}, found ${attrPosition}`
+        });
+        continue;
+      }
+
+      validAttributeFiles.push({
+        file: attrImage.file,
+        originalName: attrImage.originalName
+      });
+    }
 
     const queryRunner = this.playerRepo.manager.connection.createQueryRunner();
     await queryRunner.connect();
@@ -953,7 +1091,6 @@ export class PlayerOcrService {
         throw new Error('Primary image upload failed');
       }
 
-      const { NAME, POS, OVR, CLASS, HEIGHT, WEIGHT, HOMETOWN, REASON } = bioImage.data;
       const position = await this.playerPositionRepo.findOne({ where: { code: POS } });
       if (!position) {
         throw new NotFoundException(`Position "${POS}" not found`);
@@ -962,14 +1099,20 @@ export class PlayerOcrService {
       const draftRound = extractDraftRound(REASON);
       const playerClass = normalizeClassString(CLASS || '');
 
+      const jerseyNumber = JERSEY_NUMBER && typeof JERSEY_NUMBER === 'string'
+        ? JERSEY_NUMBER.trim().startsWith('#') ? JERSEY_NUMBER.trim() : `#${JERSEY_NUMBER.trim()}`
+        : null;
+
+
       const playerData: DeepPartial<PlayerEntity> = {
         name: NAME,
         overallRating: parseInt(OVR, 10) || undefined,
         height: parseHeightString(HEIGHT),
         weight: parseWeightString(WEIGHT),
-        homeTown: HOMETOWN ?? null,
+        homeTown: HOMETOWN || null,
         playerClass: playerClass as any,
         projectedReason: draftRound !== null ? draftRound.toString() : undefined,
+        jerseyNumber: jerseyNumber as any,
         user: { id: userId } as any,
         position: { id: position.id } as any,
       };
@@ -989,43 +1132,59 @@ export class PlayerOcrService {
 
       const bulkJobId = `bulk-${player.id}-${Date.now()}`;
 
-      const attributeFiles = matchedAttributes.map(attr => attr.file);
-      const uploadPromises = attributeFiles.map(async (file) => {
-        const result = await this.cloudinaryService.uploadFile(file);
-        if (!result?.secure_url) {
-          throw new Error('Attribute image upload failed');
-        }
+      const queueResults = await Promise.allSettled(
+        validAttributeFiles.map(async ({ file, originalName }) => {
+          try {
+            const result = await this.cloudinaryService.uploadFile(file);
+            if (!result?.secure_url) {
+              throw new Error('Attribute image upload failed');
+            }
 
-        const job = await this.imageQueue.add(
-          'processImage',
-          {
-            userId,
-            playerId: player.id,
-            imageUrl: result.secure_url,
-            originalName: file.originalname,
-            positionCode: POS,
-            bulkJobId
-          },
-          {
-            delay: 1000,
-            attempts: 3,
-            backoff: {
-              type: 'exponential',
-              delay: 2000,
-            },
+            const job = await this.imageQueue.add(
+              'processImage',
+              {
+                userId,
+                playerId: player.id,
+                imageUrl: result.secure_url,
+                originalName: originalName,
+                positionCode: POS,
+                bulkJobId
+              },
+              {
+                delay: 1000,
+                attempts: 3,
+                backoff: {
+                  type: 'exponential',
+                  delay: 2000,
+                },
+              }
+            );
+
+            return {
+              filename: originalName,
+              status: 'queued',
+              jobId: job.id
+            };
+          } catch (error) {
+            return {
+              filename: originalName,
+              status: 'failed',
+              error: error.message
+            };
           }
-        );
+        })
+      );
 
-        return {
-          file: file.originalname,
-          status: 'queued',
-          jobId: job.id
-        };
-      });
+      const queuedJobs = queueResults
+        .filter((r): r is PromiseFulfilledResult<any> =>
+          r.status === 'fulfilled' && r.value.status === 'queued'
+        )
+        .map(r => r.value);
 
-      const queueResults = await Promise.allSettled(uploadPromises);
-      const completedJobs = queueResults
-        .filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled')
+      const failedJobs = queueResults
+        .filter((r): r is PromiseFulfilledResult<any> =>
+          r.status === 'fulfilled' && r.value.status === 'failed'
+        )
         .map(r => r.value);
 
       await queryRunner.commitTransaction();
@@ -1041,12 +1200,18 @@ export class PlayerOcrService {
           weight: WEIGHT,
           homeTown: HOMETOWN,
           draftProjection: REASON,
+          jersey_Number: jerseyNumber,
           imageUrl: uploadResult.secure_url,
         },
         attributes: {
-          valid: completedJobs.length,
-          queued: completedJobs.length,
-          bulkJobId
+          valid: queuedJobs.length,
+          failed: failedJobs.length + invalidAttributeFiles.length,
+          queued: queuedJobs.length,
+          bulkJobId,
+          invalidDetails: [...invalidAttributeFiles, ...failedJobs.map(job => ({
+            filename: job.filename,
+            error: job.error
+          }))]
         },
       };
     } catch (error) {
