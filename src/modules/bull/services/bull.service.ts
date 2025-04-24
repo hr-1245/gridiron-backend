@@ -667,7 +667,7 @@ Return ONLY the JSON, no explanations or comments. Use the exact attribute names
         for (const file of playerFiles) {
           await this.handleImageProcessing({
             data: {
-              userId: 0, // Replace with real user ID if needed
+              userId: 0,
               playerId,
               imageUrl: file.url,
               originalName: file.originalName,
