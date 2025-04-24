@@ -1132,48 +1132,46 @@ export class PlayerOcrService {
 
       const bulkJobId = `bulk-${player.id}-${Date.now()}`;
 
-      const queueResults = await Promise.allSettled(
-        validAttributeFiles.map(async ({ file, originalName }) => {
-          try {
-            const result = await this.cloudinaryService.uploadFile(file);
-            if (!result?.secure_url) {
-              throw new Error('Attribute image upload failed');
-            }
-
-            const job = await this.imageQueue.add(
-              'processImage',
-              {
-                userId,
-                playerId: player.id,
-                imageUrl: result.secure_url,
-                originalName: originalName,
-                positionCode: POS,
-                bulkJobId
-              },
-              {
-                delay: 1000,
-                attempts: 3,
-                backoff: {
-                  type: 'exponential',
-                  delay: 2000,
-                },
-              }
-            );
-
-            return {
-              filename: originalName,
-              status: 'queued',
-              jobId: job.id
-            };
-          } catch (error) {
-            return {
-              filename: originalName,
-              status: 'failed',
-              error: error.message
-            };
+      const jobPromises = validAttributeFiles.map(async ({ file, originalName }) => {
+        try {
+          const result = await this.cloudinaryService.uploadFile(file);
+          if (!result?.secure_url) {
+            throw new Error('Attribute image upload failed');
           }
-        })
-      );
+
+          const job = await this.imageQueue.add(
+            'processImage',
+            {
+              userId,
+              playerId: player.id,
+              imageUrl: result.secure_url,
+              originalName: originalName,
+              positionCode: POS,
+              bulkJobId
+            },
+            {
+              attempts: 3,
+              backoff: {
+                type: 'exponential',
+                delay: 2000,
+              },
+            }
+          );
+
+          return {
+            filename: originalName,
+            status: 'queued',
+            jobId: job.id
+          };
+        } catch (error) {
+          return {
+            filename: originalName,
+            status: 'failed',
+            error: error.message
+          };
+        }
+      });
+      const queueResults = await Promise.allSettled(jobPromises);
 
       const queuedJobs = queueResults
         .filter((r): r is PromiseFulfilledResult<any> =>

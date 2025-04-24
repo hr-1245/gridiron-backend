@@ -26,6 +26,9 @@ export class userPlanEntity extends baseEntity {
   @Column({ nullable: true })
   appliedDiscountId: number;
 
+  @Column({ type: 'timestamp', nullable: true })
+  validUntil: Date;
+
   @Column({ type: 'float', nullable: true })
   appliedDiscountPercentage: number;
 
