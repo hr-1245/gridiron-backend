@@ -12,25 +12,13 @@ import { StripeModule } from './modules/stripe/stripe.module';
 import { MailModule } from './modules/mail/mail.module';
 import { OtpModule } from './modules/otp/otp.module';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
-import { BullModule } from '@nestjs/bull';
-import { BullBoardModule } from './modules/bull/bull.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { BullConfigModule } from './modules/bull/bull.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync(forDatabasePostgresAsyncConfig),
-
-    BullModule.forRoot({
-      redis: {
-        host: '127.0.0.1',
-        port: 6379,
-      },
-      defaultJobOptions: {
-        removeOnComplete: true,
-        removeOnFail: true,
-      },
-    }),
 
     AuthModule,
     JwtModule,
@@ -40,8 +28,8 @@ import { AdminModule } from './modules/admin/admin.module';
     MailModule,
     OtpModule,
     CloudinaryModule,
-    BullBoardModule,
-    AdminModule
+    AdminModule,
+    BullConfigModule
   ],
   providers: [adminjwtStrategy, userjwtStrategy],
 })
