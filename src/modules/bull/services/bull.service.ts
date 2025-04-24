@@ -4,8 +4,9 @@ import {
   OnQueueActive,
   OnQueueCompleted,
   OnQueueFailed,
+  InjectQueue,
 } from '@nestjs/bull';
-import { Job } from 'bull';
+import { Job, Queue } from 'bull';
 import { Injectable, Logger } from '@nestjs/common';
 import { PlayerOcrService } from 'src/modules/player/services/playerocr.service';
 import { PlayerEntity, PlayerAttributesEntity } from 'src/modules/player/entity/players.entity';
@@ -506,10 +507,11 @@ Return ONLY the JSON, no explanations or comments. Use the exact attribute names
     private readonly playerRepo: Repository<PlayerEntity>,
     @InjectRepository(PlayerAttributesEntity)
     private readonly playerAttrRepo: Repository<PlayerAttributesEntity>,
+    @InjectQueue('imageProcessing')
+    private readonly imageQueue: Queue
   ) { }
 
   private readonly logger = new Logger(bullService.name);
-
 
   @OnQueueActive()
   onActive(job: Job) {
@@ -646,6 +648,7 @@ Return ONLY the JSON, no explanations or comments. Use the exact attribute names
       positionCode: string;
       url: string;
       originalName: string;
+      userId: number;
     }>;
   }>) {
     const { files } = job.data;
@@ -658,38 +661,42 @@ Return ONLY the JSON, no explanations or comments. Use the exact attribute names
       return acc;
     }, {} as Record<number, typeof files>);
 
-    const results = await Promise.all(
-      Object.entries(filesByPlayer).map(async ([playerIdStr, playerFiles]) => {
-        const playerId = parseInt(playerIdStr, 10);
-        const positionCode = playerFiles[0].positionCode;
-        const bulkJobId = `bulk-${playerId}-${Date.now()}`;
+    const jobPromises: Array<{ jobId: any; playerId: number; bulkJobId: string }> = [];
 
-        for (const file of playerFiles) {
-          await this.handleImageProcessing({
-            data: {
-              userId: 0,
-              playerId,
-              imageUrl: file.url,
-              originalName: file.originalName,
-              positionCode,
-              bulkJobId,
-            },
-          } as Job);
-        }
+    for (const [playerIdStr, playerFiles] of Object.entries(filesByPlayer)) {
+      const playerId = parseInt(playerIdStr, 10);
+      const positionCode = playerFiles[0].positionCode;
+      const bulkJobId = `bulk-${playerId}-${Date.now()}`;
 
-        return {
+      for (const file of playerFiles) {
+        const newJob = await this.imageQueue.add('processImage', {
+          userId: file.userId,
           playerId,
+          imageUrl: file.url,
+          originalName: file.originalName,
+          positionCode,
           bulkJobId,
-          status: 'completed',
-          processedAt: new Date(),
-        };
-      })
-    );
+        }, {
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 2000,
+          },
+        });
+
+        jobPromises.push({
+          jobId: newJob.id,
+          playerId,
+          bulkJobId
+        });
+      }
+    }
 
     return {
-      totalPlayers: results.length,
+      totalPlayers: Object.keys(filesByPlayer).length,
+      totalJobs: jobPromises.length,
       processedAt: new Date(),
-      results,
+      jobs: jobPromises
     };
   }
 }

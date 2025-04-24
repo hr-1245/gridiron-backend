@@ -25,7 +25,8 @@ import { ConversionDto } from './dto/convert-manually.dto';
 import { User } from 'src/utils/user.decorator';
 import { userjwtInterface } from '../jwt/interface/jwt.interface';
 import { userjwtGuard } from 'src/providers/guards/user-guard/user.guard';
-import { userConversionLimitGuard } from 'src/providers/guards/user-guard/playerConversionlimitGuard.guard';
+import { userOcrConversionLimitGuard } from 'src/providers/guards/user-guard/playerManualConversionLimit.guard';
+import { userManualConversionLimitGuard } from 'src/providers/guards/user-guard/playerConversionlimitGuard.guard';
 
 @ApiTags('Player OCR')
 @ApiBearerAuth('jwt')
@@ -55,7 +56,7 @@ export class PlayerOcrController {
 
   //------------------CONVERT MANUALLY----------
   @Post("convert")
-  @UseGuards(userjwtGuard)
+  @UseGuards(userManualConversionLimitGuard)
   @ApiOperation({ summary: "Convert player attributes based on position" })
   @ApiResponse({
     status: 200,
@@ -71,7 +72,7 @@ export class PlayerOcrController {
 
   //------BULK CONVERT WITH AI MODEL----
   @Post('upload')
-  @UseGuards(userConversionLimitGuard)
+  @UseGuards(userOcrConversionLimitGuard)
   @UseInterceptors(FilesInterceptor('files'))
   @ApiOperation({
     summary: 'Process uploaded player images (bio image + attributes).'

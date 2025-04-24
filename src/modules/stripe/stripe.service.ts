@@ -166,10 +166,15 @@ export class StripeService {
 
       const subscription = await this.stripe.subscriptions.create(subscriptionParams);
 
+      const validUntil = subscription.current_period_end
+        ? new Date(subscription.current_period_end * 1000)
+        : null;
+
       const newPlan = this.planRepo.create({
         stripeSubscriptionId: subscription.id,
         planType: subscriptionEnum.REGULAR,
         subscriptionStatus: subscription.status === 'active' ? paymentStatus.SUCCEEDED : paymentStatus.PENDING,
+        validUntil: validUntil as any,
         user: user,
         name,
         phoneNumber,
@@ -337,12 +342,7 @@ export class StripeService {
 
     let event: Stripe.Event;
     try {
-      // Using raw body for webhook signature verification
-      event = this.stripe.webhooks.constructEvent(
-        req.body,
-        sig,
-        this.webhookSecret
-      );
+      event = this.stripe.webhooks.constructEvent(req.body, sig, this.webhookSecret);
     } catch (err: any) {
       this.logger.error('⚠️ Webhook signature verification failed.', err.message);
       throw new BadRequestException(`Webhook Error: ${err.message}`);
@@ -365,15 +365,16 @@ export class StripeService {
       return { message: 'Webhook processed successfully' };
     } catch (error: any) {
       this.logger.error(`Error processing webhook ${event.type}: ${error.message}`, error.stack);
-      // Still returning success to Stripe to prevent retries
       return { message: `Webhook received but processing error occurred: ${error.message}` };
     }
   }
+
 
   // -------------------- Handle Payment Succeeded --------------------
   private async handlePaymentSucceeded(event: Stripe.Event) {
     const invoice = event.data.object as Stripe.Invoice;
     const subscriptionId = invoice.subscription as string;
+
     const subscription = await this.planRepo.findOne({
       where: { stripeSubscriptionId: subscriptionId },
       relations: ['user'],
@@ -385,6 +386,13 @@ export class StripeService {
     }
 
     subscription.subscriptionStatus = paymentStatus.SUCCEEDED;
+
+    // Set validUntil from the latest invoice period end (if available)
+    const periodEnd = invoice.lines?.data?.[0]?.period?.end;
+    if (periodEnd) {
+      subscription.validUntil = new Date(periodEnd * 1000);
+    }
+
     await this.planRepo.save(subscription);
     this.logger.log(`✅ Payment succeeded for subscription ${subscriptionId}`);
   }
@@ -393,6 +401,7 @@ export class StripeService {
   private async handleSubscriptionUpdated(event: Stripe.Event) {
     const subscriptionData = event.data.object as Stripe.Subscription;
     const subscriptionId = subscriptionData.id;
+
     const subscription = await this.planRepo.findOne({
       where: { stripeSubscriptionId: subscriptionId },
       relations: ['user'],
@@ -408,14 +417,20 @@ export class StripeService {
         ? paymentStatus.SUCCEEDED
         : paymentStatus.PENDING;
 
+    if (subscriptionData.current_period_end) {
+      subscription.validUntil = new Date(subscriptionData.current_period_end * 1000);
+    }
+
     await this.planRepo.save(subscription);
     this.logger.log(`🔄 Subscription ${subscriptionId} updated: ${subscriptionData.status}`);
   }
+
 
   // -------------------- Handle Subscription Canceled --------------------
   private async handleSubscriptionCanceled(event: Stripe.Event) {
     const subscriptionData = event.data.object as Stripe.Subscription;
     const subscriptionId = subscriptionData.id;
+
     const subscription = await this.planRepo.findOne({
       where: { stripeSubscriptionId: subscriptionId },
       relations: ['user'],
@@ -427,6 +442,10 @@ export class StripeService {
     }
 
     subscription.subscriptionStatus = paymentStatus.CANCELED;
+
+    // Optional: You can also nullify validUntil if you want
+    subscription.validUntil = null as any;
+
     await this.planRepo.save(subscription);
     this.logger.log(`❌ Subscription ${subscriptionId} canceled.`);
   }
