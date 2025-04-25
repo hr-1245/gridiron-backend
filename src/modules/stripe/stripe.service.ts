@@ -15,6 +15,8 @@ import { userEntity } from '../user/entity/user.entity';
 import { discountConfigEntity, userPlanEntity } from '../user/entity/userPlan.entity';
 import { SubscribeDto, AttachPaymentMethodDto } from './dto/stripe.dto';
 import { Request } from 'express';
+import { mailService } from '../mail/mail.service';
+import subscriptionTemplate from '../mail/template/subscription-template';
 
 @Injectable()
 export class StripeService {
@@ -32,7 +34,8 @@ export class StripeService {
     @InjectRepository(discountConfigEntity)
     private discountConfigRepo: Repository<discountConfigEntity>,
 
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly MailService: mailService
   ) {
     const stripeSecretKey = this.configService.get<string>('STRIPE_SECRET_KEY') || '';
     this.webhookSecret = this.configService.get<string>('STRIPE_WEBHOOK_SIGN') || '';
@@ -81,12 +84,10 @@ export class StripeService {
     if (!user.stripeCustomerId) throw new BadRequestException('User does not have a Stripe customer ID');
 
     try {
-      // Attach the payment method to the Stripe customer
       await this.stripe.paymentMethods.attach(paymentMethodId, {
         customer: user.stripeCustomerId,
       });
 
-      // Set as default payment method
       await this.stripe.customers.update(user.stripeCustomerId, {
         invoice_settings: { default_payment_method: paymentMethodId },
       });
@@ -96,8 +97,7 @@ export class StripeService {
 
       return { message: 'Payment method attached successfully', paymentMethodId };
     } catch (error: any) {
-      this.logger.error(`Failed to attach payment method: ${error.message}`, error.stack);
-      throw new InternalServerErrorException('Failed to attach payment method: ' + error.message);
+      throw new NotFoundException('Failed to attach payment method: ' + error.message);
     }
   }
 
@@ -138,7 +138,6 @@ export class StripeService {
     }
 
     try {
-      // Check for active discount
       const activeDiscount = await this.getActiveDiscount();
       const subscriptionParams: Stripe.SubscriptionCreateParams = {
         customer: user.stripeCustomerId,
@@ -147,10 +146,8 @@ export class StripeService {
         expand: ['latest_invoice.payment_intent'],
       };
 
-      // If there's an active discount, apply it to the subscription
       let discountInfo: { percentage: number; name: string } | null = null;
       if (activeDiscount && activeDiscount.percentage > 0) {
-        // Create a coupon with the current discount percentage
         const coupon = await this.stripe.coupons.create({
           percent_off: activeDiscount.percentage,
           duration: 'once',
@@ -185,6 +182,19 @@ export class StripeService {
 
       await this.planRepo.save(newPlan);
 
+      if (validUntil) {
+        const discountApplied = activeDiscount ? {
+          percentage: activeDiscount.percentage,
+          name: activeDiscount.name || `${activeDiscount.percentage}% Discount`
+        } : undefined;
+
+        await this.sendAIConversionCongratulationEmail(
+          user.email,
+          subscriptionEnum.REGULAR,
+          validUntil,
+          discountApplied
+        );
+      }
       const successMessage = activeDiscount
         ? `Subscribed to Regular Plan successfully with ${activeDiscount.percentage}% discount`
         : 'Subscribed to Regular Plan successfully';
@@ -206,7 +216,23 @@ export class StripeService {
       throw new InternalServerErrorException('Failed to create subscription: ' + error.message);
     }
   }
-
+  private async sendAIConversionCongratulationEmail(
+    email: string,
+    planType: string,
+    endDate: Date,
+    discountApplied?: { percentage: number, name: string }
+  ): Promise<void> {
+    try {
+      await this.MailService.sendMail({
+        mailOptions: {
+          to: email,
+          subject: 'Your AI Player Conversion Tools Are Ready! 🏈',
+          html: subscriptionTemplate(email, planType, endDate, discountApplied)
+        }
+      });
+    } catch (error) {
+    }
+  }
   // -------------------- Get Subscription Status --------------------
   async getSubscriptionStatus(userId: number): Promise<{
     isSubscribed: boolean;
@@ -237,7 +263,6 @@ export class StripeService {
         cancelAtPeriodEnd: subscription.cancel_at_period_end,
       };
 
-      // Add discount information if available
       if (user.subscription.appliedDiscountPercentage) {
         return {
           ...response,
@@ -271,12 +296,17 @@ export class StripeService {
       });
       return { message: 'Subscription will be canceled at the end of the billing period' };
     } catch (error: any) {
+
       if (error.code === 'resource_missing') {
+
         user.subscription.subscriptionStatus = paymentStatus.CANCELED;
+
         await this.planRepo.save(user.subscription);
-        return { message: 'Subscription not found in Stripe, marked as canceled in database' };
+
+        return {
+          message: 'Subscription not found in Stripe, marked as canceled in database'
+        };
       }
-      this.logger.error(`Failed to cancel subscription: ${error.message}`, error.stack);
       throw new InternalServerErrorException(`Failed to cancel subscription: ${error.message}`);
     }
   }
@@ -286,20 +316,17 @@ export class StripeService {
 
     const { percentage, name, isActive } = data;
 
-    // Validate discount percentage
     if (percentage < 0 || percentage > 100) {
       throw new BadRequestException('Discount percentage must be between 0 and 100');
     }
 
     try {
-      // If setting a new active discount, deactivate all other discounts
       if (isActive) {
         await this.discountConfigRepo.update({}, { isActive: false });
       }
 
-      // Create new discount configuration
       const discountConfig = this.discountConfigRepo.create({
-        percentage: `Discount ${percentage}%` as any,
+        percentage,
         name: name,
         isActive,
       });
@@ -387,7 +414,6 @@ export class StripeService {
 
     subscription.subscriptionStatus = paymentStatus.SUCCEEDED;
 
-    // Set validUntil from the latest invoice period end (if available)
     const periodEnd = invoice.lines?.data?.[0]?.period?.end;
     if (periodEnd) {
       subscription.validUntil = new Date(periodEnd * 1000);
@@ -443,7 +469,6 @@ export class StripeService {
 
     subscription.subscriptionStatus = paymentStatus.CANCELED;
 
-    // Optional: You can also nullify validUntil if you want
     subscription.validUntil = null as any;
 
     await this.planRepo.save(subscription);
