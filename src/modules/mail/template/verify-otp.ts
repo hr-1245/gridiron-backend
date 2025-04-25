@@ -96,7 +96,7 @@ const verifyTemplate = (email: string, code: string | number): string => `<!doct
             <p>Email: <strong>${email}</strong></p>
             <p class="code" id="verificationCode">${code}</p>
             <p>This code will expire in 5 minutes, so please use it as soon as possible. ⏳</p>
-            <span class="button" onClick="copyToClipboard()">Copy your code 📋</span>
+<div class="button">Copy your code 📋</div>
             <p>Or, enter the code manually in the app. 🔑</p>
             <p>Thank you,<br/> Grid-Iron Team  😊</p>
         </div>

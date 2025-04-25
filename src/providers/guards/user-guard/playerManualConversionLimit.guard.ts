@@ -13,7 +13,7 @@ import { PlayerEntity } from 'src/modules/player/entity/players.entity';
 import { paymentStatus } from 'src/types/enums/subscription';
 
 @Injectable()
-export class userOcrConversionLimitGuard extends AuthGuard('jwt-user') {
+export class userManualConversionLimitGuard extends AuthGuard('jwt-user') {
   constructor(
     @InjectRepository(userEntity)
     private readonly userRepo: Repository<userEntity>,

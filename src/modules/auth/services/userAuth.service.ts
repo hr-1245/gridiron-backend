@@ -150,32 +150,72 @@ export class userAuthService {
       throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST);
     }
   }
-  //======================================RESEND OTP LOGIC=========================================================
-  async resendVerificationOtp(email: string) {
+  async forgotPassword(email: string) {
     try {
-      const [user] = await this.find(email);
+      const [user] = await this.find(email.toLowerCase());
       if (!user) {
         throw new NotFoundException('User not found');
       }
 
-      if (user.isVerified) {
-        return {
-          message: 'Email is already verified',
-          status: HttpStatus.OK
-        };
-      }
-
       await this.otpService.generateOtpCode({
-        email,
-        reason: OTP_REASON_ENUM.VERIFY_EMAIL
+        email: user.email,
+        reason: OTP_REASON_ENUM.RESET_PASSWORD
       });
 
       return {
-        message: 'Verification code sent successfully',
+        message: 'Password reset code sent to your email',
         status: HttpStatus.OK
       };
     } catch (error) {
-      throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        error.message || 'Failed to process forgot password request',
+        error.status || HttpStatus.BAD_REQUEST
+      );
     }
+  }
+
+  async verifyOTPAndResetPassword(email: string, otp: number, newPassword: string) {
+    try {
+      // Verify OTP
+      const otpRecord = await this.otpService.findByOtp(otp);
+
+      if (!otpRecord) {
+        throw new BadRequestException('Invalid OTP');
+      }
+
+      if (otpRecord.email !== email.toLowerCase()) {
+        throw new BadRequestException('OTP does not match email');
+      }
+
+      if (otpRecord.is_expired || otpRecord.is_used || otpRecord.expires_at < new Date()) {
+        throw new BadRequestException('OTP has expired or already been used');
+      }
+
+      const [user] = await this.find(email.toLowerCase());
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      const hashedPassword = hashPassword(newPassword);
+      user.password = hashedPassword;
+
+      otpRecord.is_used = true;
+
+      await this.repo.manager.transaction(async transactionalEntityManager => {
+        await transactionalEntityManager.save(user);
+        await transactionalEntityManager.save(otpRecord);
+      });
+
+      return {
+        message: 'Password reset successful',
+        status: HttpStatus.OK
+      };
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'Failed to reset password',
+        error.status || HttpStatus.BAD_REQUEST
+      );
+    }
+
   }
 }
