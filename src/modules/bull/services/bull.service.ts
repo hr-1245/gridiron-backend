@@ -41,7 +41,7 @@ export class bullService {
       "stamina": number,
       "injury": number
       "strength": number
-      "jumping": number
+      "jumping": number // Also Knows as "Jumping" in image
     }
     // QB-specific attributes focused on throwing accuracy, power, and mobility
     Return ONLY the JSON, no explanations or comments. Use the exact attribute names as shown. Only include attributes visible in the image with numeric values.`,
@@ -87,7 +87,7 @@ export class bullService {
       "catch_in_traffic": number,  // Also known as "Catch In Traffic" in image
       "spectacular_catch": number,  // Also known as "Spectacular Catch" or "SPC" in image
       "release": number,
-      "jumping": number,
+      "jumping": number // Also Knows as "Jumping" in image // Also Knows as "Jumping" in imag // Also Knows as "Jumping" in imagee,
       "carrying": number,
       "trucking": number,
       "ball_carrier_vision": number,  // Also known as "Ball Carrier Vision" in image
@@ -98,7 +98,7 @@ export class bullService {
       "short_route_running": number,  // Also known as "Short Route Running" in image
       "medium_route_running": number,  // Also known as "Medium Route Running" in image
       "deep_route_running": number,  // Also known as "Deep Route Running" in image
-      "jumping": number,
+      "jumping": number // Also Knows as "Jumping" in image,
       "stamina": number,
       "return": number,  // Also known as "Kick Return" in image
       "injury": number
@@ -126,7 +126,7 @@ export class bullService {
       "run_block_finesse": number,  // Also known as "Run Block Finesse" in image
       "lead_blocking": number,  // Also known as "Lead Block" in image
       "impact_blocking": number,  // Also known as "Impact Block" in image
-      "jumping": number,
+      "jumping": number // Also Knows as "Jumping" in image,
       "carrying": number,
       "trucking": number,
       "catching": number,
@@ -136,7 +136,7 @@ export class bullService {
       "short_route_running": number,  // Also known as "Short Route Running" in image
       "medium_route_running": number,  // Also known as "Medium Route Running" in image
       "deep_route_running": number,  // Also known as "Deep Route Running" in image
-      "jumping": number,
+      "jumping": number // Also Knows as "Jumping" in image,
       "stamina": number,
       "injury": number
     }
@@ -173,7 +173,7 @@ export class bullService {
       "change_of_direction": number,  // Also known as "Change of Direction" or "COD" in image
       "awareness": number,
       "strength": number,
-      "jumping": number,
+      "jumping": number // Also Knows as "Jumping" in image,
       "tackling": number,
       "hit_power": number,  // Also known as "Hit Power" in image
       "power_moves": number,  // Also known as "Power Moves" in image
@@ -197,7 +197,7 @@ export class bullService {
       "change_of_direction": number,  // Also known as "Change of Direction" or "COD" in image
       "awareness": number,
       "strength": number,
-      "jumping": number,
+      "jumping": number // Also Knows as "Jumping" in image,
       "tackling": number,
       "hit_power": number,  // Also known as "Hit Power" in image
       "power_moves": number,  // Also known as "Power Moves" in image
@@ -221,7 +221,7 @@ export class bullService {
       "change_of_direction": number,  // Also known as "Change of Direction" or "COD" in image
       "awareness": number,
       "strength": number,
-      "jumping": number,
+      "jumping": number // Also Knows as "Jumping" in image,
       "tackle": number,
       "hit_power": number,  // Also known as "Hit Power" in image
       "power_moves": number,  // Also known as "Power Moves" in image
@@ -245,7 +245,7 @@ export class bullService {
       "change_of_direction": number,  // Also known as "Change of Direction" or "COD" in image
       "awareness": number,
       "strength": number,
-      "jumping": number,
+      "jumping": number // Also Knows as "Jumping" in image,
       "tackling": number,
       "hit_power": number,  // Also known as "Hit Power" in image
       "pursuit": number,
@@ -270,7 +270,7 @@ export class bullService {
       "awareness": number,
       "strength": number,
       "block_shed": number,  // Also known as "Block Shed" in image
-      "jumping": number,
+      "jumping": number // Also Knows as "Jumping" in image,
       "tackling": number,
       "hit_power": number,  // Also known as "Hit Power" in image
       "pursuit": number,

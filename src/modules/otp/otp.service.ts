@@ -93,6 +93,14 @@ export class otpService {
     // Save the OTP entry in the database
     return this.otpRepo.save(data);
   }
+  /**
+   * Deletes an OTP record from the database
+   * @param id ID of the OTP record to delete
+   * @returns Result of the deletion operation
+   */
+  async deleteOtp(id: number): Promise<void> {
+    await this.otpRepo.delete(id);
+  }
 
   /**
    * Verifies an OTP code

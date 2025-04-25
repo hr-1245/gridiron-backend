@@ -13,7 +13,7 @@ import { PlayerEntity } from 'src/modules/player/entity/players.entity';
 import { paymentStatus } from 'src/types/enums/subscription';
 
 @Injectable()
-export class userManualConversionLimitGuard extends AuthGuard('jwt-user') {
+export class userOcrConversionLimitGuard extends AuthGuard('jwt-user') {
   constructor(
     @InjectRepository(userEntity)
     private readonly userRepo: Repository<userEntity>,
@@ -29,6 +29,7 @@ export class userManualConversionLimitGuard extends AuthGuard('jwt-user') {
 
     const request = context.switchToHttp().getRequest();
     const user = request.user;
+
     if (!user) throw new UnauthorizedException();
 
     const userWithSubscription = await this.userRepo.findOne({
@@ -36,15 +37,15 @@ export class userManualConversionLimitGuard extends AuthGuard('jwt-user') {
       relations: ['subscription'],
     });
 
-    const BASIC_PLAN_LIMIT = 5;
+    console.log('User with subscription:', userWithSubscription);
 
-    if (
-      !userWithSubscription?.subscription ||
-      this.isSubscriptionExpiredOrInactive(userWithSubscription.subscription)
-    ) {
+    const BASIC_PLAN_LIMIT = 5;
+    if (!userWithSubscription?.subscription || this.isSubscriptionExpiredOrInactive(userWithSubscription.subscription)) {
       const convertedPlayersCount = await this.playerRepo.count({
         where: { user: { id: user.id } },
       });
+
+      console.log('Converted players count:', convertedPlayersCount); // Add logging here
 
       if (convertedPlayersCount >= BASIC_PLAN_LIMIT) {
         throw new ForbiddenException(
@@ -57,6 +58,7 @@ export class userManualConversionLimitGuard extends AuthGuard('jwt-user') {
 
     return true;
   }
+
 
   private isSubscriptionExpiredOrInactive(subscription: any): boolean {
     const now = new Date();

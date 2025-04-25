@@ -25,8 +25,8 @@ import { ConversionDto } from './dto/convert-manually.dto';
 import { User } from 'src/utils/user.decorator';
 import { userjwtInterface } from '../jwt/interface/jwt.interface';
 import { userjwtGuard } from 'src/providers/guards/user-guard/user.guard';
-import { userOcrConversionLimitGuard } from 'src/providers/guards/user-guard/playerManualConversionLimit.guard';
-import { userManualConversionLimitGuard } from 'src/providers/guards/user-guard/playerConversionlimitGuard.guard';
+import { userManualConversionLimitGuard } from 'src/providers/guards/user-guard/playerManualConversionLimit.guard';
+import { userOcrConversionLimitGuard } from 'src/providers/guards/user-guard/playerConversionlimitGuard.guard';
 
 @ApiTags('Player OCR')
 @ApiBearerAuth('jwt')
