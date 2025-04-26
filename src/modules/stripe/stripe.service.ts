@@ -17,6 +17,7 @@ import { SubscribeDto, AttachPaymentMethodDto } from './dto/stripe.dto';
 import { Request } from 'express';
 import { mailService } from '../mail/mail.service';
 import subscriptionTemplate from '../mail/template/subscription-template';
+import { adminauthEntity } from '../admin/entity/admin.entity';
 
 @Injectable()
 export class StripeService {
@@ -27,6 +28,9 @@ export class StripeService {
   constructor(
     @InjectRepository(userEntity)
     private userRepo: Repository<userEntity>,
+
+    @InjectRepository(adminauthEntity)
+    private adminRepo: Repository<adminauthEntity>,
 
     @InjectRepository(userPlanEntity)
     private planRepo: Repository<userPlanEntity>,
@@ -233,6 +237,29 @@ export class StripeService {
     } catch (error) {
     }
   }
+
+  // -------------------- Admin: Remove Active Discount --------------------
+  async removeActiveDiscountConfiguration(adminId: number): Promise<{ message: string }> {
+    const admin = await this.adminRepo.findOne({ where: { id: adminId } });
+
+    if (!admin) {
+      throw new NotFoundException('Admin not found');
+    }
+
+    const activeDiscount = await this.discountConfigRepo.findOne({
+      where: { isActive: true },
+    });
+
+    if (!activeDiscount) {
+      return { message: 'No active discount to remove' };
+    }
+
+    activeDiscount.isActive = false;
+    await this.discountConfigRepo.save(activeDiscount);
+
+    return { message: 'Active discount configuration removed successfully' };
+  }
+
   // -------------------- Get Subscription Status --------------------
   async getSubscriptionStatus(userId: number): Promise<{
     isSubscribed: boolean;
@@ -312,7 +339,15 @@ export class StripeService {
   }
 
   // -------------------- Admin: Set Discount Configuration --------------------
-  async setDiscountConfiguration(data: { percentage: number; name?: string; isActive: boolean }): Promise<discountConfigEntity> {
+  async setDiscountConfiguration(adminId: number, data: { percentage: number; name?: string; isActive: boolean }): Promise<discountConfigEntity> {
+
+    const admin = this.adminRepo.findOne({
+      where: { id: adminId }
+    })
+
+    if (!admin) {
+      throw new NotFoundException('Admin Not Found')
+    }
 
     const { percentage, name, isActive } = data;
 
@@ -340,19 +375,37 @@ export class StripeService {
   }
 
   // -------------------- Admin: Get Current Discount Configuration --------------------
-  async getCurrentDiscountConfiguration(): Promise<discountConfigEntity | null> {
+  async getCurrentDiscountConfiguration(adminId: number): Promise<{
+    message: string;
+    discount?: discountConfigEntity;
+  }> {
     try {
-      return await this.getActiveDiscount();
+      const activeDiscount = await this.getActiveDiscount();
+
+      if (!activeDiscount) {
+        return {
+          message: 'No active discount available',
+        };
+      }
+
+      return {
+        message: 'Active discount retrieved successfully',
+        discount: activeDiscount,
+      };
     } catch (error: any) {
-      throw new InternalServerErrorException(`Failed to get discount configuration: ${error.message}`);
+      this.logger.error(`Failed to get discount configuration: ${error.message}`, error.stack);
+      throw new InternalServerErrorException(
+        `Failed to get discount configuration: ${error.message}`
+      );
     }
   }
 
+
   // -------------------- Admin: Get All Discount Configurations --------------------
-  async getAllDiscountConfigurations(): Promise<discountConfigEntity[]> {
+  async getAllDiscountConfigurations(adminId: number): Promise<discountConfigEntity[]> {
     try {
       return await this.discountConfigRepo.find({
-        order: { updatedAt: 'DESC' }
+        order: { updatedAt: 'ASC' }
       });
     } catch (error: any) {
       this.logger.error(`Failed to get all discount configurations: ${error.message}`, error.stack);
