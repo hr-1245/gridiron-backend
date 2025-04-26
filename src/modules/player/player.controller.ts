@@ -28,9 +28,9 @@ import { userjwtGuard } from 'src/providers/guards/user-guard/user.guard';
 import { userManualConversionLimitGuard } from 'src/providers/guards/user-guard/playerManualConversionLimit.guard';
 import { userOcrConversionLimitGuard } from 'src/providers/guards/user-guard/playerConversionlimitGuard.guard';
 
-@ApiTags('Player OCR')
+@ApiTags('Convert Player To Maden')
 @ApiBearerAuth('jwt')
-@Controller('players/ocr')
+@Controller('Conversion/Player')
 export class PlayerOcrController {
 
   logger: any;
@@ -55,7 +55,7 @@ export class PlayerOcrController {
 
 
   //------------------CONVERT MANUALLY----------
-  @Post("convert")
+  @Post("convert/manually")
   @UseGuards(userManualConversionLimitGuard)
   @ApiOperation({ summary: "Convert player attributes based on position" })
   @ApiResponse({
@@ -71,7 +71,7 @@ export class PlayerOcrController {
 
 
   //------BULK CONVERT WITH AI MODEL----
-  @Post('upload')
+  @Post('convert/AI')
   @UseGuards(userOcrConversionLimitGuard)
   @UseInterceptors(FilesInterceptor('files'))
   @ApiOperation({
