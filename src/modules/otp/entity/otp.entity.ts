@@ -1,6 +1,6 @@
 import { Entity, Column, ManyToOne } from 'typeorm';
 import { baseEntity } from 'src/entities/base.entity';
-import { userEntity } from 'src/modules/user/entity/user.entity';
+import { userEntity } from 'src/modules/user/entity/userEntity';
 import { OTP_REASON_ENUM } from 'src/types/enums/otp';
 
 @Entity({ name: 'otp' })

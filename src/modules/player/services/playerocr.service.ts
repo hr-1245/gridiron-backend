@@ -23,6 +23,7 @@ import { OpenAI } from 'openai';
 import { All_Middle_LinebackersDTO, CornerBackDto, DefensiveTackleDto, FullBackDto, KickerDto, Left_Outside_linebacker_above_245_lbsDTO, LeftEndDTO, LeftGaurdDto, LeftOutside_linebacker_below_245lbsDTO, LeftTackleDto, PunterDto, QuarterBackDto, Right_Outside_linebacker_above_245lbsDTO, RightEndDTO, RightGaurdDto, RightOutside_linebacker_below_245lbsDTO, RightTackleDto, RunningBackDto, SafetyDto, TightEndDto, WideReceiverDto } from '../dto/convert-manually.dto';
 
 import { areNamesEquivalent, extractDraftRound, findBestNameMatch, normalizeClassString, parseHeightString, parseWeightString } from 'src/utils/helpers/helpers';
+import { playerDraftFolderEntity } from '../entity/player-draft-folder.entity';
 
 @Injectable()
 export class PlayerOcrService {
@@ -43,6 +44,9 @@ export class PlayerOcrService {
 
     @InjectRepository(PlayerAttributesEntity)
     private readonly playerAttrRepo: Repository<PlayerAttributesEntity>,
+
+    @InjectRepository(playerDraftFolderEntity)
+    private readonly playerDraftRepo: Repository<playerDraftFolderEntity>,
 
     @InjectQueue('imageProcessing')
     private readonly imageQueue: Queue,
@@ -866,7 +870,28 @@ export class PlayerOcrService {
     }
   }
 
-  async processBulkPlayerImages(files: Express.Multer.File[], userId: number): Promise<any> {
+  private async getOrCreateDraftFolders(userId: number, folderName?: string): Promise<playerDraftFolderEntity | null> {
+
+    if (!folderName) return null;
+    let folder = await this.playerDraftRepo.findOne({
+      where: {
+        name: folderName,
+        user: { id: userId }
+      }
+    });
+
+    if (!folder) {
+      folder = this.playerDraftRepo.create({
+        name: folderName,
+        user: { id: userId }
+      });
+      await this.playerDraftRepo.save(folder);
+    }
+
+    return folder;
+  }
+
+  async processBulkPlayerImages(files: Express.Multer.File[], userId: number, draftfolderName: string): Promise<any> {
     if (!files?.length) {
       throw new BadRequestException('No files uploaded');
     }
@@ -997,7 +1022,7 @@ export class PlayerOcrService {
 
     const processPromises = Array.from(bioNamesMap.entries()).map(([bioName, bioImage]) => {
       const matchedAttributes = attributesByBioName.get(bioName) || [];
-      return this.processPlayerWithAttributes(bioImage, matchedAttributes, userId);
+      return this.processPlayerWithAttributes(bioImage, matchedAttributes, userId, draftfolderName);
     });
 
     const results = await Promise.allSettled(processPromises);
@@ -1040,10 +1065,12 @@ export class PlayerOcrService {
     };
   }
 
+
   private async processPlayerWithAttributes(
     bioImage: { file: Express.Multer.File, data: any, positionCode?: string },
     matchedAttributes: Array<{ file: Express.Multer.File, data: any, positionCode?: string, originalName: string }>,
-    userId: number
+    userId: number,
+    draftFolderName?: string
   ): Promise<any> {
     const { NAME, POS, OVR, CLASS, HEIGHT, WEIGHT, HOMETOWN, REASON, JERSEY_NUMBER } = bioImage.data;
 
@@ -1103,8 +1130,10 @@ export class PlayerOcrService {
         ? JERSEY_NUMBER.trim().startsWith('#') ? JERSEY_NUMBER.trim() : `#${JERSEY_NUMBER.trim()}`
         : null;
 
+      const folder = await this.getOrCreateDraftFolders(userId, draftFolderName);
 
       const playerData: DeepPartial<PlayerEntity> = {
+        draftFolder: folder ? { id: folder.id } : undefined,
         name: NAME,
         overallRating: parseInt(OVR, 10) || undefined,
         height: parseHeightString(HEIGHT),
@@ -1189,6 +1218,7 @@ export class PlayerOcrService {
 
       return {
         player: {
+          folder: draftFolderName,
           id: player.id,
           name: NAME,
           position: POS,
@@ -1220,5 +1250,6 @@ export class PlayerOcrService {
       await queryRunner.release();
     }
   }
+
 
 }

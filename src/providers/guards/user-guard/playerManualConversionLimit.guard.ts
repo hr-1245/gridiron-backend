@@ -8,7 +8,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { userEntity } from 'src/modules/user/entity/user.entity';
+import { userEntity } from 'src/modules/user/entity/userEntity';
 import { PlayerEntity } from 'src/modules/player/entity/players.entity';
 import { paymentStatus } from 'src/types/enums/subscription';
 

@@ -11,7 +11,7 @@ import Stripe from 'stripe';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { subscriptionEnum, paymentStatus } from 'src/types/enums/subscription';
-import { userEntity } from '../user/entity/user.entity';
+import { userEntity } from '../user/entity/userEntity';
 import { discountConfigEntity, userPlanEntity } from '../user/entity/userPlan.entity';
 import { SubscribeDto, AttachPaymentMethodDto } from './dto/stripe.dto';
 import { Request } from 'express';

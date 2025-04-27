@@ -86,17 +86,20 @@ const subscriptionTemplate = (email: string, planType: string, endDate: Date, di
         <div class="header">
             <h2>You're All Set! 🏈🤖</h2>
         </div>
-        <div class="content">
-            <p style="margin-top:0px; padding-top:1rem">Congratulations, <strong>${email}</strong>!</p>
-            
-            ${discountApplied ? `<span class="discount-badge">🏷️ ${discountApplied.name || `${discountApplied.percentage}% Discount`} Applied!</span>` : ''}
-            
-            <div class="ai-feature">
-                <p class="highlight">Unlimited Player Conversion Now Available!</p>
-                <p><span class="checkmark">✓</span> Transform stats into insights instantly</p>
-                <p><span class="checkmark">✓</span> Generate pro-level scouting reports</p>
-                <p><span class="checkmark">✓</span> And many more premium features!</p>
-            </div>
+      <div class="content">
+<p style="font-size:18px; color:#007BFF; font-weight:700; background-color:#E8F0FE; padding:10px 15px; border-radius:8px; display:inline-block; margin-top:1rem;">Thanks for Subscribing! Your Madden Mastery Starts Now 🏈</p>
+  
+  <p style="margin-top:0px; padding-top:1rem">Congratulations, <strong>${email}</strong>!</p>
+  
+  ${discountApplied ? `<span class="discount-badge">🏷️ ${discountApplied.name || `${discountApplied.percentage}% Discount`} Applied!</span>` : ''}
+
+      <div class="ai-feature">
+    <p class="highlight">Unlimited Player Conversion Now Available!</p>
+    <p><span class="checkmark">✓</span> Convert Unlimited Players to Madden Ratings in Seconds</p>
+    <p><span class="checkmark">✓</span> Instantly Create Madden-Style Profiles</p>
+    <p><span class="checkmark">✓</span> Track Player Stats and Ratings History Effortlessly</p>
+</div>
+
             
             <p>Start exploring your new AI tools and take your game to the next level.</p>
             <p class="valid-info">Valid until ${endDate.toLocaleDateString()}</p>

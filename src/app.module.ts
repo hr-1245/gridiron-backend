@@ -14,6 +14,7 @@ import { OtpModule } from './modules/otp/otp.module';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { BullConfigModule } from './modules/bull/bull.module';
+import { redisModule } from './modules/redis/redis.module';
 
 @Module({
   imports: [
@@ -29,7 +30,8 @@ import { BullConfigModule } from './modules/bull/bull.module';
     OtpModule,
     CloudinaryModule,
     AdminModule,
-    BullConfigModule
+    BullConfigModule,
+    redisModule
   ],
   providers: [adminjwtStrategy, userjwtStrategy],
 })

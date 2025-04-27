@@ -2,7 +2,8 @@ import { Entity, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { PlayerPositionEntity } from './player-position.entity';
 import { COLLAGE_AGE_ENUM } from 'src/types/enums/roles';
 import { baseEntity } from 'src/entities/base.entity';
-import { userEntity } from 'src/modules/user/entity/user.entity';
+import { userEntity } from 'src/modules/user/entity/userEntity';
+import { playerDraftFolderEntity } from './player-draft-folder.entity';
 
 @Entity({ name: 'player' })
 export class PlayerEntity extends baseEntity {
@@ -44,6 +45,10 @@ export class PlayerEntity extends baseEntity {
 
     @OneToMany(() => PlayerAttributesEntity, attr => attr.player, { cascade: true })
     attributes: PlayerAttributesEntity[];
+
+    @ManyToOne(() => playerDraftFolderEntity, folder => folder.players, { nullable: true })
+    @JoinColumn()
+    draftFolder: playerDraftFolderEntity
 
 }
 

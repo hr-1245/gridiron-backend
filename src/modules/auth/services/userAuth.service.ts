@@ -4,7 +4,7 @@ import { comparePassword, hashPassword } from "src/types/enums/bcrypt";
 import { OTP_REASON_ENUM } from "src/types/enums/otp";
 import { loginDto } from "../dto/login.dto";
 import { InjectRepository } from "@nestjs/typeorm";
-import { userEntity } from "src/modules/user/entity/user.entity";
+import { userEntity } from 'src/modules/user/entity/userEntity';
 import { userjwtService } from "src/modules/jwt/services/player-jwt.service";
 import { ConfigService } from "@nestjs/config";
 import Stripe from "stripe";

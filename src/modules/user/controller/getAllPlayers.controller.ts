@@ -1,6 +1,7 @@
 import { Controller, Get, Query, UseGuards, ParseIntPipe, Delete, Param, HttpStatus } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
 import { userjwtInterface } from 'src/modules/jwt/interface/jwt.interface';
+import { GetDraftFoldersQueryDto } from 'src/modules/player/dto/draft-folder.dto';
 import { PlayerDataService } from 'src/modules/player/services/playerdata.service';
 import { userjwtGuard } from 'src/providers/guards/user-guard/user.guard';
 import { User } from 'src/utils/user.decorator';
@@ -10,7 +11,9 @@ import { User } from 'src/utils/user.decorator';
 @UseGuards(userjwtGuard)
 @Controller('players')
 export class userPlayerCardsController {
-  constructor(private readonly playerDataService: PlayerDataService) { }
+  constructor(private readonly playerDataService: PlayerDataService,
+
+  ) { }
 
   //--------------------------GET ALL CONVERTED PLAYERS ================
   @Get('getAll/converted/players')
@@ -49,4 +52,19 @@ export class userPlayerCardsController {
     return this.playerDataService.deletePlayerCard(id, user.id);
   }
 
+
+  @Get('draft-folders')
+  @UseGuards(userjwtGuard)
+  @ApiOperation({ summary: 'Get all draft folders for user, with optional filters' })
+  @ApiQuery({ name: 'searchId', required: false, type: Number, description: 'Search by Folder ID' })
+  @ApiQuery({ name: 'searchName', required: false, type: String, description: 'Search by Folder Name' })
+  async getDraftFolders(
+    @User() user: userjwtInterface,
+    @Query() query: GetDraftFoldersQueryDto,
+  ) {
+    const searchId = query.searchId ? parseInt(query.searchId, 10) : undefined;
+    const searchName = query.searchName;
+
+    return this.playerDataService.getUserDraftFolders(user.id, searchId, searchName);
+  }
 }
