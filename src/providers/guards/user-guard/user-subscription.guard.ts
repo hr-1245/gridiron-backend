@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Reflector } from '@nestjs/core';
-import { userEntity } from 'src/modules/user/entity/user.entity';
+import { userEntity } from 'src/modules/user/entity/userEntity';
 import { subscriptionEnum } from 'src/types/enums/subscription';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';

@@ -1,6 +1,6 @@
 import { paymentStatus, subscriptionEnum } from "src/types/enums/subscription"
 import { Column, Entity, OneToOne } from "typeorm"
-import { userEntity } from "./user.entity"
+import { userEntity } from './userEntity';
 import { baseEntity } from "src/entities/base.entity"
 
 @Entity({ name: 'userPlan' })

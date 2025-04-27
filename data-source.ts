@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { PlayerAttributesEntity, PlayerEntity, PlayerImageEntity, PositionAttributeMappingEntity } from './src/modules/player/entity/players.entity';
-import { userEntity } from './src/modules/user/entity/user.entity';
+import { userEntity } from 'src/modules/user/entity/userEntity';
 import { userPlanEntity } from 'src/modules/user/entity/userPlan.entity';
 import { otpEntity } from 'src/modules/otp/entity/otp.entity';
 import { SeedPlayerPositionsAndMappings20250318121000 } from 'src/entities/migrations/playerpositionmapping';

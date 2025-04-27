@@ -1,8 +1,9 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PlayerEntity } from '../entity/players.entity';
 import { Repository } from 'typeorm';
 import { PaginatedPlayers } from 'src/types/enums/otp';
+import { playerDraftFolderEntity } from '../entity/player-draft-folder.entity';
 
 
 
@@ -11,6 +12,8 @@ export class PlayerDataService {
   constructor(
     @InjectRepository(PlayerEntity)
     private readonly playerRepo: Repository<PlayerEntity>,
+    @InjectRepository(playerDraftFolderEntity)
+    private readonly playerDraftRepo: Repository<playerDraftFolderEntity>,
   ) { }
 
   private removeNulls<T extends Record<string, any>>(obj: T): Partial<T> {
@@ -92,6 +95,42 @@ export class PlayerDataService {
     } catch (error) {
       throw new InternalServerErrorException('Player not Found');
     }
+  }
+
+  async getUserDraftFolders(
+    userId: number,
+    searchId?: number,
+    searchName?: string,
+  ): Promise<playerDraftFolderEntity[]> {
+    const query = this.playerDraftRepo.createQueryBuilder('draft')
+      .leftJoinAndSelect('draft.players', 'players')
+      .where('draft.user.id = :userId', { userId });
+
+    if (searchId) {
+      query.andWhere('draft.id = :searchId', { searchId });
+    }
+
+    if (searchName) {
+      query.andWhere('draft.name ILIKE :searchName', { searchName: `%${searchName}%` });
+    }
+
+    query.orderBy('draft.createdAt', 'DESC');
+
+    const draftFolders = await query.getMany();
+
+    if (!draftFolders.length) {
+      let errorMessage = 'No draft folders found';
+
+      if (searchId) {
+        errorMessage = `No draft folders found for the given ID: ${searchId}`;
+      } else if (searchName) {
+        errorMessage = `No draft folders found for the given name: "${searchName}"`;
+      }
+
+      throw new NotFoundException(errorMessage);
+    }
+
+    return draftFolders;
   }
 
   //--------------Update AND EDIT LATER -

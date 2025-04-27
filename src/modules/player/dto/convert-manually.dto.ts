@@ -40,9 +40,14 @@ export class ConversionDto {
 
   @ApiProperty() @IsNumber() @IsOptional()
   projected_Reason: number
-  
+
   @ApiProperty() @IsString() @IsOptional()
   jerseyNumber: number
+
+  @ApiProperty()
+  @IsString()
+  @IsOptional()
+  draftFolderName?: string;
 }
 
 export class TightEndDto {

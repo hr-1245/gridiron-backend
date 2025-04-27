@@ -5,6 +5,7 @@ import { All_Middle_LinebackersDTO, ConversionDto, ConverstionDataDto, CornerBac
 import { COLLAGE_AGE_ENUM, POSTION_CODE, CollageAgeMapping } from "src/types/enums/roles";
 import { PlayerPositionEntity } from "../entity/player-position.entity";
 import { PlayerAttributesEntity, PlayerEntity } from "../entity/players.entity";
+import { playerDraftFolderEntity } from "../entity/player-draft-folder.entity";
 
 @Injectable()
 export class playerService {
@@ -16,7 +17,10 @@ export class playerService {
     private readonly playerPositionRepo: Repository<PlayerPositionEntity>,
 
     @InjectRepository(PlayerAttributesEntity)
-    private readonly playerAttrRepo: Repository<PlayerAttributesEntity>
+    private readonly playerAttrRepo: Repository<PlayerAttributesEntity>,
+
+    @InjectRepository(playerDraftFolderEntity)
+    private readonly playerFolderepo: Repository<playerDraftFolderEntity>
 
   ) {
   }
@@ -79,20 +83,52 @@ export class playerService {
 
 
   async conversionLogic(obj: ConversionDto, userId: number): Promise<any> {
-    //----------CONVERSION LOGIC --------------------------------
     try {
-      const { playerName, positionId, positionCode, data: rawData, draft_round, ovr, height, homeTown, weight, jerseyNumber } = obj
+      const {
+        playerName,
+        positionId,
+        positionCode,
+        data: rawData,
+        draft_round,
+        ovr,
+        height,
+        homeTown,
+        weight,
+        jerseyNumber,
+        draftFolderName
+      } = obj;
+
+      let draftFolder: playerDraftFolderEntity | null = null;
+      if (draftFolderName) {
+        draftFolder = await this.playerFolderepo.findOne({
+          where: {
+            name: draftFolderName,
+            user: { id: userId }
+          }
+        });
+
+        if (!draftFolder) {
+          draftFolder = this.playerFolderepo.create({
+            name: draftFolderName,
+            user: { id: userId }
+          });
+          draftFolder = await this.playerFolderepo.save(draftFolder);
+        }
+      }
 
       const fetchData = await this.playerPositionRepo.findOne({
         where: { id: positionId, code: positionCode },
-      })
-      if (!fetchData) {
-        throw new NotFoundException('Invalid Posiiton | Position Code')
-      }
-      let player: PlayerEntity | null
-      player = await this.playerRepo.findOne({ where: { name: playerName } })
-      if (!player) {
+      });
 
+      if (!fetchData) {
+        throw new NotFoundException('Invalid Position | Position Code');
+      }
+
+      let player: PlayerEntity | null = await this.playerRepo.findOne({
+        where: { name: playerName }
+      });
+
+      if (!player) {
         const newPlayer = this.playerRepo.create({
           name: playerName,
           user: { id: userId },
@@ -101,20 +137,28 @@ export class playerService {
           height: height,
           homeTown: homeTown,
           weight: weight,
-          jerseyNumber: jerseyNumber as unknown as string
+          jerseyNumber: jerseyNumber as unknown as string,
+          draftFolder: draftFolder ? { id: draftFolder.id } : undefined
         });
-        player = await this.playerRepo.save(newPlayer)
+
+        player = await this.playerRepo.save(newPlayer);
+      } else {
+        // Update existing player with draft folder if needed
+        if (draftFolder && !player.draftFolder) {
+          player.draftFolder = { id: draftFolder.id } as any;
+          await this.playerRepo.save(player);
+        }
       }
 
-      let dataobj: ConverstionDataDto
-
+      let dataobj: ConverstionDataDto;
       const randomAge = Math.floor(Math.random() * 2) + 17;
       const collegeYearKey = rawData.age as unknown as COLLAGE_AGE_ENUM;
       const collegeYearAge = CollageAgeMapping[collegeYearKey];
+
       if (collegeYearAge === undefined) {
         throw new Error(`Invalid college year key: ${collegeYearKey}`);
-
       }
+
       const calculatedAge = randomAge + collegeYearAge;
 
       switch (obj.positionCode || rawData.age) {
@@ -205,7 +249,8 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
-            jerseyNumber: jerseyNumber
+            jerseyNumber: jerseyNumber,
+            draftFolder: draftFolderName
           }
 
         ///////////////////////////----------------QB CONVERISON=========================
@@ -280,7 +325,9 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
-            jerseyNumber: jerseyNumber
+            jerseyNumber: jerseyNumber,
+            draftFolder: draftFolderName
+
           }
 
         //------------------------------RB CONVERSION
@@ -358,7 +405,9 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
-            jerseyNumber: jerseyNumber
+            jerseyNumber: jerseyNumber,
+            draftFolder: draftFolderName
+
           }
 
 
@@ -437,7 +486,9 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
-            jerseyNumber: jerseyNumber
+            jerseyNumber: jerseyNumber,
+            draftFolder: draftFolderName
+
           }
 
         //-----------------------LT Conversion ------------------------
@@ -495,7 +546,9 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
-            jerseyNumber: jerseyNumber
+            jerseyNumber: jerseyNumber,
+            draftFolder: draftFolderName
+
           }
 
         //---------------RT CONVERSION=-----------------
@@ -554,7 +607,9 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
-            jerseyNumber: jerseyNumber
+            jerseyNumber: jerseyNumber,
+            draftFolder: draftFolderName
+
           }
 
 
@@ -615,7 +670,9 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
-            jerseyNumber: jerseyNumber
+            jerseyNumber: jerseyNumber,
+            draftFolder: draftFolderName
+
           }
 
         //---------------------LG CONVERSION ---------------
@@ -675,7 +732,9 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
-            jerseyNumber: jerseyNumber
+            jerseyNumber: jerseyNumber,
+            draftFolder: draftFolderName
+
           }
 
         //----------------------------LE CONVERSION ------------------------------
@@ -734,7 +793,9 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
-            jerseyNumber: jerseyNumber
+            jerseyNumber: jerseyNumber,
+            draftFolder: draftFolderName
+
           }
         //----------------------------RE CONVERSION ------------------------------
         case POSTION_CODE.RightEnd:
@@ -792,7 +853,9 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
-            jerseyNumber: jerseyNumber
+            jerseyNumber: jerseyNumber,
+            draftFolder: draftFolderName
+
           }
 
 
@@ -852,7 +915,9 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
-            jerseyNumber: jerseyNumber
+            jerseyNumber: jerseyNumber,
+            draftFolder: draftFolderName
+
           }
 
 
@@ -912,7 +977,9 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
-            jerseyNumber: jerseyNumber
+            jerseyNumber: jerseyNumber,
+            draftFolder: draftFolderName
+
           }
 
         //-------------- DT CONVERSION -----------
@@ -972,7 +1039,9 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
-            jerseyNumber: jerseyNumber
+            jerseyNumber: jerseyNumber,
+            draftFolder: draftFolderName
+
           }
 
         //------------------------------ LOLB CONVERSION ================
@@ -1035,7 +1104,9 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
-            jerseyNumber: jerseyNumber
+            jerseyNumber: jerseyNumber,
+            draftFolder: draftFolderName
+
           };
         //------------------------------ ROLB CONVERSION ================
         case POSTION_CODE.RightOutside_linebacker_below_245lbs:
@@ -1231,7 +1302,9 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
-            jerseyNumber: jerseyNumber
+            jerseyNumber: jerseyNumber,
+            draftFolder: draftFolderName
+
           };
 
 
@@ -1300,7 +1373,9 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
-            jerseyNumber: jerseyNumber
+            jerseyNumber: jerseyNumber,
+            draftFolder: draftFolderName
+
           };
         case POSTION_CODE.Kicker:
 
@@ -1340,7 +1415,9 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
-            jerseyNumber: jerseyNumber
+            jerseyNumber: jerseyNumber,
+            draftFolder: draftFolderName
+
           }
         case POSTION_CODE.Punter:
 
@@ -1380,7 +1457,9 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
-            jerseyNumber: jerseyNumber
+            jerseyNumber: jerseyNumber,
+            draftFolder: draftFolderName
+
           }
         case POSTION_CODE.FullBack:
 
@@ -1454,7 +1533,9 @@ export class playerService {
             height: height,
             homeTown: homeTown,
             weight: weight,
-            jerseyNumber: jerseyNumber
+            jerseyNumber: jerseyNumber,
+            draftFolder: draftFolderName
+
           }
         default:
           throw new Error('Invalid Position Code');
