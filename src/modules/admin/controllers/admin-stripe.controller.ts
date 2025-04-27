@@ -22,7 +22,6 @@ import { DiscountConfigDto } from '../../stripe/dto/stripe.dto';
 import { adminjwtGuard } from 'src/providers/guards/admin.guard';
 import { adminJwtInterface } from '../../jwt/interface/jwt.interface';
 import { User } from 'src/utils/user.decorator';
-import { adminService } from '../admin.service';
 import { subscriptionEnum } from 'src/types/enums/subscription';
 
 @ApiTags('Admin Stripe Management')
@@ -31,7 +30,6 @@ import { subscriptionEnum } from 'src/types/enums/subscription';
 @UseGuards(adminjwtGuard)
 export class adminController {
   constructor(private readonly stripeService: StripeService,
-    private readonly AdminService: adminService
   ) { }
 
   @Post('discount')
@@ -94,5 +92,5 @@ export class adminController {
   }
 
 
-  
+
 }

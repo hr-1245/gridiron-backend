@@ -1,9 +1,11 @@
-import { Entity, Column, OneToOne, OneToMany, JoinColumn } from 'typeorm';
 import { baseEntity } from 'src/entities/base.entity';
-import { rolesEnum } from 'src/types/enums/roles';
-import { userPlanEntity } from './userPlan.entity';
 import { otpEntity } from 'src/modules/otp/entity/otp.entity';
 import { PlayerEntity } from 'src/modules/player/entity/players.entity';
+import { rolesEnum } from 'src/types/enums/roles';
+import { Entity, Column, OneToOne, JoinColumn, OneToMany } from 'typeorm';
+import { userPlanEntity } from './userPlan.entity';
+import { playerDraftFolderEntity } from 'src/modules/player/entity/player-draft-folder.entity';
+
 
 @Entity({ name: 'user' })
 export class userEntity extends baseEntity {
@@ -34,6 +36,7 @@ export class userEntity extends baseEntity {
 
   @OneToMany(() => PlayerEntity, (player) => player.user)
   player: PlayerEntity[];
+
+  @OneToMany(() => playerDraftFolderEntity, folder => folder.user)
+  draftFolders: playerDraftFolderEntity[];
 }
-
-

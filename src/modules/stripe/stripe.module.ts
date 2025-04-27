@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
 import { StripeService } from "./stripe.service";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { userEntity } from "../user/entity/user.entity";
+import { userEntity } from '../user/entity/userEntity';
 import { discountConfigEntity, userPlanEntity } from "../user/entity/userPlan.entity";
 import { adminauthEntity } from "../admin/entity/admin.entity";
 

@@ -27,6 +27,7 @@ import { userjwtInterface } from '../jwt/interface/jwt.interface';
 import { userjwtGuard } from 'src/providers/guards/user-guard/user.guard';
 import { userManualConversionLimitGuard } from 'src/providers/guards/user-guard/playerManualConversionLimit.guard';
 import { userOcrConversionLimitGuard } from 'src/providers/guards/user-guard/playerConversionlimitGuard.guard';
+import { PlayerDataService } from './services/playerdata.service';
 
 @ApiTags('Convert Player To Maden')
 @ApiBearerAuth('jwt')
@@ -39,6 +40,8 @@ export class PlayerOcrController {
     private readonly playerOcrService: PlayerOcrService,
 
     private readonly playeService: playerService,
+
+    private readonly playeDataService: PlayerDataService,
   ) { }
 
 
@@ -94,12 +97,33 @@ export class PlayerOcrController {
       required: ['files']
     },
   })
+  @ApiBody({
+    description: 'Player image upload with draft folder',
+    required: true,
+    type: 'multipart/form-data',
+    schema: {
+      type: 'object',
+      properties: {
+        files: {
+          type: 'array',
+          items: {
+            type: 'string',
+            format: 'binary',
+          },
+        },
+        draftFolderName: {
+          type: 'string',
+        },
+      },
+    },
+  })
   @ApiResponse({
     status: 400,
     description: 'Bad request - missing files or invalid data'
   })
   async uploadPlayerImages(
     @UploadedFiles() files: Express.Multer.File[],
+    @Body() body: { draftFolderName?: string },
     @User() user: userjwtInterface
   ) {
     if (!files || files.length === 0) {
@@ -107,7 +131,11 @@ export class PlayerOcrController {
     }
 
     try {
-      return await this.playerOcrService.processBulkPlayerImages(files, user.id);
+      return await this.playerOcrService.processBulkPlayerImages(
+        files,
+        user.id,
+        body.draftFolderName as any
+      );
     } catch (error) {
       if (error instanceof BadRequestException || error instanceof NotFoundException) {
         throw error;

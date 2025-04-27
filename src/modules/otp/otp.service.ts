@@ -3,7 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { otpEntity } from "./entity/otp.entity";
 import { Repository } from 'typeorm';
 import { OTP_REASON_ENUM } from "src/types/enums/otp";
-import { userEntity } from "../user/entity/user.entity";
+import { userEntity } from '../user/entity/userEntity';
 import { generateOTP, NUMERICAL_OTP } from ".";
 import { mailService } from "../mail/mail.service";
 import verifyTemplate from "../mail/template/verify-otp";

@@ -12,3 +12,7 @@ export enum paymentStatus {
 }
 
 
+export enum REDIS_KEYS {
+
+  ANALYTICS = 'analytics'
+ }
