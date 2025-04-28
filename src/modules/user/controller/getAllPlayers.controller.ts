@@ -1,5 +1,7 @@
-import { Controller, Get, Query, UseGuards, ParseIntPipe, Delete, Param, HttpStatus } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
+import { Controller, Get, Query, UseGuards, ParseIntPipe, Delete, Param, HttpStatus, UseInterceptors, Post, UploadedFile } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiQuery, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { CloudinaryService } from 'src/modules/cloudinary/cloudinary.service';
 import { userjwtInterface } from 'src/modules/jwt/interface/jwt.interface';
 import { GetDraftFoldersQueryDto } from 'src/modules/player/dto/draft-folder.dto';
 import { PlayerDataService } from 'src/modules/player/services/playerdata.service';
@@ -12,6 +14,7 @@ import { User } from 'src/utils/user.decorator';
 @Controller('players')
 export class userPlayerCardsController {
   constructor(private readonly playerDataService: PlayerDataService,
+    private readonly cloudinaryService: CloudinaryService,
 
   ) { }
 
@@ -67,4 +70,42 @@ export class userPlayerCardsController {
 
     return this.playerDataService.getUserDraftFolders(user.id, searchId, searchName);
   }
+
+  @Post('upload/profile-picture')
+  @ApiOperation({ summary: 'Upload Profile Picture' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'File uploaded successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid file format or upload error',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadfile(@UploadedFile() file: Express.Multer.File) {
+    const result = await this.cloudinaryService.uploadFile(file);
+
+    const { public_id, format, url, secure_url } = result;
+
+    return {
+      message: 'Profile Photo Uploaded Sucessfully',
+      public_id,
+      format,
+      url,
+      secure_url
+    };
+  }
+
 }
