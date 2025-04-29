@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
+import * as basicAuth from 'express-basic-auth'; 
 import { getQueueToken } from '@nestjs/bull';
 import { ExpressAdapter } from '@bull-board/express';
 import { createBullBoard } from '@bull-board/api';
@@ -14,6 +15,16 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
+    }),
+  );
+
+  // Basic authentication middleware
+  app.use(
+    basicAuth({
+      users: {
+        'admin': 'mushi1264273',
+      },
+      challenge: true,
     }),
   );
 
