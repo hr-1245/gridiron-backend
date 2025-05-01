@@ -116,10 +116,10 @@ export class userAuthService {
     return this.repo.find({ where: { email } });
   }
   //======================================VERIFY EMAIL LOGIC=========================================================
-  async verifyEmail(otp: number, data: loginDto): Promise<any> {
+  async verifyEmail(otp: number, email?: string): Promise<any> {
     try {
 
-      const [user] = await this.find(data.email);
+      const [user] = await this.find(email as any);
       if (!user) {
         throw new NotFoundException('User not Found');
       }
@@ -152,16 +152,13 @@ export class userAuthService {
         await this.repo.save(user);
 
         return {
-          message: 'Email verified successfully',
+          message: 'Email verified successfully with JWT token',
+          accessToken,
           status: HttpStatus.OK
         };
       }
 
-      return {
-        message: 'Email Verified Sucessfully with JWT TOKEN',
-        result,
-        accessToken
-      }
+
     } catch (error) {
       throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST);
     }

@@ -78,7 +78,7 @@ export class userauthController {
   })
   @Post('verify/email')
   async verifyEmail(@Body() verifyEmailDTO: VerifyEmailDto) {
-    const result = await this.authService.verifyEmail(verifyEmailDTO.otp);
+    const result = await this.authService.verifyEmail(verifyEmailDTO.otp)
     return result;
   }
 
