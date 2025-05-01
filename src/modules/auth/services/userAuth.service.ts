@@ -48,6 +48,7 @@ export class userAuthService {
       user.stripeCustomerId = stripeCustomer.id;
       await this.repo.save(user);
 
+
       await this.otpService.generateOtpCode({
         email: user.email,
         reason: OTP_REASON_ENUM.VERIFY_EMAIL
@@ -115,14 +116,25 @@ export class userAuthService {
     return this.repo.find({ where: { email } });
   }
   //======================================VERIFY EMAIL LOGIC=========================================================
-  async verifyEmail(otp: number) {
+  async verifyEmail(otp: number, data: loginDto): Promise<any> {
     try {
 
+      const [user] = await this.find(data.email);
+      if (!user) {
+        throw new NotFoundException('User not Found');
+      }
       const otp_record = await this.otpService.findByOtp(otp);
 
       if (!otp_record) {
         throw new NotFoundException('Invalid verification code');
       }
+
+      const accessToken = this.jwtService.generateAuthToken({
+        email: user.email,
+        id: user.id,
+        role: user.role
+      });
+
 
       const result = await this.otpService.verifyOtpCode({
         otp,
@@ -145,7 +157,11 @@ export class userAuthService {
         };
       }
 
-      return result;
+      return {
+        message: 'Email Verified Sucessfully with JWT TOKEN',
+        result,
+        accessToken
+      }
     } catch (error) {
       throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST);
     }
