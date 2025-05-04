@@ -9,6 +9,7 @@ import {
   UseGuards,
   InternalServerErrorException,
   NotFoundException,
+  Param,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import {
@@ -28,6 +29,8 @@ import { userjwtGuard } from 'src/providers/guards/user-guard/user.guard';
 import { userManualConversionLimitGuard } from 'src/providers/guards/user-guard/playerManualConversionLimit.guard';
 import { userOcrConversionLimitGuard } from 'src/providers/guards/user-guard/playerConversionlimitGuard.guard';
 import { PlayerDataService } from './services/playerdata.service';
+import { editPlayerService } from './services/editPlayer.service';
+import { EditDto } from './dto/edit.dto';
 
 @ApiTags('Convert Player To Maden')
 @ApiBearerAuth('jwt')
@@ -41,7 +44,8 @@ export class PlayerOcrController {
 
     private readonly playeService: playerService,
 
-    private readonly playeDataService: PlayerDataService,
+    private readonly editPlayerService: editPlayerService,
+
   ) { }
 
 
@@ -143,4 +147,16 @@ export class PlayerOcrController {
       throw new NotFoundException('Failed to process image upload. Please ensure you have included at least one player bio image.');
     }
   }
+  @Post('edit/:playerId')
+  @UseGuards(userjwtGuard)
+  @ApiOperation({ summary: 'Edit a player by ID' })
+  @ApiResponse({ status: 200, description: 'Player updated successfully' })
+  async editPlayer(
+    @Param('playerId') playerId: number,
+    @Body() dto: EditDto,
+    @User() user: userjwtInterface
+  ) {
+    return this.editPlayerService.editPlayer(playerId, user.id, dto);
+  }
+
 }

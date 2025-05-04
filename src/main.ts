@@ -19,14 +19,14 @@ async function bootstrap() {
   );
 
   // Basic authentication middleware
-  app.use(
-    basicAuth({
-      users: {
-        'admin': 'mushi1264273',
-      },
-      challenge: true,
-    }),
-  );
+  // app.use(
+  //   basicAuth({
+  //     users: {
+  //       'admin': 'mushi1264273',
+  //     },
+  //     challenge: true,
+  //   }),
+  // );
 
   app.enableCors({
     origin: '*',

@@ -16,6 +16,7 @@ import { PlayerDataService } from './services/playerdata.service';
 import { BullModule } from '@nestjs/bull';
 import { bullService } from '../bull/services/bull.service';
 import { playerDraftFolderEntity } from './entity/player-draft-folder.entity';
+import { editPlayerService } from './services/editPlayer.service';
 
 @Module({
   imports: [
@@ -34,7 +35,7 @@ import { playerDraftFolderEntity } from './entity/player-draft-folder.entity';
     }),
   ],
   controllers: [PlayerOcrController],
-  providers: [playerService, PlayerOcrService, PlayerDataService, bullService],
+  providers: [playerService, PlayerOcrService, PlayerDataService, editPlayerService, bullService],
   exports: [playerService, PlayerOcrService, PlayerDataService],
 })
 export class PlayerModule { }
