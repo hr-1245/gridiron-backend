@@ -46,42 +46,6 @@ export class playerService {
     };
   }
 
-  // async getPositionAttributes(input: FetchPositionAttributesDto): Promise<PositionAttributesResponseDto> {
-  //   // Fetch the position by code or name
-  //   const position = await this.playerPositionRepo.findOne({
-  //     where: [{ code: input.position }, { name: input.position }],
-  //   });
-
-  //   if (!position) {
-  //     throw new NotFoundException(`Position with code or name '${input.position}' not found`);
-  //   }
-
-  //   const attributes = await this.playerAttributesMapping.find({
-  //     where: { position: { id: position.id } },
-  //     order: { displayOrder: "ASC" },
-  //   });
-
-  //   if (!attributes.length) {
-  //     throw new Error(`No attributes found for position '${input.position}'`);
-  //   }
-
-  //   return {
-  //     message: `${input.position} Position with its attribute fetched Sucessfully`,
-  //     positionCode: position.code,
-  //     positionName: position.name,
-  //     attributes: attributes.map(attr => ({
-  //       attributeKey: attr.attributeKey,
-  //       conversionLogic: attr.conversionLogic,
-  //       displayOrder: attr.displayOrder,
-  //     })),
-  //   };
-  // }
-
-
-  //----------CONVERSION LOGIC --------------------------------
-
-
-
   async conversionLogic(obj: ConversionDto, userId: number): Promise<any> {
     try {
       const {
