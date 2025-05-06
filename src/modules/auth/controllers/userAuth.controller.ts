@@ -3,7 +3,7 @@ import { ApiOperation, ApiResponse, ApiTags, ApiBody } from "@nestjs/swagger";
 import { userAuthService } from "../services/userAuth.service";
 import { signupDto } from "../dto/signup.dto";
 import { loginDto } from "../dto/login.dto";
-import { ResendVerificationDto, VerifyEmailDto } from "../dto/verifyemai.dto";
+import { VerifyEmailDto } from "../dto/verifyemai.dto";
 import { ForgetPasswordDTO } from "../dto/forgot-password.dto";
 import { ResetPasswordDTO } from "../dto/reset-password.dto";
 
@@ -83,7 +83,6 @@ export class userauthController {
   }
 
 
-  // Add these controller endpoints to your auth controller - src/modules/auth/controllers/auth.controller.ts
   @ApiOperation({ summary: 'Forgot Password Route' })
   @ApiResponse({
     status: HttpStatus.OK,

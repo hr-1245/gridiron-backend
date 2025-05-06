@@ -11,9 +11,13 @@ import { MailModule } from "../mail/mail.module";
 import { OtpModule } from "../otp/otp.module";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([userEntity, adminauthEntity]), JwtModule, MailModule, OtpModule],
+  imports: [
+    TypeOrmModule.forFeature([userEntity, adminauthEntity]), 
+    JwtModule,
+    MailModule,
+    OtpModule,
+  ],
   controllers: [userauthController, adminauthController],
   providers: [userAuthService, adminauthService],
 })
-
-export class AuthModule { }
+export class AuthModule {}

@@ -82,6 +82,19 @@ export class otpService {
    * @param data OTP entity data
    * @returns Created OTP entity
    */
+
+
+  async findByEmail(email: string): Promise<otpEntity | null> {
+    const otpRecords = await this.otpRepo.find({
+      where: { email },
+      order: { expires_at: 'DESC' }, // Get the latest OTP first
+    });
+
+    return otpRecords.length > 0 ? otpRecords[0] : null; // Return the latest OTP or null if none found
+  }
+
+
+
   async create(data: Partial<otpEntity>): Promise<otpEntity> {
     // Calculate the expiry time 5 minutes from now
     const expiry = new Date();

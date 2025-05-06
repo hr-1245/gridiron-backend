@@ -17,7 +17,7 @@ export class userPlanEntity extends baseEntity {
   @Column({ type: 'enum', enum: subscriptionEnum, default: subscriptionEnum.BASIC })
   planType: subscriptionEnum;
 
-  @Column({ type: 'enum', enum: paymentStatus, default: paymentStatus.PENDING })
+  @Column({ type: 'enum', enum: paymentStatus, default: paymentStatus.SUCCEEDED })
   subscriptionStatus: paymentStatus;
 
   @OneToOne(() => userEntity, (user) => user.subscription)
