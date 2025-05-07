@@ -12,10 +12,10 @@ export interface GenerateOTPOptions {
   specialChars: boolean;
 }
 
-
 export interface PaginatedPlayers {
+  message: string;
   data: any[];
-  message: string
   totalCount: number;
   totalPages: number;
+  positionSummary: { [key: string]: number }; // Position counts with keys like 'wrCount', 'teCount', etc.
 }

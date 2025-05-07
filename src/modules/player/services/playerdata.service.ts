@@ -1,9 +1,11 @@
 import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PlayerEntity } from '../entity/players.entity';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import { PaginatedPlayers } from 'src/types/enums/otp';
 import { playerDraftFolderEntity } from '../entity/player-draft-folder.entity';
+import { PlayerPositionEntity } from '../entity/player-position.entity';
+import { playerStatusEnum, POSTION_CODE } from 'src/types/enums/roles';
 
 
 
@@ -14,6 +16,9 @@ export class PlayerDataService {
     private readonly playerRepo: Repository<PlayerEntity>,
     @InjectRepository(playerDraftFolderEntity)
     private readonly playerDraftRepo: Repository<playerDraftFolderEntity>,
+
+    @InjectRepository(PlayerPositionEntity)
+    private readonly playerPosRepo: Repository<PlayerPositionEntity>,
   ) { }
 
   private removeNulls<T extends Record<string, any>>(obj: T): Partial<T> {
@@ -27,6 +32,7 @@ export class PlayerDataService {
   }
 
   //-----------------GET CONVERTED PLAYERS -------------------------------
+
   async getConvertedPlayers(
     userId: number,
     page: number = 1,
@@ -40,7 +46,8 @@ export class PlayerDataService {
         .leftJoinAndSelect('player.attributes', 'attributes')
         .leftJoinAndSelect('player.position', 'position')
         .where('attributes.id IS NOT NULL')
-        .andWhere('player.user.id = :userId', { userId });
+        .andWhere('player.user.id = :userId', { userId })
+        .andWhere('player.isActive = :status', { status: playerStatusEnum.ISACTIVE }); // ✅ Filter active players only
 
       if (searchValue) {
         query = query.andWhere('player.name ILIKE :search', { search: `%${searchValue}%` });
@@ -57,11 +64,24 @@ export class PlayerDataService {
       const [players, totalCount] = await query.getManyAndCount();
       const totalPages = Math.ceil(totalCount / limit);
 
-      const cleanedPlayers = players.map(player => ({
+      // ✅ Initialize all positions with count = 0
+      const positionSummaryMap: Record<string, number> = {};
+      for (const key in POSTION_CODE) {
+        const code = POSTION_CODE[key as keyof typeof POSTION_CODE];
+        positionSummaryMap[`${code.toLowerCase()}Count`] = 0;
+      }
+
+      for (const player of players) {
+        if (player.position?.code) {
+          const key = `${player.position.code.toLowerCase()}Count`;
+          positionSummaryMap[key]++;
+        }
+      }
+
+      const cleanedPlayers = players.map((player) => ({
         ...this.removeNulls(player),
         position: player.position ? this.removeNulls(player.position) : null,
         attributes: player.attributes?.map(attr => this.removeNulls(attr)) || [],
-
       }));
 
       const message = totalCount === 0
@@ -73,29 +93,36 @@ export class PlayerDataService {
         data: cleanedPlayers,
         totalCount,
         totalPages,
+        positionSummary: positionSummaryMap,
       };
-
     } catch (error) {
       throw new Error('Error retrieving converted players');
     }
   }
+
+
   //--------------Delete a Player Card ---------------
   async deletePlayerCard(playerId: number, userId: number): Promise<{ message: string }> {
     try {
       const player = await this.playerRepo.findOne({
         where: { id: playerId, user: { id: userId } },
       });
+
       if (!player) {
-        throw new Error('Player not found or you do not have permission to delete this player');
+        throw new Error('Player not found');
       }
-      await this.playerRepo.remove(player);
+
+      player.isActive = playerStatusEnum.INACTIVE;
+      await this.playerRepo.save(player);
+
       return {
-        message: 'Player card deleted successfully'
+        message: 'Player card deleted successfully (soft deleted)',
       };
     } catch (error) {
       throw new InternalServerErrorException('Player not Found');
     }
   }
+
 
   async getUserDraftFolders(
     userId: number,
@@ -106,12 +133,14 @@ export class PlayerDataService {
       .leftJoinAndSelect('draft.players', 'players')
       .where('draft.user.id = :userId', { userId });
 
-    if (searchId) {
-      query.andWhere('draft.id = :searchId', { searchId });
-    }
 
     if (searchName) {
-      query.andWhere('draft.name ILIKE :searchName', { searchName: `%${searchName}%` });
+      query.andWhere(
+        new Brackets((qb) => {
+          qb.where('draft.name ILIKE :searchName', { searchName: `%${searchName}%` })
+            .orWhere('players.name ILIKE :searchName', { searchName: `%${searchName}%` });
+        }),
+      );
     }
 
     query.orderBy('draft.createdAt', 'DESC');
@@ -124,7 +153,7 @@ export class PlayerDataService {
       if (searchId) {
         errorMessage = `No draft folders found for the given ID: ${searchId}`;
       } else if (searchName) {
-        errorMessage = `No draft folders found for the given name: "${searchName}"`;
+        errorMessage = `No draft folders found for the given name or player: "${searchName}"`;
       }
 
       throw new NotFoundException(errorMessage);
@@ -132,6 +161,4 @@ export class PlayerDataService {
 
     return draftFolders;
   }
-
-  //--------------Update AND EDIT LATER -
 }

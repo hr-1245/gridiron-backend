@@ -1,6 +1,6 @@
 import { Entity, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { PlayerPositionEntity } from './player-position.entity';
-import { COLLAGE_AGE_ENUM } from 'src/types/enums/roles';
+import { COLLAGE_AGE_ENUM, playerStatusEnum } from 'src/types/enums/roles';
 import { baseEntity } from 'src/entities/base.entity';
 import { userEntity } from 'src/modules/user/entity/userEntity';
 import { playerDraftFolderEntity } from './player-draft-folder.entity';
@@ -39,6 +39,9 @@ export class PlayerEntity extends baseEntity {
     @ManyToOne(() => PlayerPositionEntity, position => position.players, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn()
     position: PlayerPositionEntity;
+
+    @Column({ type: 'enum', enum: playerStatusEnum, default: playerStatusEnum.ISACTIVE })
+    isActive: playerStatusEnum;
 
     @OneToMany(() => PlayerImageEntity, image => image.player, { cascade: true })
     images: PlayerImageEntity[];
