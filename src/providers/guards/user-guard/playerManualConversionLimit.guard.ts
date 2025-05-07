@@ -11,6 +11,7 @@ import { Repository } from 'typeorm';
 import { userEntity } from 'src/modules/user/entity/userEntity';
 import { PlayerEntity } from 'src/modules/player/entity/players.entity';
 import { paymentStatus } from 'src/types/enums/subscription';
+import { playerStatusEnum } from 'src/types/enums/roles';
 
 @Injectable()
 export class userManualConversionLimitGuard extends AuthGuard('jwt-user') {
@@ -42,17 +43,18 @@ export class userManualConversionLimitGuard extends AuthGuard('jwt-user') {
       !userWithSubscription?.subscription ||
       this.isSubscriptionExpiredOrInactive(userWithSubscription.subscription)
     ) {
-      const convertedPlayersCount = await this.playerRepo.count({
-        where: { user: { id: user.id } },
+      const activePlayersCount = await this.playerRepo.count({
+        where: {
+          user: { id: user.id },
+          isActive: playerStatusEnum.ISACTIVE,
+        },
       });
 
-      if (convertedPlayersCount >= BASIC_PLAN_LIMIT) {
+      if (activePlayersCount >= BASIC_PLAN_LIMIT) {
         throw new ForbiddenException(
           'You have reached the maximum limit of 10 player conversions on the free plan. Please subscribe to convert more players.'
         );
       }
-
-      return true;
     }
 
     return true;
@@ -62,7 +64,6 @@ export class userManualConversionLimitGuard extends AuthGuard('jwt-user') {
     const now = new Date();
     const isExpired = !subscription.validUntil || new Date(subscription.validUntil) < now;
     const isNotActive = subscription.subscriptionStatus !== paymentStatus.SUCCEEDED;
-
     return isExpired || isNotActive;
   }
 }

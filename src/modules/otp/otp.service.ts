@@ -27,50 +27,42 @@ export class otpService {
    * @returns Generated OTP code
    */
   async generateOtpCode({ email, reason }: { email: string, reason: OTP_REASON_ENUM }): Promise<number> {
-    const user = await this.userRepo.findOne({
-      where: { email }
-    });
-
-    if (!user) {
-      throw new Error('User not found');
+    let userId: number | undefined;
+  
+    if (reason !== OTP_REASON_ENUM.VERIFY_EMAIL) {
+      const user = await this.userRepo.findOne({ where: { email } });
+      if (!user) throw new Error('User not found');
+      userId = user.id;
     }
-
-    const { id } = user;
-
-    // Remove any existing OTPs for this user and reason
-    const otp_requested_by_user = await this.otpRepo.find({
-      where: { user: { id }, type: reason }
-    });
-
-    await this.otpRepo.remove(otp_requested_by_user);
-
-    // Generate a new OTP code
-    const code: number | string = generateOTP({
+  
+    const existingOtps = await this.otpRepo.find({ where: { email, type: reason } });
+    await this.otpRepo.remove(existingOtps);
+  
+    const code = generateOTP({
       length: 6,
       options: NUMERICAL_OTP,
     }) as number;
-
-    // Create OTP record in database
+  
     await this.create({
       email,
       otp: code,
       is_used: false,
       is_expired: false,
       type: reason,
-      user: { id } as userEntity
+      ...(userId ? { user: { id: userId } as userEntity } : {})
     });
-
-    // Send email with OTP
-    this.mailService.sendMail({
+  
+    await this.mailService.sendMail({
       mailOptions: {
         to: email,
         subject: 'Your One-Time Password (OTP) for Verification',
-        html: verifyTemplate(email, code)
-      }
+        html: verifyTemplate(email, code),
+      },
     });
-
+  
     return code;
   }
+  
   async findByOtp(otp: number): Promise<otpEntity | null> {
     return this.otpRepo.findOne({
       where: { otp },

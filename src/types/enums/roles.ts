@@ -9,6 +9,10 @@ export enum approvalStatusEnum {
   REJECTED = 'REJECTED'
 }
 
+export enum playerStatusEnum {
+  ISACTIVE= 'isActive',
+  INACTIVE = 'inActive'
+}
 
 export enum POSTION_CODE {
   TightEnd = 'TE',
