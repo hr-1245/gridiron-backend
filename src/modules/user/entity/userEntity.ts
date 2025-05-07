@@ -9,6 +9,10 @@ import { playerDraftFolderEntity } from 'src/modules/player/entity/player-draft-
 
 @Entity({ name: 'user' })
 export class userEntity extends baseEntity {
+
+  @Column({ nullable: true })
+  fullName: string
+
   @Column({ unique: true })
   email: string;
 

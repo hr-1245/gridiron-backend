@@ -59,7 +59,6 @@ export class userPlayerCardsController {
   @Get('draft-folders')
   @UseGuards(userjwtGuard)
   @ApiOperation({ summary: 'Get all draft folders for user, with optional filters' })
-  @ApiQuery({ name: 'searchId', required: false, type: Number, description: 'Search by Folder ID' })
   @ApiQuery({ name: 'searchName', required: false, type: String, description: 'Search by Folder Name' })
   async getDraftFolders(
     @User() user: userjwtInterface,
