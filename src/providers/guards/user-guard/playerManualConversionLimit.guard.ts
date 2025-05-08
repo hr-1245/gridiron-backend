@@ -43,14 +43,13 @@ export class userManualConversionLimitGuard extends AuthGuard('jwt-user') {
       !userWithSubscription?.subscription ||
       this.isSubscriptionExpiredOrInactive(userWithSubscription.subscription)
     ) {
-      const activePlayersCount = await this.playerRepo.count({
+      const allPlayersCount = await this.playerRepo.count({
         where: {
           user: { id: user.id },
-          isActive: playerStatusEnum.ISACTIVE,
         },
       });
 
-      if (activePlayersCount >= BASIC_PLAN_LIMIT) {
+      if (allPlayersCount >= BASIC_PLAN_LIMIT) {
         throw new ForbiddenException(
           'You have reached the maximum limit of 10 player conversions on the free plan. Please subscribe to convert more players.'
         );

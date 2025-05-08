@@ -11,7 +11,6 @@ import { Repository } from 'typeorm';
 import { userEntity } from 'src/modules/user/entity/userEntity';
 import { PlayerEntity } from 'src/modules/player/entity/players.entity';
 import { paymentStatus } from 'src/types/enums/subscription';
-import { playerStatusEnum } from 'src/types/enums/roles';
 
 @Injectable()
 export class userOcrConversionLimitGuard extends AuthGuard('jwt-user') {
@@ -43,14 +42,13 @@ export class userOcrConversionLimitGuard extends AuthGuard('jwt-user') {
       !userWithSubscription?.subscription ||
       this.isSubscriptionExpiredOrInactive(userWithSubscription.subscription)
     ) {
-      const activePlayersCount = await this.playerRepo.count({
+      const allPlayersCount = await this.playerRepo.count({
         where: {
           user: { id: user.id },
-          isActive: playerStatusEnum.ISACTIVE,
         },
       });
 
-      if (activePlayersCount >= BASIC_PLAN_LIMIT) {
+      if (allPlayersCount >= BASIC_PLAN_LIMIT) {
         throw new ForbiddenException(
           'You have reached the maximum limit of 5 player conversions on the free plan. Please subscribe to convert more players.'
         );
