@@ -10,10 +10,10 @@ import { playerDraftFolderEntity } from 'src/modules/player/entity/player-draft-
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
-  host: process.env.DB_HOST || 'eshaat.co3y2wmsaxy6.us-east-1.rds.amazonaws.com',
+  host: process.env.DB_HOST || 'gridirongc-db1.cn6myq0impoz.us-west-2.rds.amazonaws.com',
   port: parseInt(process.env.DB_PORT || '5432', 10),
   username: process.env.DB_USERNAME || 'postgres',
-  password: process.env.DB_PASSWORD || 'test123456',
+  password: process.env.DB_PASSWORD || 'mushi1264273',
   database: process.env.DB_DATABASE || 'postgres',
   synchronize: false,
   logging: process.env.DB_LOGGING === 'true',
