@@ -10,7 +10,7 @@ export enum approvalStatusEnum {
 }
 
 export enum playerStatusEnum {
-  ISACTIVE= 'isActive',
+  ISACTIVE = 'isActive',
   INACTIVE = 'inActive'
 }
 

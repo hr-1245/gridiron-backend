@@ -26,18 +26,19 @@ export class playerService {
   }
   //-- Get All Position with Their Attributes ----------------------
 
-  async getAllPositionDropDown() {
-    let data = await this.playerPositionRepo.find({
+  async getAllPositionDropDown(): Promise<any> {
+    const data = await this.playerPositionRepo.find({
       relations: { attributeMappings: true }
     });
 
     const cleanedData = data.map(position => ({
+      positionId: position.id, // or position.positionId if that's the actual property
       code: position.code,
       name: position.name,
-      attributeMappings: position.attributeMappings.map(attr => ({
-        attributeKey: attr.attributeKey,
-        displayOrder: attr.displayOrder
-      }))
+      // attributeMappings: position.attributeMappings.map(attr => ({
+      //   attributeKey: attr.attributeKey,
+      //   displayOrder: attr.displayOrder
+      // }))
     }));
 
     return {
@@ -97,6 +98,7 @@ export class playerService {
           name: playerName,
           user: { id: userId },
           position: { id: positionId },
+          playerClass: obj.player_class as COLLAGE_AGE_ENUM,
           overallRating: ovr,
           height: height,
           homeTown: homeTown,
@@ -116,7 +118,7 @@ export class playerService {
 
       let dataobj: ConverstionDataDto;
       const randomAge = Math.floor(Math.random() * 2) + 17;
-      const collegeYearKey = rawData.age as unknown as COLLAGE_AGE_ENUM;
+      const collegeYearKey = obj.player_class as unknown as COLLAGE_AGE_ENUM;
       const collegeYearAge = CollageAgeMapping[collegeYearKey];
 
       if (collegeYearAge === undefined) {
@@ -125,7 +127,7 @@ export class playerService {
 
       const calculatedAge = randomAge + collegeYearAge;
 
-      switch (obj.positionCode || rawData.age) {
+      switch (obj.positionCode || obj.player_class) {
         /////----------------------TE CONVERISON =----------
 
         case POSTION_CODE.TightEnd:
