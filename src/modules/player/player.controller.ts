@@ -130,6 +130,7 @@ export class PlayerOcrController {
     @Body() body: { draftFolderName?: string },
     @User() user: userjwtInterface
   ) {
+
     if (!files || files.length === 0) {
       throw new BadRequestException('No files uploaded');
     }
