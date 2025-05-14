@@ -131,14 +131,15 @@ export class PlayerDataService {
   ): Promise<playerDraftFolderEntity[]> {
     const query = this.playerDraftRepo.createQueryBuilder('draft')
       .leftJoinAndSelect('draft.players', 'players')
+      .leftJoinAndSelect('players.position', 'position')
       .where('draft.user.id = :userId', { userId });
-
 
     if (searchName) {
       query.andWhere(
         new Brackets((qb) => {
           qb.where('draft.name ILIKE :searchName', { searchName: `%${searchName}%` })
-            .orWhere('players.name ILIKE :searchName', { searchName: `%${searchName}%` });
+            .orWhere('players.name ILIKE :searchName', { searchName: `%${searchName}%` })
+            .orWhere('position.name ILIKE :searchName', { searchName: `%${searchName}%` });
         }),
       );
     }
@@ -147,18 +148,27 @@ export class PlayerDataService {
 
     const draftFolders = await query.getMany();
 
-    if (!draftFolders.length) {
-      let errorMessage = 'No draft folders found';
+    return draftFolders;
+  }
 
-      if (searchId) {
-        errorMessage = `No draft folders found for the given ID: ${searchId}`;
-      } else if (searchName) {
-        errorMessage = `No draft folders found for the given name or player: "${searchName}"`;
-      }
+  async getPlayerById(playerId: number): Promise<{ message: string; data: PlayerEntity }> {
+    const player = await this.playerRepo.findOne({
+      where: { id: playerId },
+      relations: {
+        position: true,
+        attributes: true,
+        draftFolder: true,
+        images: true,
+      },
+    });
 
-      throw new NotFoundException(errorMessage);
+    if (!player) {
+      throw new NotFoundException('Player not found');
     }
 
-    return draftFolders;
+    return {
+      message: 'Player retrieved successfully',
+      data: player,
+    };
   }
 }

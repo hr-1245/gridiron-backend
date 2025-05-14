@@ -4,15 +4,15 @@ export enum subscriptionEnum {
 }
 
 export enum paymentStatus {
-  PENDING = 'pending',
-  SUCCEEDED = 'succeeded',
-  FAILED = 'failed',
-  CANCELED = 'canceled',
-  REQUIRES_ACTION = 'requires_action',
+  SUCCEEDED = 'SUCCEEDED',
+  FAILED = 'FAILED',
+  PENDING = 'PENDING',
+  CANCELED = 'CANCELED',
+  NOT_REQUIRED = 'NOT_REQUIRED'
 }
 
 
 export enum REDIS_KEYS {
 
   ANALYTICS = 'analytics'
- }
+}  

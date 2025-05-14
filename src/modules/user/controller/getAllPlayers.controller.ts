@@ -106,5 +106,33 @@ export class userPlayerCardsController {
       secure_url
     };
   }
+  @Get('players/:id')
+  @ApiOperation({ summary: 'Get player by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Player retrieved successfully',
+    schema: {
+      example: {
+        message: 'Player retrieved successfully',
+        data: {
+          id: 1,
+          name: 'John Doe',
+          overallRating: 85,
+          height: '6ft 2in',
+          weight: 190,
+          playerClass: 'Senior',
+          isActive: 'isActive',
+          position: { id: 1, name: 'Forward' },
+          attributes: [{ id: 1, speed: 90 }],
+          draftFolder: { id: 1, folderName: 'Draft 2025' },
+          images: [{ id: 1, url: 'https://...' }]
+        }
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: 'Player not found' })
+  async getPlayerById(@Param('id', ParseIntPipe) id: number) {
+    return this.playerDataService.getPlayerById(id);
+  }
 
 }
