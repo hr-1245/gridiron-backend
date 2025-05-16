@@ -47,7 +47,7 @@ export class PlayerDataService {
         .leftJoinAndSelect('player.position', 'position')
         .where('attributes.id IS NOT NULL')
         .andWhere('player.user.id = :userId', { userId })
-        .andWhere('player.isActive = :status', { status: playerStatusEnum.ISACTIVE }); // ✅ Filter active players only
+        .andWhere('player.isActive = :status', { status: playerStatusEnum.ISACTIVE });
 
       if (searchValue) {
         query = query.andWhere('player.name ILIKE :search', { search: `%${searchValue}%` });
@@ -64,7 +64,6 @@ export class PlayerDataService {
       const [players, totalCount] = await query.getManyAndCount();
       const totalPages = Math.ceil(totalCount / limit);
 
-      // ✅ Initialize all positions with count = 0
       const positionSummaryMap: Record<string, number> = {};
       for (const key in POSTION_CODE) {
         const code = POSTION_CODE[key as keyof typeof POSTION_CODE];

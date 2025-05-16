@@ -90,8 +90,25 @@ export class playerService {
       }
 
       let player: PlayerEntity | null = await this.playerRepo.findOne({
-        where: { name: playerName }
+        where: { name: playerName }, relations: { position: true }
       });
+
+      if (player && player.position.code !== positionCode) {
+        const newPlayer = this.playerRepo.create({
+          name: playerName,
+          user: { id: userId },
+          position: { id: positionId },
+          playerClass: obj.player_class as COLLAGE_AGE_ENUM,
+          overallRating: ovr,
+          height: height,
+          homeTown: homeTown,
+          weight: weight,
+          projectedReason: String(draft_round),
+          jerseyNumber: jerseyNumber as unknown as string,
+          draftFolder: draftFolder ? { id: draftFolder.id } : undefined
+        });
+        player = await this.playerRepo.save(newPlayer);
+      }
 
       if (!player) {
         const newPlayer = this.playerRepo.create({
@@ -103,6 +120,7 @@ export class playerService {
           height: height,
           homeTown: homeTown,
           weight: weight,
+          projectedReason: String(draft_round),
           jerseyNumber: jerseyNumber as unknown as string,
           draftFolder: draftFolder ? { id: draftFolder.id } : undefined
         });
@@ -216,6 +234,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
           }
 
@@ -292,6 +311,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -372,6 +392,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -453,6 +474,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -513,6 +535,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -574,6 +597,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -637,6 +661,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -699,6 +724,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -760,6 +786,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -820,6 +847,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -882,6 +910,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -944,6 +973,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -1006,6 +1036,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -1071,6 +1102,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           };
@@ -1269,6 +1301,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           };
@@ -1340,6 +1373,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           };
@@ -1382,6 +1416,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -1424,6 +1459,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -1500,6 +1536,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
