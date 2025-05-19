@@ -5,7 +5,7 @@ import { baseEntity } from "src/entities/base.entity"
 
 @Entity({ name: 'userPlan' })
 export class userPlanEntity extends baseEntity {
-  @Column()
+  @Column({nullable: true})
   stripeSubscriptionId: string;
 
   @Column({ nullable: true })
@@ -17,8 +17,13 @@ export class userPlanEntity extends baseEntity {
   @Column({ type: 'enum', enum: subscriptionEnum, default: subscriptionEnum.BASIC })
   planType: subscriptionEnum;
 
-  @Column({ type: 'enum', enum: paymentStatus, default: paymentStatus.SUCCEEDED })
+  @Column({
+    type: 'enum',
+    enum: paymentStatus,
+    default: paymentStatus.SUCCEEDED,
+  })
   subscriptionStatus: paymentStatus;
+
 
   @OneToOne(() => userEntity, (user) => user.subscription)
   user: userEntity;

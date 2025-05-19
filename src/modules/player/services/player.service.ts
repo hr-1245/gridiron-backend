@@ -26,18 +26,19 @@ export class playerService {
   }
   //-- Get All Position with Their Attributes ----------------------
 
-  async getAllPositionDropDown() {
-    let data = await this.playerPositionRepo.find({
+  async getAllPositionDropDown(): Promise<any> {
+    const data = await this.playerPositionRepo.find({
       relations: { attributeMappings: true }
     });
 
     const cleanedData = data.map(position => ({
+      positionId: position.id, // or position.positionId if that's the actual property
       code: position.code,
       name: position.name,
-      attributeMappings: position.attributeMappings.map(attr => ({
-        attributeKey: attr.attributeKey,
-        displayOrder: attr.displayOrder
-      }))
+      // attributeMappings: position.attributeMappings.map(attr => ({
+      //   attributeKey: attr.attributeKey,
+      //   displayOrder: attr.displayOrder
+      // }))
     }));
 
     return {
@@ -89,18 +90,37 @@ export class playerService {
       }
 
       let player: PlayerEntity | null = await this.playerRepo.findOne({
-        where: { name: playerName }
+        where: { name: playerName }, relations: { position: true }
       });
+
+      if (player && player.position.code !== positionCode) {
+        const newPlayer = this.playerRepo.create({
+          name: playerName,
+          user: { id: userId },
+          position: { id: positionId },
+          playerClass: obj.player_class as COLLAGE_AGE_ENUM,
+          overallRating: ovr,
+          height: height,
+          homeTown: homeTown,
+          weight: weight,
+          projectedReason: String(draft_round),
+          jerseyNumber: jerseyNumber as unknown as string,
+          draftFolder: draftFolder ? { id: draftFolder.id } : undefined
+        });
+        player = await this.playerRepo.save(newPlayer);
+      }
 
       if (!player) {
         const newPlayer = this.playerRepo.create({
           name: playerName,
           user: { id: userId },
           position: { id: positionId },
+          playerClass: obj.player_class as COLLAGE_AGE_ENUM,
           overallRating: ovr,
           height: height,
           homeTown: homeTown,
           weight: weight,
+          projectedReason: String(draft_round),
           jerseyNumber: jerseyNumber as unknown as string,
           draftFolder: draftFolder ? { id: draftFolder.id } : undefined
         });
@@ -116,7 +136,7 @@ export class playerService {
 
       let dataobj: ConverstionDataDto;
       const randomAge = Math.floor(Math.random() * 2) + 17;
-      const collegeYearKey = rawData.age as unknown as COLLAGE_AGE_ENUM;
+      const collegeYearKey = obj.player_class as unknown as COLLAGE_AGE_ENUM;
       const collegeYearAge = CollageAgeMapping[collegeYearKey];
 
       if (collegeYearAge === undefined) {
@@ -125,7 +145,7 @@ export class playerService {
 
       const calculatedAge = randomAge + collegeYearAge;
 
-      switch (obj.positionCode || rawData.age) {
+      switch (obj.positionCode || obj.player_class) {
         /////----------------------TE CONVERISON =----------
 
         case POSTION_CODE.TightEnd:
@@ -214,6 +234,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
           }
 
@@ -290,6 +311,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -370,6 +392,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -451,6 +474,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -511,6 +535,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -572,6 +597,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -635,6 +661,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -697,6 +724,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -758,6 +786,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -818,6 +847,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -880,6 +910,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -942,6 +973,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -1004,6 +1036,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -1069,6 +1102,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           };
@@ -1267,6 +1301,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           };
@@ -1338,6 +1373,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           };
@@ -1380,6 +1416,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -1422,6 +1459,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
@@ -1498,6 +1536,7 @@ export class playerService {
             homeTown: homeTown,
             weight: weight,
             jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
             draftFolder: draftFolderName
 
           }
