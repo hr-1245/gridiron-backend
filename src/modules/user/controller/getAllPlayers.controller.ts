@@ -55,11 +55,21 @@ export class userPlayerCardsController {
     return this.playerDataService.deletePlayerCard(id, user.id);
   }
 
-
   @Get('draft-folders')
   @UseGuards(userjwtGuard)
   @ApiOperation({ summary: 'Get all draft folders for user, with optional filters' })
-  @ApiQuery({ name: 'searchName', required: false, type: String, description: 'Search by Folder Name' })
+  @ApiQuery({
+    name: 'searchName',
+    required: false,
+    type: String,
+    description: 'Search by Folder Name, Player Name, Position, or Hometown'
+  })
+  @ApiQuery({
+    name: 'searchId',
+    required: false,
+    type: Number,
+    description: 'Optional search by ID'
+  })
   async getDraftFolders(
     @User() user: userjwtInterface,
     @Query() query: GetDraftFoldersQueryDto,
@@ -69,6 +79,7 @@ export class userPlayerCardsController {
 
     return this.playerDataService.getUserDraftFolders(user.id, searchId, searchName);
   }
+
 
   @Post('upload/profile-picture')
   @ApiOperation({ summary: 'Upload Profile Picture' })

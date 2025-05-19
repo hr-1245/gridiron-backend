@@ -72,7 +72,6 @@ export class userAuthService {
       throw new BadRequestException('Verification code expired or used');
     }
 
-    // Create user
     const user = this.repo.create({
       email,
       password: hashPassword(data.password),
@@ -81,10 +80,8 @@ export class userAuthService {
       isVerified: true,
     });
 
-    // Create a Stripe customer
     const stripeCustomer = await this.stripe.customers.create({ email });
 
-    // Assign the Stripe Customer ID to the user
     user.stripeCustomerId = stripeCustomer.id;
 
 
@@ -103,7 +100,6 @@ export class userAuthService {
       await manager.save(otpRecord);
     });
 
-    // Fetch the user with the plan
     const userWithPlan = await this.repo.findOne({
       where: { id: user.id },
       relations: { subscription: true },
@@ -116,7 +112,6 @@ export class userAuthService {
       });
     }
 
-    // Generate auth token
     const accessToken = this.jwtService.generateAuthToken({
       email: user.email,
       id: user.id,
@@ -126,12 +121,12 @@ export class userAuthService {
     if (!userWithPlan) {
       throw new NotFoundException('User plan not found');
     }
-    const { password, ...userWithoutPassword } = userWithPlan;
+    const { password, stripeCustomerId, paymentMethodId, ...userSafe } = user;
 
     return {
       message: 'Registration successful',
       user: {
-        ...userWithoutPassword,
+        ...user,
         subscription: {
           ...userWithPlan.subscription,
           discount,
@@ -175,19 +170,20 @@ export class userAuthService {
       role: user.role,
     });
 
-    const { password, ...userWithoutPassword } = user;
+    const { password, stripeCustomerId, paymentMethodId, ...userSafe } = user;
 
     return {
-      message: 'Login successful',
+      message: 'Registration successful',
       user: {
-        ...userWithoutPassword,
+        ...userSafe,
         subscription: {
           ...user.subscription,
           discount,
         },
       },
-      accessToken: token,
+      token,
     };
+
   }
 
 

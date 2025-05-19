@@ -138,7 +138,8 @@ export class PlayerDataService {
         new Brackets((qb) => {
           qb.where('draft.name ILIKE :searchName', { searchName: `%${searchName}%` })
             .orWhere('players.name ILIKE :searchName', { searchName: `%${searchName}%` })
-            .orWhere('position.name ILIKE :searchName', { searchName: `%${searchName}%` });
+            .orWhere('position.name ILIKE :searchName', { searchName: `%${searchName}%` })
+            .orWhere('players.homeTown ILIKE :searchName', { searchName: `%${searchName}%` });
         }),
       );
     }
@@ -149,6 +150,7 @@ export class PlayerDataService {
 
     return draftFolders;
   }
+
 
   async getPlayerById(playerId: number): Promise<{ message: string; data: PlayerEntity }> {
     const player = await this.playerRepo.findOne({
