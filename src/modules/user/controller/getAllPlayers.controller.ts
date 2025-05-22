@@ -62,24 +62,36 @@ export class userPlayerCardsController {
     name: 'searchName',
     required: false,
     type: String,
-    description: 'Search by Folder Name, Player Name, Position, or Hometown'
+    description: 'Search by Folder Name, Player Name, Position, or Hometown',
   })
   @ApiQuery({
     name: 'searchId',
     required: false,
     type: Number,
-    description: 'Optional search by ID'
+    description: 'Optional search by ID',
   })
   async getDraftFolders(
-    @User() user: userjwtInterface,
-    @Query() query: GetDraftFoldersQueryDto,
+    @User() user: userjwtInterface, 
+    @Query() query: GetDraftFoldersQueryDto, 
   ) {
     const searchId = query.searchId ? parseInt(query.searchId, 10) : undefined;
-    const searchName = query.searchName;
+    const searchName = query.searchName as any;
 
+    // Call the service to fetch draft folders
     return this.playerDataService.getUserDraftFolders(user.id, searchId, searchName);
   }
 
+  @Get('draft-folders/getById/:id')
+  @ApiOperation({ summary: 'Get draft folder by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Draft folder retrieved successfully',
+
+  })
+  @ApiResponse({ status: 404, description: 'Draft folder not found' })
+  async getDraftFolderById(@Param('id', ParseIntPipe) id: number, @User() user: userjwtInterface,) {
+    return this.playerDataService.getDraftFolderById(id, user);
+  }
 
   @Post('upload/profile-picture')
   @ApiOperation({ summary: 'Upload Profile Picture' })
