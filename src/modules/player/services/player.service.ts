@@ -6,6 +6,7 @@ import { COLLAGE_AGE_ENUM, POSTION_CODE, CollageAgeMapping } from "src/types/enu
 import { PlayerPositionEntity } from "../entity/player-position.entity";
 import { PlayerAttributesEntity, PlayerEntity } from "../entity/players.entity";
 import { playerDraftFolderEntity } from "../entity/player-draft-folder.entity";
+import { userjwtInterface } from "src/modules/jwt/interface/jwt.interface";
 
 @Injectable()
 export class playerService {
@@ -46,6 +47,23 @@ export class playerService {
       data: cleanedData
     };
   }
+
+  async getDraftFolderDropdown(user: userjwtInterface) {
+    try {
+      const draftFolders = await this.playerFolderepo.find({
+        where: {
+          user: { id: user.id }
+        }
+      })
+
+      if (draftFolders.length === 0) return []
+
+      return draftFolders.map((draft) => draft.name)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
 
   async conversionLogic(obj: ConversionDto, userId: number): Promise<any> {
     try {

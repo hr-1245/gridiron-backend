@@ -4,9 +4,9 @@ import { IsNotEmpty, IsNumber, IsString, } from "class-validator";
 
 export class EditDto {
 
-data: ConverstionDataDto;
+  data: ConverstionDataDto;
 
-  @ApiProperty() @IsNumber()
+  @ApiProperty() @IsOptional() @IsNumber()
   draft_round: number;
 
   @ApiProperty() @IsNumber() @IsOptional()

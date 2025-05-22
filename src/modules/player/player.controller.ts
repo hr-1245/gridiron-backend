@@ -61,6 +61,17 @@ export class PlayerOcrController {
   }
 
 
+  @Get("dropdown/draft-folders")
+  @UseGuards(userjwtGuard)
+  @ApiResponse({
+    status: 200,
+    description: "Draft Folders",
+  })
+  async getDraftFoldersDropdwn(@User() user: userjwtInterface) {
+    return this.playeService.getDraftFolderDropdown(user);
+  }
+
+
   //------------------CONVERT MANUALLY----------
   @Post("convert/manually")
   @UseGuards(userManualConversionLimitGuard)
