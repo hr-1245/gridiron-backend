@@ -1,11 +1,12 @@
 import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PlayerEntity } from '../entity/players.entity';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, ILike, Repository } from 'typeorm';
 import { PaginatedPlayers } from 'src/types/enums/otp';
 import { playerDraftFolderEntity } from '../entity/player-draft-folder.entity';
 import { PlayerPositionEntity } from '../entity/player-position.entity';
 import { playerStatusEnum, POSTION_CODE } from 'src/types/enums/roles';
+import { userjwtInterface } from 'src/modules/jwt/interface/jwt.interface';
 
 
 
@@ -128,28 +129,48 @@ export class PlayerDataService {
     searchId?: number,
     searchName?: string,
   ): Promise<playerDraftFolderEntity[]> {
-    const query = this.playerDraftRepo.createQueryBuilder('draft')
-      .leftJoinAndSelect('draft.players', 'players')
-      .leftJoinAndSelect('players.position', 'position')
-      .where('draft.user.id = :userId', { userId });
+    try {
+      let where: any = { user: { id: userId } };
 
-    if (searchName) {
-      query.andWhere(
-        new Brackets((qb) => {
-          qb.where('draft.name ILIKE :searchName', { searchName: `%${searchName}%` })
-            .orWhere('players.name ILIKE :searchName', { searchName: `%${searchName}%` })
-            .orWhere('position.name ILIKE :searchName', { searchName: `%${searchName}%` })
-            .orWhere('players.homeTown ILIKE :searchName', { searchName: `%${searchName}%` });
-        }),
-      );
+      if (searchName) {
+        where = {
+          ...where,
+          name: ILike(`%${searchName}%`),
+          players: {
+            name: ILike(`%${searchName}%`),
+            homeTown: ILike(`%${searchName}%`),
+            position: {
+              name: ILike(`%${searchName}%`),
+            },
+          },
+        };
+      }
+
+      if (searchId) {
+        where = { ...where, id: searchId };
+      }
+
+      const data = await this.playerDraftRepo.find({
+        where: where,
+        relations: {
+          players: true,
+        },
+        order: { createdAt: 'DESC' },
+      });
+
+      data.forEach(draftFolder => {
+        draftFolder.players = draftFolder.players.filter(player => player.isActive === playerStatusEnum.ISACTIVE);
+      });
+
+      return data;
+
+    } catch (error) {
+      throw new Error(`Error fetching draft folders: ${error.message}`);
     }
-
-    query.orderBy('draft.createdAt', 'DESC');
-
-    const draftFolders = await query.getMany();
-
-    return draftFolders;
   }
+
+
+
 
 
   async getPlayerById(playerId: number): Promise<{ message: string; data: PlayerEntity }> {
@@ -171,5 +192,18 @@ export class PlayerDataService {
       message: 'Player retrieved successfully',
       data: player,
     };
+  }
+
+
+  async getDraftFolderById(id: number, user: userjwtInterface) {
+    try {
+      const draftFolder = await this.playerDraftRepo.findOne({ where: { id, user: { id: user.id } }, relations: { players: { position: true } } })
+
+      if (!draftFolder) throw new NotFoundException('Draft folder not found.')
+
+      return draftFolder;
+    } catch (error) {
+      throw new InternalServerErrorException('Draft folder not Found');
+    }
   }
 }
