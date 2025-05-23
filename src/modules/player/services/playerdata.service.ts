@@ -116,7 +116,7 @@ export class PlayerDataService {
       await this.playerRepo.save(player);
 
       return {
-        message: 'Player card deleted successfully (soft deleted)',
+        message: 'Player card has been successfully removed',
       };
     } catch (error) {
       throw new InternalServerErrorException('Player not Found');
@@ -166,10 +166,6 @@ export class PlayerDataService {
     }
   }
 
-
-
-
-
   async getPlayerById(playerId: number): Promise<{ message: string; data: PlayerEntity }> {
     const player = await this.playerRepo.findOne({
       where: { id: playerId },
@@ -194,13 +190,25 @@ export class PlayerDataService {
 
   async getDraftFolderById(id: number, user: userjwtInterface) {
     try {
-      const draftFolder = await this.playerDraftRepo.findOne({ where: { id, user: { id: user.id } }, relations: { players: { position: true } } })
+      const draftFolder = await this.playerDraftRepo.findOne({
+        where: { id, user: { id: user.id } },
+        relations: {
+          players: {
+            position: true,
+          },
+        },
+      });
 
-      if (!draftFolder) throw new NotFoundException('Draft folder not found.')
+      if (!draftFolder) throw new NotFoundException('Draft folder not found.');
+
+      // Filter only active players
+      draftFolder.players = draftFolder.players.filter(
+        player => player.isActive === playerStatusEnum.ISACTIVE
+      );
 
       return draftFolder;
     } catch (error) {
-      throw new InternalServerErrorException('Draft folder not Found');
+      throw new InternalServerErrorException('Draft folder not found');
     }
   }
 }
