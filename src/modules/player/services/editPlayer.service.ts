@@ -69,7 +69,6 @@ export class editPlayerService {
     if (!latestAttr) {
       throw new BadRequestException("Player has no attributes to edit");
     }
-
     // Update player bio
     if (ovr !== undefined) player.overallRating = ovr;
     if (height !== undefined) player.height = height;

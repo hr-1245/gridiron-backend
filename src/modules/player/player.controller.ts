@@ -10,6 +10,9 @@ import {
   InternalServerErrorException,
   NotFoundException,
   Param,
+  HttpStatus,
+  Delete,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import {
@@ -86,7 +89,6 @@ export class PlayerOcrController {
   ) {
     return this.playeService.conversionLogic(conversionDto, user.id);
   }
-
 
   //------BULK CONVERT WITH AI MODEL----
   @Post('convert/AI')
