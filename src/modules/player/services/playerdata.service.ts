@@ -130,40 +130,37 @@ export class PlayerDataService {
     searchName?: string,
   ): Promise<playerDraftFolderEntity[]> {
     try {
-      let where: any = { user: { id: userId } };
-
-      if (searchName) {
-        where = {
-          ...where,
-          name: ILike(`%${searchName}%`),
-          players: {
-            name: ILike(`%${searchName}%`),
-            homeTown: ILike(`%${searchName}%`),
-            position: {
-              name: ILike(`%${searchName}%`),
-            },
-          },
-        };
-      }
+      const qb = this.playerDraftRepo.createQueryBuilder('folder')
+        .leftJoinAndSelect('folder.players', 'player')
+        .leftJoinAndSelect('player.position', 'position')
+        .where('folder.userId = :userId', { userId });
 
       if (searchId) {
-        where = { ...where, id: searchId };
+        qb.andWhere('folder.id = :searchId', { searchId });
       }
 
-      const data = await this.playerDraftRepo.find({
-        where: where,
-        relations: {
-          players: true,
-        },
-        order: { createdAt: 'DESC' },
-      });
+      if (searchName) {
+        qb.andWhere(
+          new Brackets(qb => {
+            qb.where('folder.name ILIKE :search')
+              .orWhere('player.name ILIKE :search')
+              .orWhere('player.homeTown ILIKE :search')
+              .orWhere('position.name ILIKE :search');
+          }),
+          { search: `%${searchName}%` },
+        );
+      }
 
-      data.forEach(draftFolder => {
-        draftFolder.players = draftFolder.players.filter(player => player.isActive === playerStatusEnum.ISACTIVE);
+      qb.orderBy('folder.createdAt', 'DESC');
+
+      const data = await qb.getMany();
+
+      // Filter out inactive players
+      data.forEach(folder => {
+        folder.players = folder.players.filter(player => player.isActive === playerStatusEnum.ISACTIVE);
       });
 
       return data;
-
     } catch (error) {
       throw new Error(`Error fetching draft folders: ${error.message}`);
     }
