@@ -49,7 +49,7 @@ export class PlayerEntity extends baseEntity {
     @OneToMany(() => PlayerAttributesEntity, attr => attr.player, { cascade: true })
     attributes: PlayerAttributesEntity[];
 
-    @ManyToOne(() => playerDraftFolderEntity, folder => folder.players, { nullable: true })
+    @ManyToOne(() => playerDraftFolderEntity, folder => folder.players, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn()
     draftFolder: playerDraftFolderEntity
 
@@ -254,10 +254,11 @@ export class PlayerImageEntity extends baseEntity {
     @Column()
     url: string;
 
-    @ManyToOne(() => PlayerEntity, player => player.images)
-    player: PlayerEntity;
+  @ManyToOne(() => PlayerEntity, player => player.images, {
+    onDelete: 'CASCADE', // ✅ This allows player deletion to cascade
+  })
+  player: PlayerEntity;
 }
-
 
 @Entity({ name: 'position_attribute_mapping' })
 export class PositionAttributeMappingEntity extends baseEntity {
