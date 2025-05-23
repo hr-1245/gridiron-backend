@@ -46,7 +46,7 @@ export class editPlayerService {
 
   async editPlayer(playerId: number, userId: number, dto: EditDto): Promise<any> {
     const {
-      draft_round,
+      draft_round: DR,
       data: rawData,
       ovr,
       height,
@@ -64,6 +64,7 @@ export class editPlayerService {
 
     if (!player) throw new NotFoundException("Player not found");
 
+    let draft_round = DR ? DR : Number(player.projectedReason);
     let latestAttr = player.attributes?.[player.attributes.length - 1];
     if (!latestAttr) {
       throw new BadRequestException("Player has no attributes to edit");
@@ -117,37 +118,37 @@ export class editPlayerService {
           const dataobj = rawData as TightEndDto;
           convertedAttributes = {
             ...convertedAttributes,
-            speed: this.calculateAttribute(dataobj.speed, 0),
-            acceleration: this.calculateAttribute(dataobj.acceleration, 2),
-            agility: this.calculateAttribute(dataobj.agility, 1),
-            change_of_direction: this.calculateAttribute(dataobj.change_of_direction, 3),
-            strength: this.calculateAttribute(dataobj.strength, -3),
-            awareness: this.calculateAttribute(dataobj.awareness, -4, draft_round),
-            break_tackle: this.calculateAttribute(dataobj.break_tackle, -2, draft_round),
-            catch_in_traffic: this.calculateAttribute(dataobj.catch_in_traffic, -1, draft_round),
-            spectacular_catch: this.calculateAttribute(dataobj.spectacular_catch, 0, draft_round),
-            release: this.calculateAttribute(dataobj.release, 2, draft_round),
-            pass_block: this.calculateAttribute(dataobj.pass_block, -14, draft_round),
-            pass_block_power: this.calculateAttribute(dataobj.pass_block_power, -14, draft_round),
-            pass_block_finesse: this.calculateAttribute(dataobj.pass_block_finesse, -10, draft_round),
-            run_block: this.calculateAttribute(dataobj.run_block, -11, draft_round),
-            run_block_power: this.calculateAttribute(dataobj.run_block_power, -12, draft_round),
-            run_block_finesse: this.calculateAttribute(dataobj.run_block_finesse, -16, draft_round),
-            lead_block: this.calculateAttribute(dataobj.lead_blocking, -4, draft_round),
-            impact_block: this.calculateAttribute(dataobj.impact_blocking, 7, draft_round),
-            jumping: this.calculateAttribute(dataobj.jumping, 3),
-            carrying: this.calculateAttribute(dataobj.carrying, -1, draft_round),
-            trucking: this.calculateAttribute(dataobj.trucking, 0, draft_round),
-            catching: this.calculateAttribute(dataobj.catching, 0, draft_round),
-            stiff_arm: this.calculateAttribute(dataobj.stiff_arm, 0, draft_round),
-            spin_move: this.calculateAttribute(dataobj.spin_move, -1, draft_round),
-            juke_move: this.calculateAttribute(dataobj.juke_move, -1, draft_round),
-            short_route_running: this.calculateAttribute(dataobj.short_route_running, -12, draft_round),
-            medium_route_running: this.calculateAttribute(dataobj.medium_route_running, -13, draft_round),
-            deep_route_running: this.calculateAttribute(dataobj.deep_route_running, -6, draft_round),
-            stamina: this.calculateAttribute(dataobj.stamina, -1),
-            injury: this.calculateAttribute(dataobj.injury, -1),
-            draft_round: draft_round
+            ...dataobj.speed && ({ speed: this.calculateAttribute(dataobj.speed, 0) }),
+            ...dataobj.acceleration && ({ acceleration: this.calculateAttribute(dataobj.acceleration, 2) }),
+            ...dataobj.agility && ({ agility: this.calculateAttribute(dataobj.agility, 1) }),
+            ...dataobj.change_of_direction && ({ change_of_direction: this.calculateAttribute(dataobj.change_of_direction, 3) }),
+            ...dataobj.strength && ({ strength: this.calculateAttribute(dataobj.strength, -3) }),
+            ...dataobj.awareness && ({ awareness: this.calculateAttribute(dataobj.awareness, -4, draft_round) }),
+            ...dataobj.break_tackle && ({ break_tackle: this.calculateAttribute(dataobj.break_tackle, -2, draft_round) }),
+            ...dataobj.catch_in_traffic && ({ catch_in_traffic: this.calculateAttribute(dataobj.catch_in_traffic, -1, draft_round) }),
+            ...dataobj.spectacular_catch && ({ spectacular_catch: this.calculateAttribute(dataobj.spectacular_catch, 0, draft_round) }),
+            ...dataobj.release && ({ release: this.calculateAttribute(dataobj.release, 2, draft_round) }),
+            ...dataobj.pass_block && ({ pass_block: this.calculateAttribute(dataobj.pass_block, -14, draft_round) }),
+            ...dataobj.pass_block_power && ({ pass_block_power: this.calculateAttribute(dataobj.pass_block_power, -14, draft_round) }),
+            ...dataobj.pass_block_finesse && ({ pass_block_finesse: this.calculateAttribute(dataobj.pass_block_finesse, -10, draft_round) }),
+            ...dataobj.run_block && ({ run_block: this.calculateAttribute(dataobj.run_block, -11, draft_round) }),
+            ...dataobj.run_block_power && ({ run_block_power: this.calculateAttribute(dataobj.run_block_power, -12, draft_round) }),
+            ...dataobj.run_block_finesse && ({ run_block_finesse: this.calculateAttribute(dataobj.run_block_finesse, -16, draft_round) }),
+            ...dataobj.lead_blocking && ({ lead_block: this.calculateAttribute(dataobj.lead_blocking, -4, draft_round) }),
+            ...dataobj.impact_blocking && ({ impact_block: this.calculateAttribute(dataobj.impact_blocking, 7, draft_round) }),
+            ...dataobj.jumping && ({ jumping: this.calculateAttribute(dataobj.jumping, 3) }),
+            ...dataobj.carrying && ({ carrying: this.calculateAttribute(dataobj.carrying, -1, draft_round) }),
+            ...dataobj.trucking && ({ trucking: this.calculateAttribute(dataobj.trucking, 0, draft_round) }),
+            ...dataobj.catching && ({ catching: this.calculateAttribute(dataobj.catching, 0, draft_round) }),
+            ...dataobj.stiff_arm && ({ stiff_arm: this.calculateAttribute(dataobj.stiff_arm, 0, draft_round) }),
+            ...dataobj.spin_move && ({ spin_move: this.calculateAttribute(dataobj.spin_move, -1, draft_round) }),
+            ...dataobj.juke_move && ({ juke_move: this.calculateAttribute(dataobj.juke_move, -1, draft_round) }),
+            ...dataobj.short_route_running && ({ short_route_running: this.calculateAttribute(dataobj.short_route_running, -12, draft_round) }),
+            ...dataobj.medium_route_running && ({ medium_route_running: this.calculateAttribute(dataobj.medium_route_running, -13, draft_round) }),
+            ...dataobj.deep_route_running && ({ deep_route_running: this.calculateAttribute(dataobj.deep_route_running, -6, draft_round) }),
+            ...dataobj.stamina && ({ stamina: this.calculateAttribute(dataobj.stamina, -1) }),
+            ...dataobj.injury && ({ injury: this.calculateAttribute(dataobj.injury, -1) }),
+            draft_round
           };
           break;
         }
@@ -157,29 +158,30 @@ export class editPlayerService {
           const dataobj = rawData as QuarterBackDto;
           convertedAttributes = {
             ...convertedAttributes,
-            speed: this.calculateAttribute(dataobj.speed, -2),
-            acceleration: this.calculateAttribute(dataobj.acceleration, -2),
-            agility: this.calculateAttribute(dataobj.agility, -5),
-            awareness: this.calculateAttribute(dataobj.awareness, -10, draft_round),
-            throw_power: this.calculateAttribute(dataobj.throw_power, -1),
-            throw_accuracy_short: this.calculateAttribute(dataobj.throw_accuracy_short, -7, draft_round),
-            throw_accuracy_mid: this.calculateAttribute(dataobj.throw_accuracy_mid, -10, draft_round),
-            throw_accuracy_deep: this.calculateAttribute(dataobj.throw_accuracy_deep, -14, draft_round),
-            throw_on_the_run: this.calculateAttribute(dataobj.throw_on_the_run, -8, draft_round),
-            throw_under_pressure: this.calculateAttribute(dataobj.throw_under_pressure, -11, draft_round),
-            play_action: this.calculateAttribute(dataobj.play_action, -15, draft_round),
-            break_sack: this.calculateAttribute(dataobj.break_sack, -9, draft_round),
-            break_tackle: this.calculateAttribute(dataobj.break_tackle, -4, draft_round),
-            trucking: this.calculateAttribute(dataobj.trucking, -13, draft_round),
-            carrying: this.calculateAttribute(dataobj.carrying, -26, draft_round),
-            ball_carrier_vision: this.calculateAttribute(dataobj.ball_carrier_vision, -13, draft_round),
-            stiff_arm: this.calculateAttribute(dataobj.stiff_arm, -7, draft_round),
-            spin_move: this.calculateAttribute(dataobj.spin_move, -14, draft_round),
-            juke_move: this.calculateAttribute(dataobj.juke_move, -10, draft_round),
-            stamina: this.calculateAttribute(dataobj.stamina, -2),
-            injury: this.calculateAttribute(dataobj.injury, -1),
-            draft_round: draft_round
+            ...dataobj.speed && ({ speed: this.calculateAttribute(dataobj.speed, -2) }),
+            ...dataobj.acceleration && ({ acceleration: this.calculateAttribute(dataobj.acceleration, -2) }),
+            ...dataobj.agility && ({ agility: this.calculateAttribute(dataobj.agility, -5) }),
+            ...dataobj.awareness && ({ awareness: this.calculateAttribute(dataobj.awareness, -10, draft_round) }),
+            ...dataobj.throw_power && ({ throw_power: this.calculateAttribute(dataobj.throw_power, -1) }),
+            ...dataobj.throw_accuracy_short && ({ throw_accuracy_short: this.calculateAttribute(dataobj.throw_accuracy_short, -7, draft_round) }),
+            ...dataobj.throw_accuracy_mid && ({ throw_accuracy_mid: this.calculateAttribute(dataobj.throw_accuracy_mid, -10, draft_round) }),
+            ...dataobj.throw_accuracy_deep && ({ throw_accuracy_deep: this.calculateAttribute(dataobj.throw_accuracy_deep, -14, draft_round) }),
+            ...dataobj.throw_on_the_run && ({ throw_on_the_run: this.calculateAttribute(dataobj.throw_on_the_run, -8, draft_round) }),
+            ...dataobj.throw_under_pressure && ({ throw_under_pressure: this.calculateAttribute(dataobj.throw_under_pressure, -11, draft_round) }),
+            ...dataobj.play_action && ({ play_action: this.calculateAttribute(dataobj.play_action, -15, draft_round) }),
+            ...dataobj.break_sack && ({ break_sack: this.calculateAttribute(dataobj.break_sack, -9, draft_round) }),
+            ...dataobj.break_tackle && ({ break_tackle: this.calculateAttribute(dataobj.break_tackle, -4, draft_round) }),
+            ...dataobj.trucking && ({ trucking: this.calculateAttribute(dataobj.trucking, -13, draft_round) }),
+            ...dataobj.carrying && ({ carrying: this.calculateAttribute(dataobj.carrying, -26, draft_round) }),
+            ...dataobj.ball_carrier_vision && ({ ball_carrier_vision: this.calculateAttribute(dataobj.ball_carrier_vision, -13, draft_round) }),
+            ...dataobj.stiff_arm && ({ stiff_arm: this.calculateAttribute(dataobj.stiff_arm, -7, draft_round) }),
+            ...dataobj.spin_move && ({ spin_move: this.calculateAttribute(dataobj.spin_move, -14, draft_round) }),
+            ...dataobj.juke_move && ({ juke_move: this.calculateAttribute(dataobj.juke_move, -10, draft_round) }),
+            ...dataobj.stamina && ({ stamina: this.calculateAttribute(dataobj.stamina, -2) }),
+            ...dataobj.injury && ({ injury: this.calculateAttribute(dataobj.injury, -1) }),
+            draft_round
           };
+
           break;
         }
 
@@ -188,30 +190,30 @@ export class editPlayerService {
           const dataobj = rawData as RunningBackDto;
           convertedAttributes = {
             ...convertedAttributes,
-            speed: this.calculateAttribute(dataobj.speed, -2),
-            acceleration: this.calculateAttribute(dataobj.acceleration, 0),
-            agility: this.calculateAttribute(dataobj.agility, -4),
-            change_of_direction: this.calculateAttribute(dataobj.change_of_direction, -4),
-            strength: this.calculateAttribute(dataobj.strength, -3),
-            awareness: this.calculateAttribute(dataobj.awareness, -11, draft_round),
-            break_tackle: this.calculateAttribute(dataobj.break_tackle, -7, draft_round),
-            carrying: this.calculateAttribute(dataobj.carrying, -5, draft_round),
-            trucking: this.calculateAttribute(dataobj.trucking, -7, draft_round),
-            ball_carrier_vision: this.calculateAttribute(dataobj.ball_carrier_vision, -14, draft_round),
-            catching: this.calculateAttribute(dataobj.catching, -14, draft_round),
-            stiff_arm: this.calculateAttribute(dataobj.stiff_arm, -3, draft_round),
-            spin_move: this.calculateAttribute(dataobj.spin_move, -8, draft_round),
-            juke_move: this.calculateAttribute(dataobj.juke_move, -8, draft_round),
-            pass_block: this.calculateAttribute(dataobj.pass_blocking, -24, draft_round),
-            catch_in_traffic: this.calculateAttribute(dataobj.catch_in_traffic, -19, draft_round),
-            spectacular_catch: this.calculateAttribute(dataobj.spectacular_catch, -12, draft_round),
-            short_route_running: this.calculateAttribute(dataobj.short_route_running, -16, draft_round),
-            medium_route_running: this.calculateAttribute(dataobj.short_route_running, -16, draft_round),
-            release: this.calculateAttribute(dataobj.release, -7, draft_round),
-            stamina: this.calculateAttribute(dataobj.stamina, -2),
-            return: this.calculateAttribute(dataobj.return, -1),
-            injury: this.calculateAttribute(dataobj.injury, -1),
-            draft_round: draft_round
+            ...dataobj.speed && ({ speed: this.calculateAttribute(dataobj.speed, -2) }),
+            ...dataobj.acceleration && ({ acceleration: this.calculateAttribute(dataobj.acceleration, 0) }),
+            ...dataobj.agility && ({ agility: this.calculateAttribute(dataobj.agility, -4) }),
+            ...dataobj.change_of_direction && ({ change_of_direction: this.calculateAttribute(dataobj.change_of_direction, -4) }),
+            ...dataobj.strength && ({ strength: this.calculateAttribute(dataobj.strength, -3) }),
+            ...dataobj.awareness && ({ awareness: this.calculateAttribute(dataobj.awareness, -11, draft_round) }),
+            ...dataobj.break_tackle && ({ break_tackle: this.calculateAttribute(dataobj.break_tackle, -7, draft_round) }),
+            ...dataobj.carrying && ({ carrying: this.calculateAttribute(dataobj.carrying, -5, draft_round) }),
+            ...dataobj.trucking && ({ trucking: this.calculateAttribute(dataobj.trucking, -7, draft_round) }),
+            ...dataobj.ball_carrier_vision && ({ ball_carrier_vision: this.calculateAttribute(dataobj.ball_carrier_vision, -14, draft_round) }),
+            ...dataobj.catching && ({ catching: this.calculateAttribute(dataobj.catching, -14, draft_round) }),
+            ...dataobj.stiff_arm && ({ stiff_arm: this.calculateAttribute(dataobj.stiff_arm, -3, draft_round) }),
+            ...dataobj.spin_move && ({ spin_move: this.calculateAttribute(dataobj.spin_move, -8, draft_round) }),
+            ...dataobj.juke_move && ({ juke_move: this.calculateAttribute(dataobj.juke_move, -8, draft_round) }),
+            ...dataobj.pass_blocking && ({ pass_block: this.calculateAttribute(dataobj.pass_blocking, -24, draft_round) }),
+            ...dataobj.catch_in_traffic && ({ catch_in_traffic: this.calculateAttribute(dataobj.catch_in_traffic, -19, draft_round) }),
+            ...dataobj.spectacular_catch && ({ spectacular_catch: this.calculateAttribute(dataobj.spectacular_catch, -12, draft_round) }),
+            ...dataobj.short_route_running && ({ short_route_running: this.calculateAttribute(dataobj.short_route_running, -16, draft_round) }),
+            ...dataobj.medium_route_running && ({ medium_route_running: this.calculateAttribute(dataobj.medium_route_running, -16, draft_round) }), // assuming reuse is intentional
+            ...dataobj.release && ({ release: this.calculateAttribute(dataobj.release, -7, draft_round) }),
+            ...dataobj.stamina && ({ stamina: this.calculateAttribute(dataobj.stamina, -2) }),
+            ...dataobj.return && ({ return: this.calculateAttribute(dataobj.return, -1) }),
+            ...dataobj.injury && ({ injury: this.calculateAttribute(dataobj.injury, -1) }),
+            draft_round
           };
           break;
         }
@@ -221,31 +223,31 @@ export class editPlayerService {
           const dataobj = rawData as WideReceiverDto;
           convertedAttributes = {
             ...convertedAttributes,
-            speed: this.calculateAttribute(dataobj.speed, -2),
-            acceleration: this.calculateAttribute(dataobj.acceleration, 0),
-            agility: this.calculateAttribute(dataobj.agility, 0),
-            change_of_direction: this.calculateAttribute(dataobj.change_of_direction, -1),
-            strength: this.calculateAttribute(dataobj.strength, -9),
-            awareness: this.calculateAttribute(dataobj.awareness, -15, draft_round),
-            break_tackle: this.calculateAttribute(dataobj.break_tackle, -3, draft_round),
-            catch_in_traffic: this.calculateAttribute(dataobj.catch_in_traffic, -10, draft_round),
-            spectacular_catch: this.calculateAttribute(dataobj.spectacular_catch, -5, draft_round),
-            release: this.calculateAttribute(dataobj.release, -13, draft_round),
-            jumping: this.calculateAttribute(dataobj.jumping, -3),
-            carrying: this.calculateAttribute(dataobj.carrying, -14, draft_round),
-            trucking: this.calculateAttribute(dataobj.trucking, -21, draft_round),
-            ball_carrier_vision: this.calculateAttribute(dataobj.ball_carrier_vision, -15, draft_round),
-            catching: this.calculateAttribute(dataobj.catching, -9, draft_round),
-            stiff_arm: this.calculateAttribute(dataobj.stiff_arm, -7, draft_round),
-            spin_move: this.calculateAttribute(dataobj.spin_move, -5, draft_round),
-            juke_move: this.calculateAttribute(dataobj.juke_move, -3, draft_round),
-            short_route_running: this.calculateAttribute(dataobj.short_route_running, -11, draft_round),
-            medium_route_running: this.calculateAttribute(dataobj.medium_route_running, -16, draft_round),
-            deep_route_running: this.calculateAttribute(dataobj.deep_route_running, -17, draft_round),
-            stamina: this.calculateAttribute(dataobj.stamina, -1),
-            return: this.calculateAttribute(dataobj.return, -1),
-            injury: this.calculateAttribute(dataobj.injury, -1),
-            draft_round: draft_round
+            ...dataobj.speed && ({ speed: this.calculateAttribute(dataobj.speed, -2) }),
+            ...dataobj.acceleration && ({ acceleration: this.calculateAttribute(dataobj.acceleration, 0) }),
+            ...dataobj.agility && ({ agility: this.calculateAttribute(dataobj.agility, 0) }),
+            ...dataobj.change_of_direction && ({ change_of_direction: this.calculateAttribute(dataobj.change_of_direction, -1) }),
+            ...dataobj.strength && ({ strength: this.calculateAttribute(dataobj.strength, -9) }),
+            ...dataobj.awareness && ({ awareness: this.calculateAttribute(dataobj.awareness, -15, draft_round) }),
+            ...dataobj.break_tackle && ({ break_tackle: this.calculateAttribute(dataobj.break_tackle, -3, draft_round) }),
+            ...dataobj.catch_in_traffic && ({ catch_in_traffic: this.calculateAttribute(dataobj.catch_in_traffic, -10, draft_round) }),
+            ...dataobj.spectacular_catch && ({ spectacular_catch: this.calculateAttribute(dataobj.spectacular_catch, -5, draft_round) }),
+            ...dataobj.release && ({ release: this.calculateAttribute(dataobj.release, -13, draft_round) }),
+            ...dataobj.jumping && ({ jumping: this.calculateAttribute(dataobj.jumping, -3) }),
+            ...dataobj.carrying && ({ carrying: this.calculateAttribute(dataobj.carrying, -14, draft_round) }),
+            ...dataobj.trucking && ({ trucking: this.calculateAttribute(dataobj.trucking, -21, draft_round) }),
+            ...dataobj.ball_carrier_vision && ({ ball_carrier_vision: this.calculateAttribute(dataobj.ball_carrier_vision, -15, draft_round) }),
+            ...dataobj.catching && ({ catching: this.calculateAttribute(dataobj.catching, -9, draft_round) }),
+            ...dataobj.stiff_arm && ({ stiff_arm: this.calculateAttribute(dataobj.stiff_arm, -7, draft_round) }),
+            ...dataobj.spin_move && ({ spin_move: this.calculateAttribute(dataobj.spin_move, -5, draft_round) }),
+            ...dataobj.juke_move && ({ juke_move: this.calculateAttribute(dataobj.juke_move, -3, draft_round) }),
+            ...dataobj.short_route_running && ({ short_route_running: this.calculateAttribute(dataobj.short_route_running, -11, draft_round) }),
+            ...dataobj.medium_route_running && ({ medium_route_running: this.calculateAttribute(dataobj.medium_route_running, -16, draft_round) }),
+            ...dataobj.deep_route_running && ({ deep_route_running: this.calculateAttribute(dataobj.deep_route_running, -17, draft_round) }),
+            ...dataobj.stamina && ({ stamina: this.calculateAttribute(dataobj.stamina, -1) }),
+            ...dataobj.return && ({ return: this.calculateAttribute(dataobj.return, -1) }),
+            ...dataobj.injury && ({ injury: this.calculateAttribute(dataobj.injury, -1) }),
+            draft_round
           };
           break;
         }
@@ -255,21 +257,21 @@ export class editPlayerService {
           const dataobj = rawData as DefensiveTackleDto;
           convertedAttributes = {
             ...convertedAttributes,
-            speed: this.calculateAttribute(dataobj.speed, -1),
-            acceleration: this.calculateAttribute(dataobj.acceleration, 0),
-            agility: this.calculateAttribute(dataobj.agility, -5),
-            awareness: this.calculateAttribute(dataobj.awareness, -13, draft_round),
-            strength: this.calculateAttribute(dataobj.strength, 0),
-            tackling: this.calculateAttribute(dataobj.tackling, -11, draft_round),
-            hit_power: this.calculateAttribute(dataobj.hit_power, -11),
-            power_moves: this.calculateAttribute(dataobj.power_moves, -8, draft_round),
-            finesse_moves: this.calculateAttribute(dataobj.finesse_moves, -9, draft_round),
-            block_shedding: this.calculateAttribute(dataobj.block_shedding, -10, draft_round),
-            pursuit: this.calculateAttribute(dataobj.pursuit, -15, draft_round),
-            play_recognition: this.calculateAttribute(dataobj.play_recognition, -18, draft_round),
-            stamina: this.calculateAttribute(dataobj.stamina, -3),
-            injury: this.calculateAttribute(dataobj.injury, -2),
-            draft_round: draft_round
+            ...dataobj.speed && ({ speed: this.calculateAttribute(dataobj.speed, -1) }),
+            ...dataobj.acceleration && ({ acceleration: this.calculateAttribute(dataobj.acceleration, 0) }),
+            ...dataobj.agility && ({ agility: this.calculateAttribute(dataobj.agility, -5) }),
+            ...dataobj.awareness && ({ awareness: this.calculateAttribute(dataobj.awareness, -13, draft_round) }),
+            ...dataobj.strength && ({ strength: this.calculateAttribute(dataobj.strength, 0) }),
+            ...dataobj.tackling && ({ tackling: this.calculateAttribute(dataobj.tackling, -11, draft_round) }),
+            ...dataobj.hit_power && ({ hit_power: this.calculateAttribute(dataobj.hit_power, -11) }),
+            ...dataobj.power_moves && ({ power_moves: this.calculateAttribute(dataobj.power_moves, -8, draft_round) }),
+            ...dataobj.finesse_moves && ({ finesse_moves: this.calculateAttribute(dataobj.finesse_moves, -9, draft_round) }),
+            ...dataobj.block_shedding && ({ block_shedding: this.calculateAttribute(dataobj.block_shedding, -10, draft_round) }),
+            ...dataobj.pursuit && ({ pursuit: this.calculateAttribute(dataobj.pursuit, -15, draft_round) }),
+            ...dataobj.play_recognition && ({ play_recognition: this.calculateAttribute(dataobj.play_recognition, -18, draft_round) }),
+            ...dataobj.stamina && ({ stamina: this.calculateAttribute(dataobj.stamina, -3) }),
+            ...dataobj.injury && ({ injury: this.calculateAttribute(dataobj.injury, -2) }),
+            draft_round
           };
           break;
         }
@@ -279,25 +281,25 @@ export class editPlayerService {
           const dataobj = rawData as CornerBackDto;
           convertedAttributes = {
             ...convertedAttributes,
-            speed: this.calculateAttribute(dataobj.speed, -4),
-            acceleration: this.calculateAttribute(dataobj.acceleration, 0),
-            agility: this.calculateAttribute(dataobj.agility, 0),
-            change_of_direction: this.calculateAttribute(dataobj.change_of_direction, -2),
-            catching: this.calculateAttribute(dataobj.catching, -19, draft_round),
-            awareness: this.calculateAttribute(dataobj.awareness, -7, draft_round),
-            strength: this.calculateAttribute(dataobj.strength, -8),
-            jumping: this.calculateAttribute(dataobj.jumping, -1),
-            tackling: this.calculateAttribute(dataobj.tackling, -8, draft_round),
-            hit_power: this.calculateAttribute(dataobj.hit_power, -10),
-            pursuit: this.calculateAttribute(dataobj.pursuit, -13, draft_round),
-            play_recognition: this.calculateAttribute(dataobj.play_recognition, -15, draft_round),
-            man_coverage: this.calculateAttribute(dataobj.man_coverage, -13, draft_round),
-            zone_coverage: this.calculateAttribute(dataobj.zone_coverage, -13, draft_round),
-            press: this.calculateAttribute(dataobj.press, -10, draft_round),
-            return: this.calculateAttribute(dataobj.return, 0),
-            stamina: this.calculateAttribute(dataobj.stamina, -1),
-            injury: this.calculateAttribute(dataobj.injury, -1),
-            draft_round: draft_round
+            ...dataobj.speed && ({ speed: this.calculateAttribute(dataobj.speed, -4) }),
+            ...dataobj.acceleration && ({ acceleration: this.calculateAttribute(dataobj.acceleration, 0) }),
+            ...dataobj.agility && ({ agility: this.calculateAttribute(dataobj.agility, 0) }),
+            ...dataobj.change_of_direction && ({ change_of_direction: this.calculateAttribute(dataobj.change_of_direction, -2) }),
+            ...dataobj.catching && ({ catching: this.calculateAttribute(dataobj.catching, -19, draft_round) }),
+            ...dataobj.awareness && ({ awareness: this.calculateAttribute(dataobj.awareness, -7, draft_round) }),
+            ...dataobj.strength && ({ strength: this.calculateAttribute(dataobj.strength, -8) }),
+            ...dataobj.jumping && ({ jumping: this.calculateAttribute(dataobj.jumping, -1) }),
+            ...dataobj.tackling && ({ tackling: this.calculateAttribute(dataobj.tackling, -8, draft_round) }),
+            ...dataobj.hit_power && ({ hit_power: this.calculateAttribute(dataobj.hit_power, -10) }),
+            ...dataobj.pursuit && ({ pursuit: this.calculateAttribute(dataobj.pursuit, -13, draft_round) }),
+            ...dataobj.play_recognition && ({ play_recognition: this.calculateAttribute(dataobj.play_recognition, -15, draft_round) }),
+            ...dataobj.man_coverage && ({ man_coverage: this.calculateAttribute(dataobj.man_coverage, -13, draft_round) }),
+            ...dataobj.zone_coverage && ({ zone_coverage: this.calculateAttribute(dataobj.zone_coverage, -13, draft_round) }),
+            ...dataobj.press && ({ press: this.calculateAttribute(dataobj.press, -10, draft_round) }),
+            ...dataobj.return && ({ return: this.calculateAttribute(dataobj.return, 0) }),
+            ...dataobj.stamina && ({ stamina: this.calculateAttribute(dataobj.stamina, -1) }),
+            ...dataobj.injury && ({ injury: this.calculateAttribute(dataobj.injury, -1) }),
+            draft_round
           };
           break;
         }
@@ -307,25 +309,25 @@ export class editPlayerService {
           const dataobj = rawData as SafetyDto;
           convertedAttributes = {
             ...convertedAttributes,
-            speed: this.calculateAttribute(dataobj.speed, -1),
-            acceleration: this.calculateAttribute(dataobj.acceleration, -1),
-            agility: this.calculateAttribute(dataobj.agility, 1),
-            change_of_direction: this.calculateAttribute(dataobj.change_of_direction, -9),
-            catching: this.calculateAttribute(dataobj.catching, -22, draft_round),
-            awareness: this.calculateAttribute(dataobj.awareness, -8, draft_round),
-            strength: this.calculateAttribute(dataobj.strength, -11),
-            block_shed: this.calculateAttribute(dataobj.block_shed, -8, draft_round),
-            jumping: this.calculateAttribute(dataobj.jumping, -6),
-            tackling: this.calculateAttribute(dataobj.tackling, -7, draft_round),
-            hit_power: this.calculateAttribute(dataobj.hit_power, -8),
-            pursuit: this.calculateAttribute(dataobj.pursuit, -11, draft_round),
-            play_recognition: this.calculateAttribute(dataobj.play_recognition, -18, draft_round),
-            man_coverage: this.calculateAttribute(dataobj.man_coverage, -6, draft_round),
-            zone_coverage: this.calculateAttribute(dataobj.zone_coverage, -15, draft_round),
-            press: this.calculateAttribute(dataobj.press, -6, draft_round),
-            stamina: this.calculateAttribute(dataobj.stamina, -1),
-            injury: this.calculateAttribute(dataobj.injury, -1),
-            draft_round: draft_round
+            ...dataobj.speed && ({ speed: this.calculateAttribute(dataobj.speed, -1) }),
+            ...dataobj.acceleration && ({ acceleration: this.calculateAttribute(dataobj.acceleration, -1) }),
+            ...dataobj.agility && ({ agility: this.calculateAttribute(dataobj.agility, 1) }),
+            ...dataobj.change_of_direction && ({ change_of_direction: this.calculateAttribute(dataobj.change_of_direction, -9) }),
+            ...dataobj.catching && ({ catching: this.calculateAttribute(dataobj.catching, -22, draft_round) }),
+            ...dataobj.awareness && ({ awareness: this.calculateAttribute(dataobj.awareness, -8, draft_round) }),
+            ...dataobj.strength && ({ strength: this.calculateAttribute(dataobj.strength, -11) }),
+            ...dataobj.block_shed && ({ block_shed: this.calculateAttribute(dataobj.block_shed, -8, draft_round) }),
+            ...dataobj.jumping && ({ jumping: this.calculateAttribute(dataobj.jumping, -6) }),
+            ...dataobj.tackling && ({ tackling: this.calculateAttribute(dataobj.tackling, -7, draft_round) }),
+            ...dataobj.hit_power && ({ hit_power: this.calculateAttribute(dataobj.hit_power, -8) }),
+            ...dataobj.pursuit && ({ pursuit: this.calculateAttribute(dataobj.pursuit, -11, draft_round) }),
+            ...dataobj.play_recognition && ({ play_recognition: this.calculateAttribute(dataobj.play_recognition, -18, draft_round) }),
+            ...dataobj.man_coverage && ({ man_coverage: this.calculateAttribute(dataobj.man_coverage, -6, draft_round) }),
+            ...dataobj.zone_coverage && ({ zone_coverage: this.calculateAttribute(dataobj.zone_coverage, -15, draft_round) }),
+            ...dataobj.press && ({ press: this.calculateAttribute(dataobj.press, -6, draft_round) }),
+            ...dataobj.stamina && ({ stamina: this.calculateAttribute(dataobj.stamina, -1) }),
+            ...dataobj.injury && ({ injury: this.calculateAttribute(dataobj.injury, -1) }),
+            draft_round
           };
           break;
         }
@@ -335,20 +337,20 @@ export class editPlayerService {
           const dataobj = rawData as LeftGaurdDto;
           convertedAttributes = {
             ...convertedAttributes,
-            speed: this.calculateAttribute(dataobj.speed, 0),
-            acceleration: this.calculateAttribute(dataobj.acceleration, -3),
-            awareness: this.calculateAttribute(dataobj.awareness, -9, draft_round),
-            agility: this.calculateAttribute(dataobj.agility, -12),
-            lead_block: this.calculateAttribute(dataobj.lead_block, -8, draft_round),
-            impact_block: this.calculateAttribute(dataobj.impact_blocking, -3, draft_round),
-            run_block: this.calculateAttribute(dataobj.run_blocking, -16, draft_round),
-            pass_block: this.calculateAttribute(dataobj.pass_blocking, -12, draft_round),
-            pass_block_power: this.calculateAttribute(dataobj.pass_block_power, -15, draft_round),
-            pass_block_finesse: this.calculateAttribute(dataobj.pass_block_finesse, -16, draft_round),
-            run_block_power: this.calculateAttribute(dataobj.run_block_power, -16, draft_round),
-            run_block_finesse: this.calculateAttribute(dataobj.run_block_finesse, -16, draft_round),
-            stamina: this.calculateAttribute(dataobj.stamina, -1),
-            injury: this.calculateAttribute(dataobj.injury, -1),
+            ...dataobj.speed && { speed: this.calculateAttribute(dataobj.speed, 0) },
+            ...dataobj.acceleration && { acceleration: this.calculateAttribute(dataobj.acceleration, -3) },
+            ...dataobj.awareness && { awareness: this.calculateAttribute(dataobj.awareness, -9, draft_round) },
+            ...dataobj.agility && { agility: this.calculateAttribute(dataobj.agility, -12) },
+            ...dataobj.lead_block && { lead_block: this.calculateAttribute(dataobj.lead_block, -8, draft_round) },
+            ...dataobj.impact_blocking && { impact_block: this.calculateAttribute(dataobj.impact_blocking, -3, draft_round) },
+            ...dataobj.run_blocking && { run_block: this.calculateAttribute(dataobj.run_blocking, -16, draft_round) },
+            ...dataobj.pass_blocking && { pass_block: this.calculateAttribute(dataobj.pass_blocking, -12, draft_round) },
+            ...dataobj.pass_block_power && { pass_block_power: this.calculateAttribute(dataobj.pass_block_power, -15, draft_round) },
+            ...dataobj.pass_block_finesse && { pass_block_finesse: this.calculateAttribute(dataobj.pass_block_finesse, -16, draft_round) },
+            ...dataobj.run_block_power && { run_block_power: this.calculateAttribute(dataobj.run_block_power, -16, draft_round) },
+            ...dataobj.run_block_finesse && { run_block_finesse: this.calculateAttribute(dataobj.run_block_finesse, -16, draft_round) },
+            ...dataobj.stamina && { stamina: this.calculateAttribute(dataobj.stamina, -1) },
+            ...dataobj.injury && { injury: this.calculateAttribute(dataobj.injury, -1) },
             draft_round: draft_round
           };
           break;
@@ -359,20 +361,20 @@ export class editPlayerService {
           const dataobj = rawData as RightGaurdDto;
           convertedAttributes = {
             ...convertedAttributes,
-            speed: this.calculateAttribute(dataobj.speed, 0),
-            acceleration: this.calculateAttribute(dataobj.acceleration, -3),
-            awareness: this.calculateAttribute(dataobj.awareness, -9, draft_round),
-            agility: this.calculateAttribute(dataobj.agility, -12),
-            lead_block: this.calculateAttribute(dataobj.lead_block, -8, draft_round),
-            impact_block: this.calculateAttribute(dataobj.impact_blocking, -3, draft_round),
-            run_block: this.calculateAttribute(dataobj.run_blocking, -16, draft_round),
-            pass_block: this.calculateAttribute(dataobj.pass_blocking, -12, draft_round),
-            pass_block_power: this.calculateAttribute(dataobj.pass_block_power, -15, draft_round),
-            pass_block_finesse: this.calculateAttribute(dataobj.pass_block_finesse, -16, draft_round),
-            run_block_power: this.calculateAttribute(dataobj.run_block_power, -16, draft_round),
-            run_block_finesse: this.calculateAttribute(dataobj.run_block_finesse, -16, draft_round),
-            stamina: this.calculateAttribute(dataobj.stamina, -1),
-            injury: this.calculateAttribute(dataobj.injury, -1),
+            ...dataobj.speed && { speed: this.calculateAttribute(dataobj.speed, 0) },
+            ...dataobj.acceleration && { acceleration: this.calculateAttribute(dataobj.acceleration, -3) },
+            ...dataobj.awareness && { awareness: this.calculateAttribute(dataobj.awareness, -9, draft_round) },
+            ...dataobj.agility && { agility: this.calculateAttribute(dataobj.agility, -12) },
+            ...dataobj.lead_block && { lead_block: this.calculateAttribute(dataobj.lead_block, -8, draft_round) },
+            ...dataobj.impact_blocking && { impact_block: this.calculateAttribute(dataobj.impact_blocking, -3, draft_round) },
+            ...dataobj.run_blocking && { run_block: this.calculateAttribute(dataobj.run_blocking, -16, draft_round) },
+            ...dataobj.pass_blocking && { pass_block: this.calculateAttribute(dataobj.pass_blocking, -12, draft_round) },
+            ...dataobj.pass_block_power && { pass_block_power: this.calculateAttribute(dataobj.pass_block_power, -15, draft_round) },
+            ...dataobj.pass_block_finesse && { pass_block_finesse: this.calculateAttribute(dataobj.pass_block_finesse, -16, draft_round) },
+            ...dataobj.run_block_power && { run_block_power: this.calculateAttribute(dataobj.run_block_power, -16, draft_round) },
+            ...dataobj.run_block_finesse && { run_block_finesse: this.calculateAttribute(dataobj.run_block_finesse, -16, draft_round) },
+            ...dataobj.stamina && { stamina: this.calculateAttribute(dataobj.stamina, -1) },
+            ...dataobj.injury && { injury: this.calculateAttribute(dataobj.injury, -1) },
             draft_round: draft_round
           };
           break;
@@ -383,21 +385,21 @@ export class editPlayerService {
           const dataobj = rawData as LeftTackleDto;
           convertedAttributes = {
             ...convertedAttributes,
-            speed: this.calculateAttribute(dataobj.speed, -5),
-            acceleration: this.calculateAttribute(dataobj.acceleration, -5),
-            awareness: this.calculateAttribute(dataobj.awareness, -10, draft_round),
-            agility: this.calculateAttribute(dataobj.agility, -5),
-            strength: this.calculateAttribute(dataobj.strength, -2),
-            lead_block: this.calculateAttribute(dataobj.lead_block, -5, draft_round),
-            impact_block: this.calculateAttribute(dataobj.impact_block, -5, draft_round),
-            run_block: this.calculateAttribute(dataobj.run_block, -5, draft_round),
-            pass_block: this.calculateAttribute(dataobj.pass_block, -5, draft_round),
-            pass_block_power: this.calculateAttribute(dataobj.pass_block_power, -5, draft_round),
-            pass_block_finesse: this.calculateAttribute(dataobj.pass_block_finesse, -5, draft_round),
-            run_block_power: this.calculateAttribute(dataobj.run_block_power, -5, draft_round),
-            run_block_finesse: this.calculateAttribute(dataobj.run_block_finesse, -5, draft_round),
-            stamina: this.calculateAttribute(dataobj.stamina, -1),
-            injury: this.calculateAttribute(dataobj.injury, -1),
+            ...dataobj.speed && { speed: this.calculateAttribute(dataobj.speed, -5) },
+            ...dataobj.acceleration && { acceleration: this.calculateAttribute(dataobj.acceleration, -5) },
+            ...dataobj.awareness && { awareness: this.calculateAttribute(dataobj.awareness, -10, draft_round) },
+            ...dataobj.agility && { agility: this.calculateAttribute(dataobj.agility, -5) },
+            ...dataobj.strength && { strength: this.calculateAttribute(dataobj.strength, -2) },
+            ...dataobj.lead_block && { lead_block: this.calculateAttribute(dataobj.lead_block, -5, draft_round) },
+            ...dataobj.impact_block && { impact_block: this.calculateAttribute(dataobj.impact_block, -5, draft_round) },
+            ...dataobj.run_block && { run_block: this.calculateAttribute(dataobj.run_block, -5, draft_round) },
+            ...dataobj.pass_block && { pass_block: this.calculateAttribute(dataobj.pass_block, -5, draft_round) },
+            ...dataobj.pass_block_power && { pass_block_power: this.calculateAttribute(dataobj.pass_block_power, -5, draft_round) },
+            ...dataobj.pass_block_finesse && { pass_block_finesse: this.calculateAttribute(dataobj.pass_block_finesse, -5, draft_round) },
+            ...dataobj.run_block_power && { run_block_power: this.calculateAttribute(dataobj.run_block_power, -5, draft_round) },
+            ...dataobj.run_block_finesse && { run_block_finesse: this.calculateAttribute(dataobj.run_block_finesse, -5, draft_round) },
+            ...dataobj.stamina && { stamina: this.calculateAttribute(dataobj.stamina, -1) },
+            ...dataobj.injury && { injury: this.calculateAttribute(dataobj.injury, -1) },
             draft_round: draft_round
           };
           break;
@@ -408,20 +410,20 @@ export class editPlayerService {
           const dataobj = rawData as RightTackleDto;
           convertedAttributes = {
             ...convertedAttributes,
-            speed: this.calculateAttribute(dataobj.speed, -6),
-            acceleration: this.calculateAttribute(dataobj.acceleration, -5),
-            awareness: this.calculateAttribute(dataobj.awareness, -8, draft_round),
-            agility: this.calculateAttribute(dataobj.agility, -13),
-            strength: this.calculateAttribute(dataobj.strength, 1),
-            lead_block: this.calculateAttribute(dataobj.lead_block, -9, draft_round),
-            impact_block: this.calculateAttribute(dataobj.impact_block, -6, draft_round),
-            run_block: this.calculateAttribute(dataobj.run_block, -15, draft_round),
-            pass_block: this.calculateAttribute(dataobj.pass_block, -13, draft_round),
-            pass_block_finesse: this.calculateAttribute(dataobj.pass_block_finesse, -14, draft_round),
-            run_block_power: this.calculateAttribute(dataobj.run_block_power, -18, draft_round),
-            run_block_finesse: this.calculateAttribute(dataobj.run_block_finesse, -14, draft_round),
-            stamina: this.calculateAttribute(dataobj.stamina, -1),
-            injury: this.calculateAttribute(dataobj.injury, -1),
+            ...dataobj.speed && { speed: this.calculateAttribute(dataobj.speed, -6) },
+            ...dataobj.acceleration && { acceleration: this.calculateAttribute(dataobj.acceleration, -5) },
+            ...dataobj.awareness && { awareness: this.calculateAttribute(dataobj.awareness, -8, draft_round) },
+            ...dataobj.agility && { agility: this.calculateAttribute(dataobj.agility, -13) },
+            ...dataobj.strength && { strength: this.calculateAttribute(dataobj.strength, 1) },
+            ...dataobj.lead_block && { lead_block: this.calculateAttribute(dataobj.lead_block, -9, draft_round) },
+            ...dataobj.impact_block && { impact_block: this.calculateAttribute(dataobj.impact_block, -6, draft_round) },
+            ...dataobj.run_block && { run_block: this.calculateAttribute(dataobj.run_block, -15, draft_round) },
+            ...dataobj.pass_block && { pass_block: this.calculateAttribute(dataobj.pass_block, -13, draft_round) },
+            ...dataobj.pass_block_finesse && { pass_block_finesse: this.calculateAttribute(dataobj.pass_block_finesse, -14, draft_round) },
+            ...dataobj.run_block_power && { run_block_power: this.calculateAttribute(dataobj.run_block_power, -18, draft_round) },
+            ...dataobj.run_block_finesse && { run_block_finesse: this.calculateAttribute(dataobj.run_block_finesse, -14, draft_round) },
+            ...dataobj.stamina && { stamina: this.calculateAttribute(dataobj.stamina, -1) },
+            ...dataobj.injury && { injury: this.calculateAttribute(dataobj.injury, -1) },
             draft_round: draft_round
           };
           break;
@@ -432,20 +434,20 @@ export class editPlayerService {
           const dataobj = rawData as LeftEndDTO;
           convertedAttributes = {
             ...convertedAttributes,
-            speed: this.calculateAttribute(dataobj.speed, -4),
-            acceleration: this.calculateAttribute(dataobj.acceleration, -2),
-            agility: this.calculateAttribute(dataobj.agility, -14),
-            awareness: this.calculateAttribute(dataobj.awareness, -15, draft_round),
-            strength: this.calculateAttribute(dataobj.strength, -2),
-            tackling: this.calculateAttribute(dataobj.tackling, -13, draft_round),
-            hit_power: this.calculateAttribute(dataobj.hit_power, -6),
-            power_moves: this.calculateAttribute(dataobj.power_moves, -13, draft_round),
-            finesse_moves: this.calculateAttribute(dataobj.finesse_moves, -8, draft_round),
-            block_shed: this.calculateAttribute(dataobj.block_shed, -16, draft_round),
-            pursuit: this.calculateAttribute(dataobj.pursuit, -16, draft_round),
-            play_recognition: this.calculateAttribute(dataobj.play_recognition, -24, draft_round),
-            stamina: this.calculateAttribute(dataobj.stamina, -1),
-            injury: this.calculateAttribute(dataobj.injury, -1),
+            ...dataobj.speed && { speed: this.calculateAttribute(dataobj.speed, -4) },
+            ...dataobj.acceleration && { acceleration: this.calculateAttribute(dataobj.acceleration, -2) },
+            ...dataobj.agility && { agility: this.calculateAttribute(dataobj.agility, -14) },
+            ...dataobj.awareness && { awareness: this.calculateAttribute(dataobj.awareness, -15, draft_round) },
+            ...dataobj.strength && { strength: this.calculateAttribute(dataobj.strength, -2) },
+            ...dataobj.tackling && { tackling: this.calculateAttribute(dataobj.tackling, -13, draft_round) },
+            ...dataobj.hit_power && { hit_power: this.calculateAttribute(dataobj.hit_power, -6) },
+            ...dataobj.power_moves && { power_moves: this.calculateAttribute(dataobj.power_moves, -13, draft_round) },
+            ...dataobj.finesse_moves && { finesse_moves: this.calculateAttribute(dataobj.finesse_moves, -8, draft_round) },
+            ...dataobj.block_shed && { block_shed: this.calculateAttribute(dataobj.block_shed, -16, draft_round) },
+            ...dataobj.pursuit && { pursuit: this.calculateAttribute(dataobj.pursuit, -16, draft_round) },
+            ...dataobj.play_recognition && { play_recognition: this.calculateAttribute(dataobj.play_recognition, -24, draft_round) },
+            ...dataobj.stamina && { stamina: this.calculateAttribute(dataobj.stamina, -1) },
+            ...dataobj.injury && { injury: this.calculateAttribute(dataobj.injury, -1) },
             draft_round: draft_round
           };
           break;
@@ -456,44 +458,47 @@ export class editPlayerService {
           const dataobj = rawData as RightEndDTO;
           convertedAttributes = {
             ...convertedAttributes,
-            speed: this.calculateAttribute(dataobj.speed, -4),
-            acceleration: this.calculateAttribute(dataobj.acceleration, -2),
-            agility: this.calculateAttribute(dataobj.agility, -14),
-            awareness: this.calculateAttribute(dataobj.awareness, -15, draft_round),
-            strength: this.calculateAttribute(dataobj.strength, -2),
-            tackling: this.calculateAttribute(dataobj.tackling, -13, draft_round),
-            hit_power: this.calculateAttribute(dataobj.hit_power, -6),
-            power_moves: this.calculateAttribute(dataobj.power_moves, -13, draft_round),
-            finesse_moves: this.calculateAttribute(dataobj.finesse_moves, -8, draft_round),
-            block_shed: this.calculateAttribute(dataobj.block_shed, -16, draft_round),
-            pursuit: this.calculateAttribute(dataobj.pursuit, -16, draft_round),
-            play_recognition: this.calculateAttribute(dataobj.play_recognition, -24, draft_round),
-            stamina: this.calculateAttribute(dataobj.stamina, -1),
-            injury: this.calculateAttribute(dataobj.injury, -1),
+            ...dataobj.speed && { speed: this.calculateAttribute(dataobj.speed, -4) },
+            ...dataobj.acceleration && { acceleration: this.calculateAttribute(dataobj.acceleration, -2) },
+            ...dataobj.agility && { agility: this.calculateAttribute(dataobj.agility, -14) },
+            ...dataobj.awareness && { awareness: this.calculateAttribute(dataobj.awareness, -15, draft_round) },
+            ...dataobj.strength && { strength: this.calculateAttribute(dataobj.strength, -2) },
+            ...dataobj.tackling && { tackling: this.calculateAttribute(dataobj.tackling, -13, draft_round) },
+            ...dataobj.hit_power && { hit_power: this.calculateAttribute(dataobj.hit_power, -6) },
+            ...dataobj.power_moves && { power_moves: this.calculateAttribute(dataobj.power_moves, -13, draft_round) },
+            ...dataobj.finesse_moves && { finesse_moves: this.calculateAttribute(dataobj.finesse_moves, -8, draft_round) },
+            ...dataobj.block_shed && { block_shed: this.calculateAttribute(dataobj.block_shed, -16, draft_round) },
+            ...dataobj.pursuit && { pursuit: this.calculateAttribute(dataobj.pursuit, -16, draft_round) },
+            ...dataobj.play_recognition && { play_recognition: this.calculateAttribute(dataobj.play_recognition, -24, draft_round) },
+            ...dataobj.stamina && { stamina: this.calculateAttribute(dataobj.stamina, -1) },
+            ...dataobj.injury && { injury: this.calculateAttribute(dataobj.injury, -1) },
             draft_round: draft_round
           };
           break;
         }
+
+
+
 
         // Left Outside Linebacker (above 245 lbs)
         case POSTION_CODE.LeftOutside_linebacker_above_245_lbs: {
           const dataobj = rawData as Left_Outside_linebacker_above_245_lbsDTO;
           convertedAttributes = {
             ...convertedAttributes,
-            speed: this.calculateAttribute(dataobj.speed, -4),
-            acceleration: this.calculateAttribute(dataobj.acceleration, -2),
-            agility: this.calculateAttribute(dataobj.agility, -14),
-            awareness: this.calculateAttribute(dataobj.awareness, -15, draft_round),
-            strength: this.calculateAttribute(dataobj.strength, -2),
-            tackling: this.calculateAttribute(dataobj.tackling, -13, draft_round),
-            hit_power: this.calculateAttribute(dataobj.hit_power, -6),
-            power_moves: this.calculateAttribute(dataobj.power_moves, -13, draft_round),
-            finesse_moves: this.calculateAttribute(dataobj.finesse_moves, -8, draft_round),
-            block_shed: this.calculateAttribute(dataobj.block_shed, -16, draft_round),
-            pursuit: this.calculateAttribute(dataobj.pursuit, -16, draft_round),
-            play_recognition: this.calculateAttribute(dataobj.play_recognition, -24, draft_round),
-            stamina: this.calculateAttribute(dataobj.stamina, -1),
-            injury: this.calculateAttribute(dataobj.injury, -1),
+            ...dataobj.speed && { speed: this.calculateAttribute(dataobj.speed, -4) },
+            ...dataobj.acceleration && { acceleration: this.calculateAttribute(dataobj.acceleration, -2) },
+            ...dataobj.agility && { agility: this.calculateAttribute(dataobj.agility, -14) },
+            ...dataobj.awareness && { awareness: this.calculateAttribute(dataobj.awareness, -15, draft_round) },
+            ...dataobj.strength && { strength: this.calculateAttribute(dataobj.strength, -2) },
+            ...dataobj.tackling && { tackling: this.calculateAttribute(dataobj.tackling, -13, draft_round) },
+            ...dataobj.hit_power && { hit_power: this.calculateAttribute(dataobj.hit_power, -6) },
+            ...dataobj.power_moves && { power_moves: this.calculateAttribute(dataobj.power_moves, -13, draft_round) },
+            ...dataobj.finesse_moves && { finesse_moves: this.calculateAttribute(dataobj.finesse_moves, -8, draft_round) },
+            ...dataobj.block_shed && { block_shed: this.calculateAttribute(dataobj.block_shed, -16, draft_round) },
+            ...dataobj.pursuit && { pursuit: this.calculateAttribute(dataobj.pursuit, -16, draft_round) },
+            ...dataobj.play_recognition && { play_recognition: this.calculateAttribute(dataobj.play_recognition, -24, draft_round) },
+            ...dataobj.stamina && { stamina: this.calculateAttribute(dataobj.stamina, -1) },
+            ...dataobj.injury && { injury: this.calculateAttribute(dataobj.injury, -1) },
             draft_round: draft_round
           };
           break;
@@ -504,104 +509,114 @@ export class editPlayerService {
           const dataobj = rawData as Right_Outside_linebacker_above_245lbsDTO;
           convertedAttributes = {
             ...convertedAttributes,
-            speed: this.calculateAttribute(dataobj.speed, -4),
-            acceleration: this.calculateAttribute(dataobj.acceleration, -2),
-            agility: this.calculateAttribute(dataobj.agility, -14),
-            awareness: this.calculateAttribute(dataobj.awareness, -15, draft_round),
-            strength: this.calculateAttribute(dataobj.strength, -2),
-            tackling: this.calculateAttribute(dataobj.tackling, -13, draft_round),
-            hit_power: this.calculateAttribute(dataobj.hit_power, -6),
-            power_moves: this.calculateAttribute(dataobj.power_moves, -13, draft_round),
-            finesse_moves: this.calculateAttribute(dataobj.finesse_moves, -8, draft_round),
-            block_shed: this.calculateAttribute(dataobj.block_shed, -16, draft_round),
-            pursuit: this.calculateAttribute(dataobj.pursuit, -16, draft_round),
-            play_recognition: this.calculateAttribute(dataobj.play_recognition, -24, draft_round),
-            stamina: this.calculateAttribute(dataobj.stamina, -1),
-            injury: this.calculateAttribute(dataobj.injury, -1),
+            ...dataobj.speed && { speed: this.calculateAttribute(dataobj.speed, -4) },
+            ...dataobj.acceleration && { acceleration: this.calculateAttribute(dataobj.acceleration, -2) },
+            ...dataobj.agility && { agility: this.calculateAttribute(dataobj.agility, -14) },
+            ...dataobj.awareness && { awareness: this.calculateAttribute(dataobj.awareness, -15, draft_round) },
+            ...dataobj.strength && { strength: this.calculateAttribute(dataobj.strength, -2) },
+            ...dataobj.tackling && { tackling: this.calculateAttribute(dataobj.tackling, -13, draft_round) },
+            ...dataobj.hit_power && { hit_power: this.calculateAttribute(dataobj.hit_power, -6) },
+            ...dataobj.power_moves && { power_moves: this.calculateAttribute(dataobj.power_moves, -13, draft_round) },
+            ...dataobj.finesse_moves && { finesse_moves: this.calculateAttribute(dataobj.finesse_moves, -8, draft_round) },
+            ...dataobj.block_shed && { block_shed: this.calculateAttribute(dataobj.block_shed, -16, draft_round) },
+            ...dataobj.pursuit && { pursuit: this.calculateAttribute(dataobj.pursuit, -16, draft_round) },
+            ...dataobj.play_recognition && { play_recognition: this.calculateAttribute(dataobj.play_recognition, -24, draft_round) },
+            ...dataobj.stamina && { stamina: this.calculateAttribute(dataobj.stamina, -1) },
+            ...dataobj.injury && { injury: this.calculateAttribute(dataobj.injury, -1) },
             draft_round: draft_round
           };
           break;
         }
+
+
+
+
+
 
         // Left Outside Linebacker (below 245 lbs)
         case POSTION_CODE.LeftOutside_linebacker_below_245lbs: {
           const dataobj = rawData as LeftOutside_linebacker_below_245lbsDTO;
           convertedAttributes = {
             ...convertedAttributes,
-            speed: this.calculateAttribute(dataobj.speed, -4),
-            acceleration: this.calculateAttribute(dataobj.acceleration, -2),
-            agility: this.calculateAttribute(dataobj.agility, -2),
-            change_of_direction: this.calculateAttribute(dataobj.change_of_direction, -4),
-            awareness: this.calculateAttribute(dataobj.awareness, -9, draft_round),
-            strength: this.calculateAttribute(dataobj.strength, -7),
-            jumping: this.calculateAttribute(dataobj.jumping, -12),
-            tackling: this.calculateAttribute(dataobj.tackling, -7, draft_round),
-            hit_power: this.calculateAttribute(dataobj.hit_power, -3),
-            power_moves: this.calculateAttribute(dataobj.power_moves, -21, draft_round),
-            finesse_moves: this.calculateAttribute(dataobj.finesse_moves, -25, draft_round),
-            block_shedding: this.calculateAttribute(dataobj.block_shedding, -6, draft_round),
-            pursuit: this.calculateAttribute(dataobj.pursuit, -6, draft_round),
-            play_recognition: this.calculateAttribute(dataobj.play_recognition, -18, draft_round),
-            man_coverage: this.calculateAttribute(dataobj.man_coverage, -25, draft_round),
-            zone_coverage: this.calculateAttribute(dataobj.zone_coverage, -22, draft_round),
-            stamina: this.calculateAttribute(dataobj.stamina, -1),
-            injury: this.calculateAttribute(dataobj.injury, -1),
+            ...dataobj.speed && { speed: this.calculateAttribute(dataobj.speed, -4) },
+            ...dataobj.acceleration && { acceleration: this.calculateAttribute(dataobj.acceleration, -2) },
+            ...dataobj.agility && { agility: this.calculateAttribute(dataobj.agility, -2) },
+            ...dataobj.change_of_direction && { change_of_direction: this.calculateAttribute(dataobj.change_of_direction, -4) },
+            ...dataobj.awareness && { awareness: this.calculateAttribute(dataobj.awareness, -9, draft_round) },
+            ...dataobj.strength && { strength: this.calculateAttribute(dataobj.strength, -7) },
+            ...dataobj.jumping && { jumping: this.calculateAttribute(dataobj.jumping, -12) },
+            ...dataobj.tackling && { tackling: this.calculateAttribute(dataobj.tackling, -7, draft_round) },
+            ...dataobj.hit_power && { hit_power: this.calculateAttribute(dataobj.hit_power, -3) },
+            ...dataobj.power_moves && { power_moves: this.calculateAttribute(dataobj.power_moves, -21, draft_round) },
+            ...dataobj.finesse_moves && { finesse_moves: this.calculateAttribute(dataobj.finesse_moves, -25, draft_round) },
+            ...dataobj.block_shedding && { block_shedding: this.calculateAttribute(dataobj.block_shedding, -6, draft_round) },
+            ...dataobj.pursuit && { pursuit: this.calculateAttribute(dataobj.pursuit, -6, draft_round) },
+            ...dataobj.play_recognition && { play_recognition: this.calculateAttribute(dataobj.play_recognition, -18, draft_round) },
+            ...dataobj.man_coverage && { man_coverage: this.calculateAttribute(dataobj.man_coverage, -25, draft_round) },
+            ...dataobj.zone_coverage && { zone_coverage: this.calculateAttribute(dataobj.zone_coverage, -22, draft_round) },
+            ...dataobj.stamina && { stamina: this.calculateAttribute(dataobj.stamina, -1) },
+            ...dataobj.injury && { injury: this.calculateAttribute(dataobj.injury, -1) },
             draft_round: draft_round
           };
           break;
         }
+
+
+
+
 
         // Right Outside Linebacker (below 245 lbs)
         case POSTION_CODE.RightOutside_linebacker_below_245lbs: {
           const dataobj = rawData as RightOutside_linebacker_below_245lbsDTO;
           convertedAttributes = {
             ...convertedAttributes,
-            speed: this.calculateAttribute(dataobj.speed, -4),
-            acceleration: this.calculateAttribute(dataobj.acceleration, -2),
-            agility: this.calculateAttribute(dataobj.agility, -2),
-            change_of_direction: this.calculateAttribute(dataobj.change_of_direction, -4),
-            awareness: this.calculateAttribute(dataobj.awareness, -9, draft_round),
-            strength: this.calculateAttribute(dataobj.strength, -7),
-            jumping: this.calculateAttribute(dataobj.jumping, -12),
-            tackling: this.calculateAttribute(dataobj.tackling, -7, draft_round),
-            hit_power: this.calculateAttribute(dataobj.hit_power, -3),
-            power_moves: this.calculateAttribute(dataobj.power_moves, -21, draft_round),
-            finesse_moves: this.calculateAttribute(dataobj.finesse_moves, -25, draft_round),
-            block_shedding: this.calculateAttribute(dataobj.block_shedding, -6, draft_round),
-            pursuit: this.calculateAttribute(dataobj.pursuit, -6, draft_round),
-            play_recognition: this.calculateAttribute(dataobj.play_recognition, -18, draft_round),
-            man_coverage: this.calculateAttribute(dataobj.man_coverage, -25, draft_round),
-            zone_coverage: this.calculateAttribute(dataobj.zone_coverage, -22, draft_round),
-            stamina: this.calculateAttribute(dataobj.stamina, -1),
-            injury: this.calculateAttribute(dataobj.injury, -1),
+            ...dataobj.speed && { speed: this.calculateAttribute(dataobj.speed, -4) },
+            ...dataobj.acceleration && { acceleration: this.calculateAttribute(dataobj.acceleration, -2) },
+            ...dataobj.agility && { agility: this.calculateAttribute(dataobj.agility, -2) },
+            ...dataobj.change_of_direction && { change_of_direction: this.calculateAttribute(dataobj.change_of_direction, -4) },
+            ...dataobj.awareness && { awareness: this.calculateAttribute(dataobj.awareness, -9, draft_round) },
+            ...dataobj.strength && { strength: this.calculateAttribute(dataobj.strength, -7) },
+            ...dataobj.jumping && { jumping: this.calculateAttribute(dataobj.jumping, -12) },
+            ...dataobj.tackling && { tackling: this.calculateAttribute(dataobj.tackling, -7, draft_round) },
+            ...dataobj.hit_power && { hit_power: this.calculateAttribute(dataobj.hit_power, -3) },
+            ...dataobj.power_moves && { power_moves: this.calculateAttribute(dataobj.power_moves, -21, draft_round) },
+            ...dataobj.finesse_moves && { finesse_moves: this.calculateAttribute(dataobj.finesse_moves, -25, draft_round) },
+            ...dataobj.block_shedding && { block_shedding: this.calculateAttribute(dataobj.block_shedding, -6, draft_round) },
+            ...dataobj.pursuit && { pursuit: this.calculateAttribute(dataobj.pursuit, -6, draft_round) },
+            ...dataobj.play_recognition && { play_recognition: this.calculateAttribute(dataobj.play_recognition, -18, draft_round) },
+            ...dataobj.man_coverage && { man_coverage: this.calculateAttribute(dataobj.man_coverage, -25, draft_round) },
+            ...dataobj.zone_coverage && { zone_coverage: this.calculateAttribute(dataobj.zone_coverage, -22, draft_round) },
+            ...dataobj.stamina && { stamina: this.calculateAttribute(dataobj.stamina, -1) },
+            ...dataobj.injury && { injury: this.calculateAttribute(dataobj.injury, -1) },
             draft_round: draft_round
           };
           break;
         }
 
+        // DONE UPTIL NOW
         // Middle Linebacker
         case POSTION_CODE.All_Middle_Linebackers: {
           const dataobj = rawData as All_Middle_LinebackersDTO;
           convertedAttributes = {
             ...convertedAttributes,
-            speed: this.calculateAttribute(dataobj.speed, -4),
-            acceleration: this.calculateAttribute(dataobj.acceleration, -2),
-            agility: this.calculateAttribute(dataobj.agility, -2),
-            change_of_direction: this.calculateAttribute(dataobj.change_of_direction, -4),
-            awareness: this.calculateAttribute(dataobj.awareness, -9, draft_round),
-            strength: this.calculateAttribute(dataobj.strength, -7),
-            jumping: this.calculateAttribute(dataobj.jumping, -12),
-            tackling: this.calculateAttribute(dataobj.tackling, -7, draft_round),
-            hit_power: this.calculateAttribute(dataobj.hit_power, -3),
-            power_moves: this.calculateAttribute(dataobj.power_moves, -21, draft_round),
-            finesse_moves: this.calculateAttribute(dataobj.finesse_moves, -25, draft_round),
-            block_shedding: this.calculateAttribute(dataobj.block_shedding, -6, draft_round),
-            pursuit: this.calculateAttribute(dataobj.pursuit, -6, draft_round),
-            play_recognition: this.calculateAttribute(dataobj.play_recognition, -18, draft_round),
-            man_coverage: this.calculateAttribute(dataobj.man_coverage, -25, draft_round),
-            zone_coverage: this.calculateAttribute(dataobj.zone_coverage, -22, draft_round),
-            stamina: this.calculateAttribute(dataobj.stamina, -1),
-            injury: this.calculateAttribute(dataobj.injury, -1),
+            ...dataobj.speed && { speed: this.calculateAttribute(dataobj.speed, -4) },
+            ...dataobj.acceleration && { acceleration: this.calculateAttribute(dataobj.acceleration, -2) },
+            ...dataobj.agility && { agility: this.calculateAttribute(dataobj.agility, -2) },
+            ...dataobj.change_of_direction && { change_of_direction: this.calculateAttribute(dataobj.change_of_direction, -4) },
+            ...dataobj.awareness && { awareness: this.calculateAttribute(dataobj.awareness, -9, draft_round) },
+            ...dataobj.strength && { strength: this.calculateAttribute(dataobj.strength, -7) },
+            ...dataobj.jumping && { jumping: this.calculateAttribute(dataobj.jumping, -12) },
+            ...dataobj.tackling && { tackling: this.calculateAttribute(dataobj.tackling, -7, draft_round) },
+            ...dataobj.hit_power && { hit_power: this.calculateAttribute(dataobj.hit_power, -3) },
+            ...dataobj.power_moves && { power_moves: this.calculateAttribute(dataobj.power_moves, -21, draft_round) },
+            ...dataobj.finesse_moves && { finesse_moves: this.calculateAttribute(dataobj.finesse_moves, -25, draft_round) },
+            ...dataobj.block_shedding && { block_shedding: this.calculateAttribute(dataobj.block_shedding, -6, draft_round) },
+            ...dataobj.pursuit && { pursuit: this.calculateAttribute(dataobj.pursuit, -6, draft_round) },
+            ...dataobj.play_recognition && { play_recognition: this.calculateAttribute(dataobj.play_recognition, -18, draft_round) },
+            ...dataobj.man_coverage && { man_coverage: this.calculateAttribute(dataobj.man_coverage, -25, draft_round) },
+            ...dataobj.zone_coverage && { zone_coverage: this.calculateAttribute(dataobj.zone_coverage, -22, draft_round) },
+            ...dataobj.stamina && { stamina: this.calculateAttribute(dataobj.stamina, -1) },
+            ...dataobj.injury && { injury: this.calculateAttribute(dataobj.injury, -1) },
             draft_round: draft_round
           };
           break;
@@ -612,11 +627,11 @@ export class editPlayerService {
           const dataobj = rawData as KickerDto;
           convertedAttributes = {
             ...convertedAttributes,
-            kick_power: this.calculateAttribute(dataobj.kick_power, 0),
-            awareness: this.calculateAttribute(dataobj.awareness, -19),
-            kick_accuracy: this.calculateAttribute(dataobj.kick_accuracy, -3),
-            speed: this.calculateAttribute(dataobj.speed, -8),
-            acceleration: this.calculateAttribute(dataobj.acceleration, 7),
+            ...dataobj.kick_power && { kick_power: this.calculateAttribute(dataobj.kick_power, 0) },
+            ...dataobj.awareness && { awareness: this.calculateAttribute(dataobj.awareness, -19) },
+            ...dataobj.kick_accuracy && { kick_accuracy: this.calculateAttribute(dataobj.kick_accuracy, -3) },
+            ...dataobj.speed && { speed: this.calculateAttribute(dataobj.speed, -8) },
+            ...dataobj.acceleration && { acceleration: this.calculateAttribute(dataobj.acceleration, 7) },
             draft_round: draft_round
           };
           break;
@@ -627,11 +642,11 @@ export class editPlayerService {
           const dataobj = rawData as PunterDto;
           convertedAttributes = {
             ...convertedAttributes,
-            kick_power: this.calculateAttribute(dataobj.kick_power, 0),
-            awareness: this.calculateAttribute(dataobj.awareness, -21),
-            kick_accuracy: this.calculateAttribute(dataobj.kick_accuracy, -3),
-            speed: this.calculateAttribute(dataobj.speed, -7),
-            acceleration: this.calculateAttribute(dataobj.acceleration, -7),
+            ...dataobj.kick_power && { kick_power: this.calculateAttribute(dataobj.kick_power, 0) },
+            ...dataobj.awareness && { awareness: this.calculateAttribute(dataobj.awareness, -21) },
+            ...dataobj.kick_accuracy && { kick_accuracy: this.calculateAttribute(dataobj.kick_accuracy, -3) },
+            ...dataobj.speed && { speed: this.calculateAttribute(dataobj.speed, -7) },
+            ...dataobj.acceleration && { acceleration: this.calculateAttribute(dataobj.acceleration, -7) },
             draft_round: draft_round
           };
           break;
@@ -642,29 +657,29 @@ export class editPlayerService {
           const dataobj = rawData as FullBackDto;
           convertedAttributes = {
             ...convertedAttributes,
-            speed: this.calculateAttribute(dataobj.speed, 5),
-            acceleration: this.calculateAttribute(dataobj.acceleration, -4),
-            agility: this.calculateAttribute(dataobj.agility, 3),
-            stamina: this.calculateAttribute(dataobj.stamina, -1),
-            change_of_direction: this.calculateAttribute(dataobj.change_of_direction, 1),
-            lead_block: this.calculateAttribute(dataobj.lead_block, -8),
-            run_block: this.calculateAttribute(dataobj.run_block, -12),
-            pass_block: this.calculateAttribute(dataobj.pass_block, -15),
-            pass_block_power: this.calculateAttribute(dataobj.pass_block_power, -6),
-            run_block_power: this.calculateAttribute(dataobj.run_block_power, -1),
-            pass_block_finesse: this.calculateAttribute(dataobj.pass_block_finesse, -8),
-            run_block_finesse: this.calculateAttribute(dataobj.run_block_finesse, -4),
-            carrying: this.calculateAttribute(dataobj.carrying, -7),
-            catching: this.calculateAttribute(dataobj.catching, -1),
-            catch_in_traffic: this.calculateAttribute(dataobj.catch_in_traffic, 19),
-            short_route_running: this.calculateAttribute(dataobj.short_route_running, -10),
-            medium_route_running: this.calculateAttribute(dataobj.medium_route_running, -10),
-            injury: this.calculateAttribute(dataobj.injury, -1),
-            strength: this.calculateAttribute(dataobj.strength, 4),
-            impact_block: this.calculateAttribute(dataobj.impact_blocking, -4),
-            stiff_arm: this.calculateAttribute(dataobj.stiff_arm, 8),
-            trucking: this.calculateAttribute(dataobj.trucking, -1),
-            awareness: this.calculateAttribute(dataobj.awareness, -3),
+            ...dataobj.speed && { speed: this.calculateAttribute(dataobj.speed, 5) },
+            ...dataobj.acceleration && { acceleration: this.calculateAttribute(dataobj.acceleration, -4) },
+            ...dataobj.agility && { agility: this.calculateAttribute(dataobj.agility, 3) },
+            ...dataobj.stamina && { stamina: this.calculateAttribute(dataobj.stamina, -1) },
+            ...dataobj.change_of_direction && { change_of_direction: this.calculateAttribute(dataobj.change_of_direction, 1) },
+            ...dataobj.lead_block && { lead_block: this.calculateAttribute(dataobj.lead_block, -8) },
+            ...dataobj.run_block && { run_block: this.calculateAttribute(dataobj.run_block, -12) },
+            ...dataobj.pass_block && { pass_block: this.calculateAttribute(dataobj.pass_block, -15) },
+            ...dataobj.pass_block_power && { pass_block_power: this.calculateAttribute(dataobj.pass_block_power, -6) },
+            ...dataobj.run_block_power && { run_block_power: this.calculateAttribute(dataobj.run_block_power, -1) },
+            ...dataobj.pass_block_finesse && { pass_block_finesse: this.calculateAttribute(dataobj.pass_block_finesse, -8) },
+            ...dataobj.run_block_finesse && { run_block_finesse: this.calculateAttribute(dataobj.run_block_finesse, -4) },
+            ...dataobj.carrying && { carrying: this.calculateAttribute(dataobj.carrying, -7) },
+            ...dataobj.catching && { catching: this.calculateAttribute(dataobj.catching, -1) },
+            ...dataobj.catch_in_traffic && { catch_in_traffic: this.calculateAttribute(dataobj.catch_in_traffic, 19) },
+            ...dataobj.short_route_running && { short_route_running: this.calculateAttribute(dataobj.short_route_running, -10) },
+            ...dataobj.medium_route_running && { medium_route_running: this.calculateAttribute(dataobj.medium_route_running, -10) },
+            ...dataobj.injury && { injury: this.calculateAttribute(dataobj.injury, -1) },
+            ...dataobj.strength && { strength: this.calculateAttribute(dataobj.strength, 4) },
+            ...dataobj.impact_blocking && { impact_block: this.calculateAttribute(dataobj.impact_blocking, -4) },
+            ...dataobj.stiff_arm && { stiff_arm: this.calculateAttribute(dataobj.stiff_arm, 8) },
+            ...dataobj.trucking && { trucking: this.calculateAttribute(dataobj.trucking, -1) },
+            ...dataobj.awareness && { awareness: this.calculateAttribute(dataobj.awareness, -3) },
             draft_round: draft_round
           };
           break;
@@ -690,7 +705,7 @@ export class editPlayerService {
         id: player.id,
         name: player.name,
         positionCode: player.position.code,
-        updatedAttributes: this.filterNullValues({
+        attributes: this.filterNullValues({
           ...this.filterNullValues(latestAttr),
           draft_round: draft_round
         }),

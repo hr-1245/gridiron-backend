@@ -116,7 +116,7 @@ export class PlayerDataService {
       await this.playerRepo.save(player);
 
       return {
-        message: 'Player card deleted successfully (soft deleted)',
+        message: 'Player card has been successfully removed',
       };
     } catch (error) {
       throw new InternalServerErrorException('Player not Found');
@@ -130,48 +130,41 @@ export class PlayerDataService {
     searchName?: string,
   ): Promise<playerDraftFolderEntity[]> {
     try {
-      let where: any = { user: { id: userId } };
-
-      if (searchName) {
-        where = {
-          ...where,
-          name: ILike(`%${searchName}%`),
-          players: {
-            name: ILike(`%${searchName}%`),
-            homeTown: ILike(`%${searchName}%`),
-            position: {
-              name: ILike(`%${searchName}%`),
-            },
-          },
-        };
-      }
+      const qb = this.playerDraftRepo.createQueryBuilder('folder')
+        .leftJoinAndSelect('folder.players', 'player')
+        .leftJoinAndSelect('player.position', 'position')
+        .where('folder.userId = :userId', { userId });
 
       if (searchId) {
-        where = { ...where, id: searchId };
+        qb.andWhere('folder.id = :searchId', { searchId });
       }
 
-      const data = await this.playerDraftRepo.find({
-        where: where,
-        relations: {
-          players: true,
-        },
-        order: { createdAt: 'DESC' },
-      });
+      if (searchName) {
+        qb.andWhere(
+          new Brackets(qb => {
+            qb.where('folder.name ILIKE :search')
+              .orWhere('player.name ILIKE :search')
+              .orWhere('player.homeTown ILIKE :search')
+              .orWhere('position.name ILIKE :search');
+          }),
+          { search: `%${searchName}%` },
+        );
+      }
 
-      data.forEach(draftFolder => {
-        draftFolder.players = draftFolder.players.filter(player => player.isActive === playerStatusEnum.ISACTIVE);
+      qb.orderBy('folder.createdAt', 'DESC');
+
+      const data = await qb.getMany();
+
+      // Filter out inactive players
+      data.forEach(folder => {
+        folder.players = folder.players.filter(player => player.isActive === playerStatusEnum.ISACTIVE);
       });
 
       return data;
-
     } catch (error) {
       throw new Error(`Error fetching draft folders: ${error.message}`);
     }
   }
-
-
-
-
 
   async getPlayerById(playerId: number): Promise<{ message: string; data: PlayerEntity }> {
     const player = await this.playerRepo.findOne({
@@ -197,13 +190,25 @@ export class PlayerDataService {
 
   async getDraftFolderById(id: number, user: userjwtInterface) {
     try {
-      const draftFolder = await this.playerDraftRepo.findOne({ where: { id, user: { id: user.id } }, relations: { players: { position: true } } })
+      const draftFolder = await this.playerDraftRepo.findOne({
+        where: { id, user: { id: user.id } },
+        relations: {
+          players: {
+            position: true,
+          },
+        },
+      });
 
-      if (!draftFolder) throw new NotFoundException('Draft folder not found.')
+      if (!draftFolder) throw new NotFoundException('Draft folder not found.');
+
+      // Filter only active players
+      draftFolder.players = draftFolder.players.filter(
+        player => player.isActive === playerStatusEnum.ISACTIVE
+      );
 
       return draftFolder;
     } catch (error) {
-      throw new InternalServerErrorException('Draft folder not Found');
+      throw new InternalServerErrorException('Draft folder not found');
     }
   }
 }

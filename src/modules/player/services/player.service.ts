@@ -25,21 +25,22 @@ export class playerService {
 
   ) {
   }
-  //-- Get All Position with Their Attributes ----------------------
 
+  private clampAttribute(value: number, adjustment: number, draftRound: number = 0, min: number = 0, max: number = 99): number {
+    const adjusted = value + adjustment - draftRound;
+    return Math.min(max, Math.max(min, adjusted));
+  }
+
+  //-- Get All Position with Their Attributes ----------------------
   async getAllPositionDropDown(): Promise<any> {
     const data = await this.playerPositionRepo.find({
       relations: { attributeMappings: true }
     });
 
     const cleanedData = data.map(position => ({
-      positionId: position.id, // or position.positionId if that's the actual property
+      positionId: position.id,
       code: position.code,
       name: position.name,
-      // attributeMappings: position.attributeMappings.map(attr => ({
-      //   attributeKey: attr.attributeKey,
-      //   displayOrder: attr.displayOrder
-      // }))
     }));
 
     return {
@@ -47,7 +48,6 @@ export class playerService {
       data: cleanedData
     };
   }
-
   async getDraftFolderDropdown(user: userjwtInterface) {
     try {
       const draftFolders = await this.playerFolderepo.find({
@@ -63,8 +63,6 @@ export class playerService {
       console.log(error)
     }
   }
-
-
   async conversionLogic(obj: ConversionDto, userId: number): Promise<any> {
     try {
       const {
@@ -145,7 +143,6 @@ export class playerService {
 
         player = await this.playerRepo.save(newPlayer);
       } else {
-        // Update existing player with draft folder if needed
         if (draftFolder && !player.draftFolder) {
           player.draftFolder = { id: draftFolder.id } as any;
           await this.playerRepo.save(player);
@@ -165,42 +162,40 @@ export class playerService {
 
       switch (obj.positionCode || obj.player_class) {
         /////----------------------TE CONVERISON =----------
-
         case POSTION_CODE.TightEnd:
           dataobj = rawData as TightEndDto;
-
           const convertedData = {
             age: calculatedAge,
-            speed: dataobj.speed + 0,
-            acceleration: dataobj.acceleration + 2,
-            agility: dataobj.agility + 1,
-            changeOfDirecton: dataobj.change_of_direction + 3,
-            strength: dataobj.strength - 3,
-            awareness: dataobj.awareness - 4,
-            breakTackle: dataobj.break_tackle - 2 - (draft_round),
-            catchInTraffic: dataobj.catch_in_traffic - 1 - (draft_round),
-            spectacularCatch: dataobj.spectacular_catch + 0 - (draft_round),
-            release: dataobj.release + 2 - (draft_round),
-            passBlock: dataobj.pass_block - 14 - (draft_round),
-            passBlockPower: dataobj.pass_block_power - 14 - (draft_round),
-            passBlockFinesse: dataobj.pass_block_finesse - 10 - (draft_round),
-            runBlock: dataobj.run_block - 11 - (draft_round),
-            runBlockPower: dataobj.run_block_power - 12 - (draft_round),
-            runBlockfinesse: dataobj.run_block_finesse - 16 - (draft_round),
-            leadBlocking: dataobj.lead_blocking - 4 - (draft_round),
-            impactBlocking: dataobj.impact_blocking + 7 - (draft_round),
-            jumping: dataobj.jumping + 3,
-            carrying: dataobj.carrying - 1 - (draft_round),
-            trucking: dataobj.trucking + 0 - (draft_round),
-            catching: dataobj.catching + 0 - (draft_round),
-            stiffArm: dataobj.stiff_arm + 0 - (draft_round),
-            spinMove: dataobj.spin_move - 1 - (draft_round),
-            jukeMove: dataobj.juke_move - 1 - (draft_round),
-            shortRouteRunning: dataobj.short_route_running - 12 - (draft_round),
-            mediumRouteRunning: dataobj.medium_route_running - 13 - (draft_round),
-            deepRouteRunning: dataobj.deep_route_running - 6 - (draft_round),
-            stamina: dataobj.stamina - 1,
-            injury: dataobj.injury - 1
+            speed: this.clampAttribute(dataobj.speed, 0),
+            acceleration: this.clampAttribute(dataobj.acceleration, 2),
+            agility: this.clampAttribute(dataobj.agility, 1),
+            changeOfDirecton: this.clampAttribute(dataobj.change_of_direction, 3),
+            strength: this.clampAttribute(dataobj.strength, -3),
+            awareness: this.clampAttribute(dataobj.awareness, -4, draft_round),
+            breakTackle: this.clampAttribute(dataobj.break_tackle, -2, draft_round),
+            catchInTraffic: this.clampAttribute(dataobj.catch_in_traffic, -1, draft_round),
+            spectacularCatch: this.clampAttribute(dataobj.spectacular_catch, 0, draft_round),
+            release: this.clampAttribute(dataobj.release, 2, draft_round),
+            passBlock: this.clampAttribute(dataobj.pass_block, -14, draft_round),
+            passBlockPower: this.clampAttribute(dataobj.pass_block_power, -14, draft_round),
+            passBlockFinesse: this.clampAttribute(dataobj.pass_block_finesse, -10, draft_round),
+            runBlock: this.clampAttribute(dataobj.run_block, -11, draft_round),
+            runBlockPower: this.clampAttribute(dataobj.run_block_power, -12, draft_round),
+            runBlockfinesse: this.clampAttribute(dataobj.run_block_finesse, -16, draft_round),
+            leadBlocking: this.clampAttribute(dataobj.lead_blocking, -4, draft_round),
+            impactBlocking: this.clampAttribute(dataobj.impact_blocking, 7, draft_round),
+            jumping: this.clampAttribute(dataobj.jumping, 3),
+            carrying: this.clampAttribute(dataobj.carrying, -1, draft_round),
+            trucking: this.clampAttribute(dataobj.trucking, 0, draft_round),
+            catching: this.clampAttribute(dataobj.catching, 0, draft_round),
+            stiffArm: this.clampAttribute(dataobj.stiff_arm, 0, draft_round),
+            spinMove: this.clampAttribute(dataobj.spin_move, -1, draft_round),
+            jukeMove: this.clampAttribute(dataobj.juke_move, -1, draft_round),
+            shortRouteRunning: this.clampAttribute(dataobj.short_route_running, -12, draft_round),
+            mediumRouteRunning: this.clampAttribute(dataobj.medium_route_running, -13, draft_round),
+            deepRouteRunning: this.clampAttribute(dataobj.deep_route_running, -6, draft_round),
+            stamina: this.clampAttribute(dataobj.stamina, -1),
+            injury: this.clampAttribute(dataobj.injury, -1)
           }
           const resultTE = this.playerAttrRepo.create({
             player: { id: player.id },
@@ -235,7 +230,6 @@ export class playerService {
             deep_route_running: convertedData.deepRouteRunning,
             stamina: convertedData.stamina,
             injury: convertedData.injury
-
           })
           await this.playerAttrRepo.save(resultTE)
           const cleanedResultTE = Object.keys(resultTE).reduce((acc, key) => {
@@ -258,41 +252,38 @@ export class playerService {
 
         ///////////////////////////----------------QB CONVERISON=========================
         case POSTION_CODE.QuarterBack:
-
           dataobj = rawData as QuarterBackDto
-
           const convertedDataQB = {
             age: calculatedAge,
-            speed: dataobj.speed - 2,
-            acceleration: dataobj.acceleration - 2,
-            agility: dataobj.agility - 5,
-            awareness: dataobj.awareness - 10 - (draft_round),
-            throw_power: dataobj.throw_power - 1,
-            throw_accuracy_short: dataobj.throw_accuracy_short - 7 - (draft_round),
-            throw_accuracy_mid: dataobj.throw_accuracy_mid - 10 - (draft_round),
-            throw_accuracy_deep: dataobj.throw_accuracy_deep - 14 - (draft_round),
-            throw_on_the_run: dataobj.throw_on_the_run - 8 - (draft_round),
-            throw_under_pressure: dataobj.throw_under_pressure - 11 - (draft_round),
-            play_action: dataobj.play_action - 15 - (draft_round),
-            break_sack: dataobj.break_sack - 9 - (draft_round),
-            break_tackle: dataobj.break_tackle - 4 - (draft_round),
-            trucking: dataobj.trucking - 13 - (draft_round),
-            carrying: dataobj.carrying - 26 - (draft_round),
-            ball_carrier_vision: dataobj.ball_carrier_vision - 13 - (draft_round),
-            stiff_arm: dataobj.stiff_arm - 7 - (draft_round),
-            spin_move: dataobj.spin_move - 14 - (draft_round),
-            juke_move: dataobj.juke_move - 10 - (draft_round),
-            stamina: dataobj.stamina - 2,
-            injury: dataobj.injury - 1
+            speed: this.clampAttribute(dataobj.speed, -2),
+            acceleration: this.clampAttribute(dataobj.acceleration, -2),
+            agility: this.clampAttribute(dataobj.agility, -5),
+            awareness: this.clampAttribute(dataobj.awareness, -10, draft_round),
+            throw_power: this.clampAttribute(dataobj.throw_power, -1),
+            throw_accuracy_short: this.clampAttribute(dataobj.throw_accuracy_short, -7, draft_round),
+            throw_accuracy_mid: this.clampAttribute(dataobj.throw_accuracy_mid, -10, draft_round),
+            throw_accuracy_deep: this.clampAttribute(dataobj.throw_accuracy_deep, -14, draft_round),
+            throw_on_the_run: this.clampAttribute(dataobj.throw_on_the_run, -8, draft_round),
+            throw_under_pressure: this.clampAttribute(dataobj.throw_under_pressure, -11, draft_round),
+            play_action: this.clampAttribute(dataobj.play_action, -15, draft_round),
+            break_sack: this.clampAttribute(dataobj.break_sack, -9, draft_round),
+            break_tackle: this.clampAttribute(dataobj.break_tackle, -4, draft_round),
+            trucking: this.clampAttribute(dataobj.trucking, -13, draft_round),
+            carrying: this.clampAttribute(dataobj.carrying, -26, draft_round),
+            ball_carrier_vision: this.clampAttribute(dataobj.ball_carrier_vision, -13, draft_round),
+            stiff_arm: this.clampAttribute(dataobj.stiff_arm, -7, draft_round),
+            spin_move: this.clampAttribute(dataobj.spin_move, -14, draft_round),
+            juke_move: this.clampAttribute(dataobj.juke_move, -10, draft_round),
+            stamina: this.clampAttribute(dataobj.stamina, -2),
+            injury: this.clampAttribute(dataobj.injury, -1)
           }
-
 
           const resultQB = this.playerAttrRepo.create({
             player: { id: player.id },
             age: calculatedAge,
             speed: convertedDataQB.speed,
             acceleration: convertedDataQB.acceleration,
-            agility: convertedDataQB.acceleration,
+            agility: convertedDataQB.agility,
             awareness: convertedDataQB.awareness,
             throw_power: convertedDataQB.throw_power,
             throw_accuracy_short: convertedDataQB.throw_accuracy_short,
@@ -311,7 +302,6 @@ export class playerService {
             juke_move: convertedDataQB.juke_move,
             stamina: convertedDataQB.stamina,
             injury: convertedDataQB.injury
-
           })
           await this.playerAttrRepo.save(resultQB)
           const cleanedResultQB = Object.keys(resultQB).reduce((acc, key) => {
@@ -331,40 +321,36 @@ export class playerService {
             jerseyNumber: jerseyNumber,
             draft_round: player.projectedReason,
             draftFolder: draftFolderName
-
           }
 
         //------------------------------RB CONVERSION
         case POSTION_CODE.RunningBack:
-
           dataobj = rawData as RunningBackDto
-
           const convertedDataRB = {
             age: calculatedAge,
-            speed: dataobj.speed - 2,
-            acceleration: dataobj.acceleration + 0,
-            agility: dataobj.agility - 4,
-            change_of_direction: dataobj.change_of_direction - 4,
-            strength: dataobj.strength - 3,
-            awareness: dataobj.awareness - 11 - (draft_round),
-            break_tackle: dataobj.break_tackle - 7 - (draft_round),
-            carrying: dataobj.carrying - 5 - (draft_round),
-            trucking: dataobj.trucking - 7 - (draft_round),
-            ball_carrier_vision: dataobj.ball_carrier_vision - 14 - (draft_round),
-            catching: dataobj.catching - 14 - (draft_round),
-            stiff_arm: dataobj.stiff_arm - 3 - (draft_round),
-            spin_move: dataobj.spin_move - 8 - (draft_round),
-            juke_move: dataobj.juke_move - 8 - (draft_round),
-            pass_blocking: dataobj.pass_blocking - 24 - (draft_round),
-            catch_in_traffic: dataobj.catch_in_traffic - 19 - (draft_round),
-            spectacular_catch: dataobj.spectacular_catch - 12 - (draft_round),
-            short_route_running: dataobj.short_route_running - 16 - (draft_round),
-            medium_route_running: dataobj.short_route_running - 16 - (draft_round),
-            release: dataobj.release - 7 - (draft_round),
-            stamina: dataobj.stamina - 2,
-            return: dataobj.return - 1,
-            injury: dataobj.injury - 1
-
+            speed: this.clampAttribute(dataobj.speed, -2),
+            acceleration: this.clampAttribute(dataobj.acceleration, 0),
+            agility: this.clampAttribute(dataobj.agility, -4),
+            change_of_direction: this.clampAttribute(dataobj.change_of_direction, -4),
+            strength: this.clampAttribute(dataobj.strength, -3),
+            awareness: this.clampAttribute(dataobj.awareness, -11, draft_round),
+            break_tackle: this.clampAttribute(dataobj.break_tackle, -7, draft_round),
+            carrying: this.clampAttribute(dataobj.carrying, -5, draft_round),
+            trucking: this.clampAttribute(dataobj.trucking, -7, draft_round),
+            ball_carrier_vision: this.clampAttribute(dataobj.ball_carrier_vision, -14, draft_round),
+            catching: this.clampAttribute(dataobj.catching, -14, draft_round),
+            stiff_arm: this.clampAttribute(dataobj.stiff_arm, -3, draft_round),
+            spin_move: this.clampAttribute(dataobj.spin_move, -8, draft_round),
+            juke_move: this.clampAttribute(dataobj.juke_move, -8, draft_round),
+            pass_blocking: this.clampAttribute(dataobj.pass_blocking, -24, draft_round),
+            catch_in_traffic: this.clampAttribute(dataobj.catch_in_traffic, -19, draft_round),
+            spectacular_catch: this.clampAttribute(dataobj.spectacular_catch, -12, draft_round),
+            short_route_running: this.clampAttribute(dataobj.short_route_running, -16, draft_round),
+            medium_route_running: this.clampAttribute(dataobj.short_route_running, -16, draft_round),
+            release: this.clampAttribute(dataobj.release, -7, draft_round),
+            stamina: this.clampAttribute(dataobj.stamina, -2),
+            return: this.clampAttribute(dataobj.return, -1),
+            injury: this.clampAttribute(dataobj.injury, -1)
           }
           const resultRB = this.playerAttrRepo.create({
             player: { id: player.id },
@@ -412,40 +398,37 @@ export class playerService {
             jerseyNumber: jerseyNumber,
             draft_round: player.projectedReason,
             draftFolder: draftFolderName
-
           }
-
 
         ///////////////---------------WR CONVERSION =========
         case POSTION_CODE.WiderReceiver:
           dataobj = rawData as WideReceiverDto
-
           const convertedDataWR = {
             age: calculatedAge,
-            speed: dataobj.speed - 2,
-            acceleartion: dataobj.acceleration + 0,
-            agility: dataobj.agility + 0,
-            change_of_direction: dataobj.change_of_direction - 1,
-            strength: dataobj.strength - 9,
-            awareness: dataobj.awareness - 15 - (draft_round),
-            break_tackle: dataobj.break_tackle - 3 - (draft_round),
-            catch_in_traffic: dataobj.catch_in_traffic - 10 - (draft_round),
-            spectacular_catch: dataobj.spectacular_catch - 5 - (draft_round),
-            release: dataobj.release - 13 - (draft_round),
-            jumping: dataobj.jumping - 3,
-            carrying: dataobj.carrying - 14 - (draft_round),
-            trucking: dataobj.trucking - 21 - (draft_round),
-            ball_carrier_vision: dataobj.ball_carrier_vision - 15 - (draft_round),
-            catching: dataobj.catching - 9 - (draft_round),
-            stiff_arm: dataobj.stiff_arm - 7 - (draft_round),
-            spin_move: dataobj.spin_move - 5 - (draft_round),
-            juke_move: dataobj.juke_move - 3 - (draft_round),
-            short_route_running: dataobj.short_route_running - 11 - (draft_round),
-            medium_route_running: dataobj.medium_route_running - 16 - (draft_round),
-            deep_route_running: dataobj.deep_route_running - 17 - (draft_round),
-            stamina: dataobj.stamina - 1,
-            return: dataobj.return - 1,
-            injury: dataobj.injury - 1
+            speed: this.clampAttribute(dataobj.speed, -2),
+            acceleartion: this.clampAttribute(dataobj.acceleration, 0),
+            agility: this.clampAttribute(dataobj.agility, 0),
+            change_of_direction: this.clampAttribute(dataobj.change_of_direction, -1),
+            strength: this.clampAttribute(dataobj.strength, -9),
+            awareness: this.clampAttribute(dataobj.awareness, -15, draft_round),
+            break_tackle: this.clampAttribute(dataobj.break_tackle, -3, draft_round),
+            catch_in_traffic: this.clampAttribute(dataobj.catch_in_traffic, -10, draft_round),
+            spectacular_catch: this.clampAttribute(dataobj.spectacular_catch, -5, draft_round),
+            release: this.clampAttribute(dataobj.release, -13, draft_round),
+            jumping: this.clampAttribute(dataobj.jumping, -3),
+            carrying: this.clampAttribute(dataobj.carrying, -14, draft_round),
+            trucking: this.clampAttribute(dataobj.trucking, -21, draft_round),
+            ball_carrier_vision: this.clampAttribute(dataobj.ball_carrier_vision, -15, draft_round),
+            catching: this.clampAttribute(dataobj.catching, -9, draft_round),
+            stiff_arm: this.clampAttribute(dataobj.stiff_arm, -7, draft_round),
+            spin_move: this.clampAttribute(dataobj.spin_move, -5, draft_round),
+            juke_move: this.clampAttribute(dataobj.juke_move, -3, draft_round),
+            short_route_running: this.clampAttribute(dataobj.short_route_running, -11, draft_round),
+            medium_route_running: this.clampAttribute(dataobj.medium_route_running, -16, draft_round),
+            deep_route_running: this.clampAttribute(dataobj.deep_route_running, -17, draft_round),
+            stamina: this.clampAttribute(dataobj.stamina, -1),
+            return: this.clampAttribute(dataobj.return, -1),
+            injury: this.clampAttribute(dataobj.injury, -1)
           }
 
           const resultWR = this.playerAttrRepo.create({
@@ -465,15 +448,16 @@ export class playerService {
             carrying: convertedDataWR.carrying,
             trucking: convertedDataWR.trucking,
             ball_carrier_vision: convertedDataWR.ball_carrier_vision,
-            catching: dataobj.catching,
-            stiff_arm: dataobj.stiff_arm,
-            spin_move: dataobj.spin_move,
-            juke_move: dataobj.juke_move,
-            short_route_running: dataobj.short_route_running,
-            medium_route_running: dataobj.medium_route_running,
-            stamina: dataobj.stamina,
-            return: dataobj.return,
-            injury: dataobj.injury
+            catching: convertedDataWR.catching,
+            stiff_arm: convertedDataWR.stiff_arm,
+            spin_move: convertedDataWR.spin_move,
+            juke_move: convertedDataWR.juke_move,
+            short_route_running: convertedDataWR.short_route_running,
+            medium_route_running: convertedDataWR.medium_route_running,
+            deep_route_running: convertedDataWR.deep_route_running,
+            stamina: convertedDataWR.stamina,
+            return: convertedDataWR.return,
+            injury: convertedDataWR.injury
           });
           await this.playerAttrRepo.save(resultWR);
 
@@ -494,29 +478,27 @@ export class playerService {
             jerseyNumber: jerseyNumber,
             draft_round: player.projectedReason,
             draftFolder: draftFolderName
-
           }
 
         //-----------------------LT Conversion ------------------------
         case POSTION_CODE.LeftTackle:
           dataobj = rawData as LeftTackleDto
-
           const convertedDataLT = {
             age: calculatedAge,
-            speed: dataobj.speed - 6,
-            acceleration: dataobj.acceleration - 5,
-            awareness: dataobj.awareness - 8 - (draft_round),
-            agility: dataobj.agility - 13,
-            strength: dataobj.strength + 1,
-            lead_block: dataobj.lead_block - 9 - (draft_round),
-            impact_block: dataobj.lead_block - 6 - (draft_round),
-            run_block: dataobj.run_block - 15 - (draft_round),
-            pass_block: dataobj.pass_block - 13 - (draft_round),
-            pass_block_finesse: dataobj.pass_block_finesse - 14 - (draft_round),
-            run_block_power: dataobj.run_block_power - 18 - (draft_round),
-            run_block_finesse: dataobj.run_block_finesse - 14 - (draft_round),
-            stamina: dataobj.stamina - 1,
-            injury: dataobj.injury - 1
+            speed: this.clampAttribute(dataobj.speed, -6),
+            acceleration: this.clampAttribute(dataobj.acceleration, -5),
+            awareness: this.clampAttribute(dataobj.awareness, -8, draft_round),
+            agility: this.clampAttribute(dataobj.agility, -13),
+            strength: this.clampAttribute(dataobj.strength, 1),
+            lead_block: this.clampAttribute(dataobj.lead_block, -9, draft_round),
+            impact_block: this.clampAttribute(dataobj.lead_block, -6, draft_round),
+            run_block: this.clampAttribute(dataobj.run_block, -15, draft_round),
+            pass_block: this.clampAttribute(dataobj.pass_block, -13, draft_round),
+            pass_block_finesse: this.clampAttribute(dataobj.pass_block_finesse, -14, draft_round),
+            run_block_power: this.clampAttribute(dataobj.run_block_power, -18, draft_round),
+            run_block_finesse: this.clampAttribute(dataobj.run_block_finesse, -14, draft_round),
+            stamina: this.clampAttribute(dataobj.stamina, -1),
+            injury: this.clampAttribute(dataobj.injury, -1)
           }
           const resultLT = this.playerAttrRepo.create({
             player: { id: player.id },
@@ -555,30 +537,27 @@ export class playerService {
             jerseyNumber: jerseyNumber,
             draft_round: player.projectedReason,
             draftFolder: draftFolderName
-
           }
 
         //---------------RT CONVERSION=-----------------
-
         case POSTION_CODE.RightTackle:
           dataobj = rawData as RightTackleDto
-
           const convertedDataRT = {
             age: calculatedAge,
-            speed: dataobj.speed - 6,
-            acceleration: dataobj.acceleration - 5,
-            awareness: dataobj.awareness - 8 - (draft_round),
-            agility: dataobj.agility - 13,
-            strength: dataobj.strength + 1,
-            lead_block: dataobj.lead_block - 9 - (draft_round),
-            impact_block: dataobj.lead_block - 6 - (draft_round),
-            run_block: dataobj.run_block - 15 - (draft_round),
-            pass_block: dataobj.pass_block - 13 - (draft_round),
-            pass_block_finesse: dataobj.pass_block_finesse - 14 - (draft_round),
-            run_block_power: dataobj.run_block_power - 18 - (draft_round),
-            run_block_finesse: dataobj.run_block_finesse - 14 - (draft_round),
-            stamina: dataobj.stamina - 1,
-            injury: dataobj.injury - 1
+            speed: this.clampAttribute(dataobj.speed, -6),
+            acceleration: this.clampAttribute(dataobj.acceleration, -5),
+            awareness: this.clampAttribute(dataobj.awareness, -8, draft_round),
+            agility: this.clampAttribute(dataobj.agility, -13),
+            strength: this.clampAttribute(dataobj.strength, 1),
+            lead_block: this.clampAttribute(dataobj.lead_block, -9, draft_round),
+            impact_block: this.clampAttribute(dataobj.lead_block, -6, draft_round),
+            run_block: this.clampAttribute(dataobj.run_block, -15, draft_round),
+            pass_block: this.clampAttribute(dataobj.pass_block, -13, draft_round),
+            pass_block_finesse: this.clampAttribute(dataobj.pass_block_finesse, -14, draft_round),
+            run_block_power: this.clampAttribute(dataobj.run_block_power, -18, draft_round),
+            run_block_finesse: this.clampAttribute(dataobj.run_block_finesse, -14, draft_round),
+            stamina: this.clampAttribute(dataobj.stamina, -1),
+            injury: this.clampAttribute(dataobj.injury, -1)
           }
           const resultRT = this.playerAttrRepo.create({
             player: { id: player.id },
@@ -617,31 +596,27 @@ export class playerService {
             jerseyNumber: jerseyNumber,
             draft_round: player.projectedReason,
             draftFolder: draftFolderName
-
           }
-
 
         //--------------------------------LG CONVERSION ----------------------
         case POSTION_CODE.LeftGuard:
-
           dataobj = rawData as LeftGaurdDto
-
           const convertedDataLG = {
             age: calculatedAge,
-            speed: dataobj.speed,
-            acceleartion: dataobj.acceleration - 3,
-            awareness: dataobj.awareness - 9 - (draft_round),
-            agility: dataobj.agility - 12,
-            lead_block: dataobj.lead_block - 8 - (draft_round),
-            impact_block: dataobj.impact_blocking - 3 - (draft_round),
-            run_block: dataobj.run_blocking - 16 - (draft_round),
-            pass_block: dataobj.pass_blocking - 12 - (draft_round),
-            pass_block_power: dataobj.pass_block_power - 15 - (draft_round),
-            pass_block_finesse: dataobj.pass_block_finesse - 16 - (draft_round),
-            run_block_power: dataobj.run_block_power - 16 - (draft_round),
-            run_block_finesse: dataobj.run_block_finesse - 16 - (draft_round),
-            stamina: dataobj.stamina - 1,
-            injury: dataobj.injury - 1
+            speed: this.clampAttribute(dataobj.speed, 0),
+            acceleartion: this.clampAttribute(dataobj.acceleration, -3),
+            awareness: this.clampAttribute(dataobj.awareness, -9, draft_round),
+            agility: this.clampAttribute(dataobj.agility, -12),
+            lead_block: this.clampAttribute(dataobj.lead_block, -8, draft_round),
+            impact_block: this.clampAttribute(dataobj.impact_blocking, -3, draft_round),
+            run_block: this.clampAttribute(dataobj.run_blocking, -16, draft_round),
+            pass_block: this.clampAttribute(dataobj.pass_blocking, -12, draft_round),
+            pass_block_power: this.clampAttribute(dataobj.pass_block_power, -15, draft_round),
+            pass_block_finesse: this.clampAttribute(dataobj.pass_block_finesse, -16, draft_round),
+            run_block_power: this.clampAttribute(dataobj.run_block_power, -16, draft_round),
+            run_block_finesse: this.clampAttribute(dataobj.run_block_finesse, -16, draft_round),
+            stamina: this.clampAttribute(dataobj.stamina, -1),
+            injury: this.clampAttribute(dataobj.injury, -1)
           }
           const resultLG = this.playerAttrRepo.create({
             player: { id: player.id },
@@ -681,30 +656,27 @@ export class playerService {
             jerseyNumber: jerseyNumber,
             draft_round: player.projectedReason,
             draftFolder: draftFolderName
-
           }
 
-        //---------------------LG CONVERSION ---------------
+        //---------------------RG CONVERSION ---------------
         case POSTION_CODE.RightGuard:
-
           dataobj = rawData as RightGaurdDto
-
           const convertedDataRG = {
             age: calculatedAge,
-            speed: dataobj.speed,
-            acceleartion: dataobj.acceleration - 3,
-            awareness: dataobj.awareness - 9 - (draft_round),
-            agility: dataobj.agility - 12,
-            lead_block: dataobj.lead_block - 8 - (draft_round),
-            impact_block: dataobj.impact_blocking - 3 - (draft_round),
-            run_block: dataobj.run_blocking - 16 - (draft_round),
-            pass_block: dataobj.pass_blocking - 12 - (draft_round),
-            pass_block_power: dataobj.pass_block_power - 15 - (draft_round),
-            pass_block_finesse: dataobj.pass_block_finesse - 16 - (draft_round),
-            run_block_power: dataobj.run_block_power - 16 - (draft_round),
-            run_block_finesse: dataobj.run_block_finesse - 16 - (draft_round),
-            stamina: dataobj.stamina - 1,
-            injury: dataobj.injury - 1
+            speed: this.clampAttribute(dataobj.speed, 0),
+            acceleartion: this.clampAttribute(dataobj.acceleration, -3),
+            awareness: this.clampAttribute(dataobj.awareness, -9, draft_round),
+            agility: this.clampAttribute(dataobj.agility, -12),
+            lead_block: this.clampAttribute(dataobj.lead_block, -8, draft_round),
+            impact_block: this.clampAttribute(dataobj.impact_blocking, -3, draft_round),
+            run_block: this.clampAttribute(dataobj.run_blocking, -16, draft_round),
+            pass_block: this.clampAttribute(dataobj.pass_blocking, -12, draft_round),
+            pass_block_power: this.clampAttribute(dataobj.pass_block_power, -15, draft_round),
+            pass_block_finesse: this.clampAttribute(dataobj.pass_block_finesse, -16, draft_round),
+            run_block_power: this.clampAttribute(dataobj.run_block_power, -16, draft_round),
+            run_block_finesse: this.clampAttribute(dataobj.run_block_finesse, -16, draft_round),
+            stamina: this.clampAttribute(dataobj.stamina, -1),
+            injury: this.clampAttribute(dataobj.injury, -1)
           }
           const resultRG = this.playerAttrRepo.create({
             player: { id: player.id },
@@ -744,30 +716,27 @@ export class playerService {
             jerseyNumber: jerseyNumber,
             draft_round: player.projectedReason,
             draftFolder: draftFolderName
-
           }
 
         //----------------------------LE CONVERSION ------------------------------
         case POSTION_CODE.LeftEnd:
-
           dataobj = rawData as LeftEndDTO
-
           const convertedDataLE = {
             age: calculatedAge,
-            speed: dataobj.speed - 4,
-            acceleartion: dataobj.acceleration - 2,
-            agility: dataobj.agility - 14,
-            awareness: dataobj.awareness - 15 - (draft_round),
-            strength: dataobj.strength - 2,
-            tackling: dataobj.tackling - 13 - (draft_round),
-            hit_power: dataobj.hit_power - 6,
-            power_moves: dataobj.power_moves - 13 - (draft_round),
-            finesse_moves: dataobj.finesse_moves - 8 - (draft_round),
-            block_shed: dataobj.block_shed - 16 - (draft_round),
-            pursuit: dataobj.pursuit - 16 - (draft_round),
-            play_recognition: dataobj.play_recognition - 24 - (draft_round),
-            stamina: dataobj.stamina - 1,
-            injury: dataobj.injury - 1
+            speed: this.clampAttribute(dataobj.speed, -4),
+            acceleartion: this.clampAttribute(dataobj.acceleration, -2),
+            agility: this.clampAttribute(dataobj.agility, -14),
+            awareness: this.clampAttribute(dataobj.awareness, -15, draft_round),
+            strength: this.clampAttribute(dataobj.strength, -2),
+            tackling: this.clampAttribute(dataobj.tackling, -13, draft_round),
+            hit_power: this.clampAttribute(dataobj.hit_power, -6),
+            power_moves: this.clampAttribute(dataobj.power_moves, -13, draft_round),
+            finesse_moves: this.clampAttribute(dataobj.finesse_moves, -8, draft_round),
+            block_shed: this.clampAttribute(dataobj.block_shed, -16, draft_round),
+            pursuit: this.clampAttribute(dataobj.pursuit, -16, draft_round),
+            play_recognition: this.clampAttribute(dataobj.play_recognition, -24, draft_round),
+            stamina: this.clampAttribute(dataobj.stamina, -1),
+            injury: this.clampAttribute(dataobj.injury, -1)
           }
 
           const resultLE = this.playerAttrRepo.create({
@@ -806,29 +775,27 @@ export class playerService {
             jerseyNumber: jerseyNumber,
             draft_round: player.projectedReason,
             draftFolder: draftFolderName
-
           }
+
         //----------------------------RE CONVERSION ------------------------------
         case POSTION_CODE.RightEnd:
-
           dataobj = rawData as RightEndDTO
-
           const convertedDataRE = {
             age: calculatedAge,
-            speed: dataobj.speed - 4,
-            acceleartion: dataobj.acceleration - 2,
-            agility: dataobj.agility - 14,
-            awareness: dataobj.awareness - 15 - (draft_round),
-            strength: dataobj.strength - 2,
-            tackling: dataobj.tackling - 13 - (draft_round),
-            hit_power: dataobj.hit_power - 6,
-            power_moves: dataobj.power_moves - 13 - (draft_round),
-            finesse_moves: dataobj.finesse_moves - 8 - (draft_round),
-            block_shed: dataobj.block_shed - 16 - (draft_round),
-            pursuit: dataobj.pursuit - 16 - (draft_round),
-            play_recognition: dataobj.play_recognition - 24 - (draft_round),
-            stamina: dataobj.stamina - 1,
-            injury: dataobj.injury - 1
+            speed: this.clampAttribute(dataobj.speed, -4),
+            acceleartion: this.clampAttribute(dataobj.acceleration, -2),
+            agility: this.clampAttribute(dataobj.agility, -14),
+            awareness: this.clampAttribute(dataobj.awareness, -15, draft_round),
+            strength: this.clampAttribute(dataobj.strength, -2),
+            tackling: this.clampAttribute(dataobj.tackling, -13, draft_round),
+            hit_power: this.clampAttribute(dataobj.hit_power, -6),
+            power_moves: this.clampAttribute(dataobj.power_moves, -13, draft_round),
+            finesse_moves: this.clampAttribute(dataobj.finesse_moves, -8, draft_round),
+            block_shed: this.clampAttribute(dataobj.block_shed, -16, draft_round),
+            pursuit: this.clampAttribute(dataobj.pursuit, -16, draft_round),
+            play_recognition: this.clampAttribute(dataobj.play_recognition, -24, draft_round),
+            stamina: this.clampAttribute(dataobj.stamina, -1),
+            injury: this.clampAttribute(dataobj.injury, -1)
           }
 
           const resultRE = this.playerAttrRepo.create({
@@ -867,31 +834,27 @@ export class playerService {
             jerseyNumber: jerseyNumber,
             draft_round: player.projectedReason,
             draftFolder: draftFolderName
-
           }
-
 
         //----------------------------LOLB> CONVERSION ------------------------------
         case POSTION_CODE.LeftOutside_linebacker_above_245_lbs:
-
           dataobj = rawData as Left_Outside_linebacker_above_245_lbsDTO
-
           const convertedDataLOLB = {
             age: calculatedAge,
-            speed: dataobj.speed - 4,
-            acceleartion: dataobj.acceleration - 2,
-            agility: dataobj.agility - 14,
-            awareness: dataobj.awareness - 15 - (draft_round),
-            strength: dataobj.strength - 2,
-            tackling: dataobj.tackling - 13 - (draft_round),
-            hit_power: dataobj.hit_power - 6,
-            power_moves: dataobj.power_moves - 13 - (draft_round),
-            finesse_moves: dataobj.finesse_moves - 8 - (draft_round),
-            block_shed: dataobj.block_shed - 16 - (draft_round),
-            pursuit: dataobj.pursuit - 16 - (draft_round),
-            play_recognition: dataobj.play_recognition - 24 - (draft_round),
-            stamina: dataobj.stamina - 1,
-            injury: dataobj.injury - 1
+            speed: this.clampAttribute(dataobj.speed, -4),
+            acceleartion: this.clampAttribute(dataobj.acceleration, -2),
+            agility: this.clampAttribute(dataobj.agility, -14),
+            awareness: this.clampAttribute(dataobj.awareness, -15, draft_round),
+            strength: this.clampAttribute(dataobj.strength, -2),
+            tackling: this.clampAttribute(dataobj.tackling, -13, draft_round),
+            hit_power: this.clampAttribute(dataobj.hit_power, -6),
+            power_moves: this.clampAttribute(dataobj.power_moves, -13, draft_round),
+            finesse_moves: this.clampAttribute(dataobj.finesse_moves, -8, draft_round),
+            block_shed: this.clampAttribute(dataobj.block_shed, -16, draft_round),
+            pursuit: this.clampAttribute(dataobj.pursuit, -16, draft_round),
+            play_recognition: this.clampAttribute(dataobj.play_recognition, -24, draft_round),
+            stamina: this.clampAttribute(dataobj.stamina, -1),
+            injury: this.clampAttribute(dataobj.injury, -1)
           }
 
           const resultLOLB = this.playerAttrRepo.create({
@@ -930,31 +893,27 @@ export class playerService {
             jerseyNumber: jerseyNumber,
             draft_round: player.projectedReason,
             draftFolder: draftFolderName
-
           }
-
 
         //----------------------------ROLB> CONVERSION ------------------------------
         case POSTION_CODE.RightOutside_linebacker_above_245lbs:
-
           dataobj = rawData as Right_Outside_linebacker_above_245lbsDTO
-
           const convertedDataROLB = {
             age: calculatedAge,
-            speed: dataobj.speed - 4,
-            acceleartion: dataobj.acceleration - 2,
-            agility: dataobj.agility - 14,
-            awareness: dataobj.awareness - 15 - (draft_round),
-            strength: dataobj.strength - 2,
-            tackling: dataobj.tackling - 13 - (draft_round),
-            hit_power: dataobj.hit_power - 6,
-            power_moves: dataobj.power_moves - 13 - (draft_round),
-            finesse_moves: dataobj.finesse_moves - 8 - (draft_round),
-            block_shed: dataobj.block_shed - 16 - (draft_round),
-            pursuit: dataobj.pursuit - 16 - (draft_round),
-            play_recognition: dataobj.play_recognition - 24 - (draft_round),
-            stamina: dataobj.stamina - 1,
-            injury: dataobj.injury - 1
+            speed: this.clampAttribute(dataobj.speed, -4),
+            acceleartion: this.clampAttribute(dataobj.acceleration, -2),
+            agility: this.clampAttribute(dataobj.agility, -14),
+            awareness: this.clampAttribute(dataobj.awareness, -15, draft_round),
+            strength: this.clampAttribute(dataobj.strength, -2),
+            tackling: this.clampAttribute(dataobj.tackling, -13, draft_round),
+            hit_power: this.clampAttribute(dataobj.hit_power, -6),
+            power_moves: this.clampAttribute(dataobj.power_moves, -13, draft_round),
+            finesse_moves: this.clampAttribute(dataobj.finesse_moves, -8, draft_round),
+            block_shed: this.clampAttribute(dataobj.block_shed, -16, draft_round),
+            pursuit: this.clampAttribute(dataobj.pursuit, -16, draft_round),
+            play_recognition: this.clampAttribute(dataobj.play_recognition, -24, draft_round),
+            stamina: this.clampAttribute(dataobj.stamina, -1),
+            injury: this.clampAttribute(dataobj.injury, -1)
           }
 
           const resultROLB = this.playerAttrRepo.create({
@@ -993,31 +952,27 @@ export class playerService {
             jerseyNumber: jerseyNumber,
             draft_round: player.projectedReason,
             draftFolder: draftFolderName
-
           }
 
         //-------------- DT CONVERSION -----------
-
-        //-------------------------------DI CONVERSION --------------------
         case POSTION_CODE.DefensiveTackle:
           dataobj = rawData as DefensiveTackleDto
-
           const convertedDataDI = {
             age: calculatedAge,
-            speed: dataobj.speed - 1,
-            acceleartion: dataobj.acceleration + 0,
-            agility: dataobj.agility - 5,
-            awareness: dataobj.awareness - 13 - (draft_round),
-            strength: dataobj.strength + 0,
-            tackling: dataobj.tackling - 11 - (draft_round),
-            hit_power: dataobj.hit_power - 11,
-            power_moves: dataobj.power_moves - 8 - (draft_round),
-            finesse_moves: dataobj.finesse_moves - 9 - (draft_round),
-            block_shed: dataobj.block_shedding - 10 - (draft_round),
-            pursuit: dataobj.pursuit - 15 - (draft_round),
-            play_recognition: dataobj.play_recognition - 18 - (draft_round),
-            stamina: dataobj.stamina - 3,
-            injury: dataobj.injury - 2
+            speed: this.clampAttribute(dataobj.speed, -1),
+            acceleartion: this.clampAttribute(dataobj.acceleration, 0),
+            agility: this.clampAttribute(dataobj.agility, -5),
+            awareness: this.clampAttribute(dataobj.awareness, -13, draft_round),
+            strength: this.clampAttribute(dataobj.strength, 0),
+            tackling: this.clampAttribute(dataobj.tackling, -11, draft_round),
+            hit_power: this.clampAttribute(dataobj.hit_power, -11),
+            power_moves: this.clampAttribute(dataobj.power_moves, -8, draft_round),
+            finesse_moves: this.clampAttribute(dataobj.finesse_moves, -9, draft_round),
+            block_shed: this.clampAttribute(dataobj.block_shedding, -10, draft_round),
+            pursuit: this.clampAttribute(dataobj.pursuit, -15, draft_round),
+            play_recognition: this.clampAttribute(dataobj.play_recognition, -18, draft_round),
+            stamina: this.clampAttribute(dataobj.stamina, -3),
+            injury: this.clampAttribute(dataobj.injury, -2)
           }
 
           const resultDE = this.playerAttrRepo.create({
@@ -1056,34 +1011,31 @@ export class playerService {
             jerseyNumber: jerseyNumber,
             draft_round: player.projectedReason,
             draftFolder: draftFolderName
-
           }
 
         //------------------------------ LOLB CONVERSION ================
         case POSTION_CODE.LeftOutside_linebacker_below_245lbs:
-
           dataobj = rawData as LeftOutside_linebacker_below_245lbsDTO
-
           const convertedDataLOLBG = {
             age: calculatedAge,
-            speed: dataobj.speed - 4,
-            acceleration: dataobj.acceleration - 2,
-            agility: dataobj.agility - 2,
-            change_of_direction: 'change_of_direction' in dataobj ? (dataobj.change_of_direction - 4) : undefined,
-            awareness: dataobj.awareness - 9 - (draft_round),
-            strength: dataobj.strength - 7,
-            jumping: 'jumping' in dataobj ? dataobj.jumping - 12 : undefined,
-            tackling: dataobj.tackling - 7 - (draft_round),
-            hit_power: dataobj.hit_power - 3,
-            power_moves: dataobj.power_moves - 21 - (draft_round),
-            finesse_moves: dataobj.finesse_moves - 25 - (draft_round),
-            block_shed: dataobj.block_shedding - 6 - (draft_round),
-            pursuit: dataobj.pursuit - 6 - (draft_round),
-            play_recognition: dataobj.play_recognition - 18 - (draft_round),
-            man_coverage: 'man_coverage' in dataobj ? (dataobj.man_coverage - 25 - (draft_round)) : undefined,
-            zone_coverage: 'zone_coverage' in dataobj ? (dataobj.zone_coverage - 22 - (draft_round)) : undefined,
-            stamina: dataobj.stamina - 1,
-            injury: dataobj.injury - 1
+            speed: this.clampAttribute(dataobj.speed, -4),
+            acceleration: this.clampAttribute(dataobj.acceleration, -2),
+            agility: this.clampAttribute(dataobj.agility, -2),
+            change_of_direction: 'change_of_direction' in dataobj ? this.clampAttribute(dataobj.change_of_direction, -4) : undefined,
+            awareness: this.clampAttribute(dataobj.awareness, -9, draft_round),
+            strength: this.clampAttribute(dataobj.strength, -7),
+            jumping: 'jumping' in dataobj ? this.clampAttribute(dataobj.jumping, -12) : undefined,
+            tackling: this.clampAttribute(dataobj.tackling, -7, draft_round),
+            hit_power: this.clampAttribute(dataobj.hit_power, -3),
+            power_moves: this.clampAttribute(dataobj.power_moves, -21, draft_round),
+            finesse_moves: this.clampAttribute(dataobj.finesse_moves, -25, draft_round),
+            block_shed: this.clampAttribute(dataobj.block_shedding, -6, draft_round),
+            pursuit: this.clampAttribute(dataobj.pursuit, -6, draft_round),
+            play_recognition: this.clampAttribute(dataobj.play_recognition, -18, draft_round),
+            man_coverage: 'man_coverage' in dataobj ? this.clampAttribute(dataobj.man_coverage, -25, draft_round) : undefined,
+            zone_coverage: 'zone_coverage' in dataobj ? this.clampAttribute(dataobj.zone_coverage, -22, draft_round) : undefined,
+            stamina: this.clampAttribute(dataobj.stamina, -1),
+            injury: this.clampAttribute(dataobj.injury, -1)
           }
           const resultLOLBG = this.playerAttrRepo.create({
             player: { id: player.id },
@@ -1101,7 +1053,11 @@ export class playerService {
             finesse_moves: convertedDataLOLBG.finesse_moves,
             block_shedding: convertedDataLOLBG.block_shed,
             pursuit: convertedDataLOLBG.pursuit,
-            play_recognition: convertedDataLOLBG.play_recognition
+            play_recognition: convertedDataLOLBG.play_recognition,
+            man_coverage: convertedDataLOLBG.man_coverage,
+            zone_coverage: convertedDataLOLBG.zone_coverage,
+            stamina: convertedDataLOLBG.stamina,
+            injury: convertedDataLOLBG.injury
           });
           await this.playerAttrRepo.save(resultLOLBG)
 
@@ -1122,33 +1078,31 @@ export class playerService {
             jerseyNumber: jerseyNumber,
             draft_round: player.projectedReason,
             draftFolder: draftFolderName
-
           };
+
         //------------------------------ ROLB CONVERSION ================
         case POSTION_CODE.RightOutside_linebacker_below_245lbs:
-
           dataobj = rawData as RightOutside_linebacker_below_245lbsDTO
-
           const convertedDataLOLBB = {
             age: calculatedAge,
-            speed: dataobj.speed - 4,
-            acceleration: dataobj.acceleration - 2,
-            agility: dataobj.agility - 2,
-            change_of_direction: 'change_of_direction' in dataobj ? (dataobj.change_of_direction - 4) : undefined,
-            awareness: dataobj.awareness - 9 - (draft_round),
-            strength: dataobj.strength - 7,
-            jumping: 'jumping' in dataobj ? dataobj.jumping - 12 : undefined,
-            tackling: dataobj.tackling - 7 - (draft_round),
-            hit_power: dataobj.hit_power - 3,
-            power_moves: dataobj.power_moves - 21 - (draft_round),
-            finesse_moves: dataobj.finesse_moves - 25 - (draft_round),
-            block_shed: dataobj.block_shedding - 6 - (draft_round),
-            pursuit: dataobj.pursuit - 6 - (draft_round),
-            play_recognition: dataobj.play_recognition - 18 - (draft_round),
-            man_coverage: 'man_coverage' in dataobj ? (dataobj.man_coverage - 25 - (draft_round)) : undefined,
-            zone_coverage: 'zone_coverage' in dataobj ? (dataobj.zone_coverage - 22 - (draft_round)) : undefined,
-            stamina: dataobj.stamina - 1,
-            injury: dataobj.injury - 1
+            speed: this.clampAttribute(dataobj.speed, -4),
+            acceleration: this.clampAttribute(dataobj.acceleration, -2),
+            agility: this.clampAttribute(dataobj.agility, -2),
+            change_of_direction: 'change_of_direction' in dataobj ? this.clampAttribute(dataobj.change_of_direction, -4) : undefined,
+            awareness: this.clampAttribute(dataobj.awareness, -9, draft_round),
+            strength: this.clampAttribute(dataobj.strength, -7),
+            jumping: 'jumping' in dataobj ? this.clampAttribute(dataobj.jumping, -12) : undefined,
+            tackling: this.clampAttribute(dataobj.tackling, -7, draft_round),
+            hit_power: this.clampAttribute(dataobj.hit_power, -3),
+            power_moves: this.clampAttribute(dataobj.power_moves, -21, draft_round),
+            finesse_moves: this.clampAttribute(dataobj.finesse_moves, -25, draft_round),
+            block_shed: this.clampAttribute(dataobj.block_shedding, -6, draft_round),
+            pursuit: this.clampAttribute(dataobj.pursuit, -6, draft_round),
+            play_recognition: this.clampAttribute(dataobj.play_recognition, -18, draft_round),
+            man_coverage: 'man_coverage' in dataobj ? this.clampAttribute(dataobj.man_coverage, -25, draft_round) : undefined,
+            zone_coverage: 'zone_coverage' in dataobj ? this.clampAttribute(dataobj.zone_coverage, -22, draft_round) : undefined,
+            stamina: this.clampAttribute(dataobj.stamina, -1),
+            injury: this.clampAttribute(dataobj.injury, -1)
           }
           const resultLOLBB = this.playerAttrRepo.create({
             player: { id: player.id },
@@ -1166,7 +1120,11 @@ export class playerService {
             finesse_moves: convertedDataLOLBB.finesse_moves,
             block_shedding: convertedDataLOLBB.block_shed,
             pursuit: convertedDataLOLBB.pursuit,
-            play_recognition: convertedDataLOLBB.play_recognition
+            play_recognition: convertedDataLOLBB.play_recognition,
+            man_coverage: convertedDataLOLBB.man_coverage,
+            zone_coverage: convertedDataLOLBB.zone_coverage,
+            stamina: convertedDataLOLBB.stamina,
+            injury: convertedDataLOLBB.injury
           });
           await this.playerAttrRepo.save(resultLOLBB)
 
@@ -1183,35 +1141,35 @@ export class playerService {
             overallRating: ovr,
             height: height,
             homeTown: homeTown,
-            weight: weight
+            weight: weight,
+            jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
+            draftFolder: draftFolderName
           };
-
 
         //------------------------------ MLB CONVERSION ================
         case POSTION_CODE.All_Middle_Linebackers:
-
           dataobj = rawData as All_Middle_LinebackersDTO
-
           const convertedDataMLB = {
             age: calculatedAge,
-            speed: dataobj.speed - 4,
-            acceleration: dataobj.acceleration - 2,
-            agility: dataobj.agility - 2,
-            change_of_direction: 'change_of_direction' in dataobj ? (dataobj.change_of_direction - 4) : undefined,
-            awareness: dataobj.awareness - 9 - (draft_round),
-            strength: dataobj.strength - 7,
-            jumping: 'jumping' in dataobj ? dataobj.jumping - 12 : undefined,
-            tackling: dataobj.tackling - 7 - (draft_round),
-            hit_power: dataobj.hit_power - 3,
-            power_moves: dataobj.power_moves - 21 - (draft_round),
-            finesse_moves: dataobj.finesse_moves - 25 - (draft_round),
-            block_shed: dataobj.block_shedding - 6 - (draft_round),
-            pursuit: dataobj.pursuit - 6 - (draft_round),
-            play_recognition: dataobj.play_recognition - 18 - (draft_round),
-            man_coverage: 'man_coverage' in dataobj ? (dataobj.man_coverage - 25 - (draft_round)) : undefined,
-            zone_coverage: 'zone_coverage' in dataobj ? (dataobj.zone_coverage - 22 - (draft_round)) : undefined,
-            stamina: dataobj.stamina - 1,
-            injury: dataobj.injury - 1
+            speed: this.clampAttribute(dataobj.speed, -4),
+            acceleration: this.clampAttribute(dataobj.acceleration, -2),
+            agility: this.clampAttribute(dataobj.agility, -2),
+            change_of_direction: 'change_of_direction' in dataobj ? this.clampAttribute(dataobj.change_of_direction, -4) : undefined,
+            awareness: this.clampAttribute(dataobj.awareness, -9, draft_round),
+            strength: this.clampAttribute(dataobj.strength, -7),
+            jumping: 'jumping' in dataobj ? this.clampAttribute(dataobj.jumping, -12) : undefined,
+            tackling: this.clampAttribute(dataobj.tackling, -7, draft_round),
+            hit_power: this.clampAttribute(dataobj.hit_power, -3),
+            power_moves: this.clampAttribute(dataobj.power_moves, -21, draft_round),
+            finesse_moves: this.clampAttribute(dataobj.finesse_moves, -25, draft_round),
+            block_shed: this.clampAttribute(dataobj.block_shedding, -6, draft_round),
+            pursuit: this.clampAttribute(dataobj.pursuit, -6, draft_round),
+            play_recognition: this.clampAttribute(dataobj.play_recognition, -18, draft_round),
+            man_coverage: 'man_coverage' in dataobj ? this.clampAttribute(dataobj.man_coverage, -25, draft_round) : undefined,
+            zone_coverage: 'zone_coverage' in dataobj ? this.clampAttribute(dataobj.zone_coverage, -22, draft_round) : undefined,
+            stamina: this.clampAttribute(dataobj.stamina, -1),
+            injury: this.clampAttribute(dataobj.injury, -1)
           }
           const resultMLB = this.playerAttrRepo.create({
             player: { id: player.id },
@@ -1229,7 +1187,11 @@ export class playerService {
             finesse_moves: convertedDataMLB.finesse_moves,
             block_shedding: convertedDataMLB.block_shed,
             pursuit: convertedDataMLB.pursuit,
-            play_recognition: convertedDataMLB.play_recognition
+            play_recognition: convertedDataMLB.play_recognition,
+            man_coverage: convertedDataMLB.man_coverage,
+            zone_coverage: convertedDataMLB.zone_coverage,
+            stamina: convertedDataMLB.stamina,
+            injury: convertedDataMLB.injury
           });
           await this.playerAttrRepo.save(resultMLB)
 
@@ -1246,39 +1208,35 @@ export class playerService {
             overallRating: ovr,
             height: height,
             homeTown: homeTown,
-            weight: weight
+            weight: weight,
+            jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
+            draftFolder: draftFolderName
           };
-
-        //--FULLBACK CONVERSION
-        //-- KICKER CONVERSION
-        //-- PUNTER CONVERSION 
 
         //------------------------CB CONVERSION ------------------------------ 
         case POSTION_CODE.CornerBack:
-
           dataobj = rawData as CornerBackDto
-
           const convertedDataCB = {
             age: calculatedAge,
-            speed: dataobj.speed - 4,
-            acceleration: dataobj.acceleration + 0,
-            agility: dataobj.agility + 0,
-            catch_of_direction: dataobj.change_of_direction - 2,
-            catching: 'catching' in dataobj ? (dataobj.catching - 19 - (draft_round)) : undefined,
-            awareness: dataobj.awareness - 7 - (draft_round),
-            strength: dataobj.strength - 8,
-            jumping: dataobj.jumping - 1,
-            tackling: 'tackling' in dataobj ? (dataobj.tackling - 8 - (draft_round)) : undefined,
-            hit_power: dataobj.hit_power - 10,
-            pursuit: dataobj.pursuit - 13 - (draft_round),
-            play_recognition: dataobj.play_recognition - 15 - (draft_round),
-            man_coverage: dataobj.man_coverage - 13 - (draft_round),
-            zone_coverage: dataobj.zone_coverage - 13 - (draft_round),
-            press: dataobj.press - 10 - (draft_round),
-            return: dataobj.return + 0,
-            stamina: dataobj.stamina - 1,
-            injury: dataobj.injury - 1
-
+            speed: this.clampAttribute(dataobj.speed, -4),
+            acceleration: this.clampAttribute(dataobj.acceleration, 0),
+            agility: this.clampAttribute(dataobj.agility, 0),
+            catch_of_direction: this.clampAttribute(dataobj.change_of_direction, -2),
+            catching: 'catching' in dataobj ? this.clampAttribute(dataobj.catching, -19, draft_round) : undefined,
+            awareness: this.clampAttribute(dataobj.awareness, -7, draft_round),
+            strength: this.clampAttribute(dataobj.strength, -8),
+            jumping: this.clampAttribute(dataobj.jumping, -1),
+            tackling: 'tackling' in dataobj ? this.clampAttribute(dataobj.tackling, -8, draft_round) : undefined,
+            hit_power: this.clampAttribute(dataobj.hit_power, -10),
+            pursuit: this.clampAttribute(dataobj.pursuit, -13, draft_round),
+            play_recognition: this.clampAttribute(dataobj.play_recognition, -15, draft_round),
+            man_coverage: this.clampAttribute(dataobj.man_coverage, -13, draft_round),
+            zone_coverage: this.clampAttribute(dataobj.zone_coverage, -13, draft_round),
+            press: this.clampAttribute(dataobj.press, -10, draft_round),
+            return: this.clampAttribute(dataobj.return, 0),
+            stamina: this.clampAttribute(dataobj.stamina, -1),
+            injury: this.clampAttribute(dataobj.injury, -1)
           }
           const resultCB = this.playerAttrRepo.create({
             player: { id: player.id },
@@ -1321,35 +1279,31 @@ export class playerService {
             jerseyNumber: jerseyNumber,
             draft_round: player.projectedReason,
             draftFolder: draftFolderName
-
           };
-
 
         //------------------S CONVERSION --------------------------
         case POSTION_CODE.Safety:
-
           dataobj = rawData as SafetyDto
-
           const convertedDataS = {
             age: calculatedAge,
-            speed: dataobj.speed - 1,
-            acceleration: dataobj.acceleration - 1,
-            agility: dataobj.agility + 1,
-            cod: dataobj.change_of_direction - 9,
-            catching: dataobj.catching - 22 - (draft_round),
-            awareness: dataobj.awareness - 8 - (draft_round),
-            strength: dataobj.strength - 11,
-            block_shed: 'block_shed' in dataobj ? (dataobj.block_shed - 8 - (draft_round)) : undefined,
-            jumping: dataobj.jumping - 6,
-            tackling: dataobj.tackling - 7 - (draft_round),
-            hit_power: dataobj.hit_power - 8,
-            pursuit: dataobj.pursuit - 11 - (draft_round),
-            play_recognition: dataobj.play_recognition - 18 - (draft_round),
-            man_coverage: dataobj.man_coverage - 6 - (draft_round),
-            zone_coverage: dataobj.zone_coverage - 15 - (draft_round),
-            press: dataobj.press - 6 - (draft_round),
-            stamina: dataobj.stamina - 1,
-            injury: dataobj.injury - 1,
+            speed: this.clampAttribute(dataobj.speed, -1),
+            acceleration: this.clampAttribute(dataobj.acceleration, -1),
+            agility: this.clampAttribute(dataobj.agility, 1),
+            cod: this.clampAttribute(dataobj.change_of_direction, -9),
+            catching: this.clampAttribute(dataobj.catching, -22, draft_round),
+            awareness: this.clampAttribute(dataobj.awareness, -8, draft_round),
+            strength: this.clampAttribute(dataobj.strength, -11),
+            block_shed: 'block_shed' in dataobj ? this.clampAttribute(dataobj.block_shed, -8, draft_round) : undefined,
+            jumping: this.clampAttribute(dataobj.jumping, -6),
+            tackling: this.clampAttribute(dataobj.tackling, -7, draft_round),
+            hit_power: this.clampAttribute(dataobj.hit_power, -8),
+            pursuit: this.clampAttribute(dataobj.pursuit, -11, draft_round),
+            play_recognition: this.clampAttribute(dataobj.play_recognition, -18, draft_round),
+            man_coverage: this.clampAttribute(dataobj.man_coverage, -6, draft_round),
+            zone_coverage: this.clampAttribute(dataobj.zone_coverage, -15, draft_round),
+            press: this.clampAttribute(dataobj.press, -6, draft_round),
+            stamina: this.clampAttribute(dataobj.stamina, -1),
+            injury: this.clampAttribute(dataobj.injury, -1),
           }
           const resultS = this.playerAttrRepo.create({
             player: { id: player.id },
@@ -1385,7 +1339,6 @@ export class playerService {
           return {
             message: `Conversion of ${positionCode} Successful`,
             result: cleanedResultS,
-
             overallRating: ovr,
             height: height,
             homeTown: homeTown,
@@ -1393,19 +1346,17 @@ export class playerService {
             jerseyNumber: jerseyNumber,
             draft_round: player.projectedReason,
             draftFolder: draftFolderName
-
           };
+
         case POSTION_CODE.Kicker:
-
           dataobj = rawData as KickerDto
-
           const convertedDataK = {
             age: calculatedAge,
-            kick_power: dataobj.kick_power + 0,
-            awareness: dataobj.awareness - 19,
-            kick_accuracy: dataobj.kick_accuracy - 3,
-            speed: dataobj.speed - 8,
-            acceleration: dataobj.acceleration + 7,
+            kick_power: this.clampAttribute(dataobj.kick_power, 0),
+            awareness: this.clampAttribute(dataobj.awareness, -19),
+            kick_accuracy: this.clampAttribute(dataobj.kick_accuracy, -3),
+            speed: this.clampAttribute(dataobj.speed, -8),
+            acceleration: this.clampAttribute(dataobj.acceleration, 7),
           }
           const resultK = this.playerAttrRepo.create({
             player: { id: player.id },
@@ -1418,7 +1369,7 @@ export class playerService {
           })
           await this.playerAttrRepo.save(resultK)
 
-          const cleanedResultK = Object.keys(convertedDataK).reduce((acc, key) => {
+          const cleanedResultK = Object.keys(resultK).reduce((acc, key) => {
             if (resultK[key] !== null && resultK[key] !== undefined) {
               acc[key] = resultK[key];
             }
@@ -1428,7 +1379,6 @@ export class playerService {
           return {
             message: `Conversion of ${positionCode} Successful`,
             result: cleanedResultK,
-
             overallRating: ovr,
             height: height,
             homeTown: homeTown,
@@ -1436,19 +1386,17 @@ export class playerService {
             jerseyNumber: jerseyNumber,
             draft_round: player.projectedReason,
             draftFolder: draftFolderName
-
           }
+
         case POSTION_CODE.Punter:
-
           dataobj = rawData as PunterDto
-
           const convertedDataP = {
             age: calculatedAge,
-            kick_power: dataobj.kick_power + 0,
-            awareness: dataobj.awareness - 21,
-            kick_accuracy: dataobj.kick_accuracy - 3,
-            speed: dataobj.speed - 7,
-            acceleration: dataobj.acceleration - 7,
+            kick_power: this.clampAttribute(dataobj.kick_power, 0),
+            awareness: this.clampAttribute(dataobj.awareness, -21),
+            kick_accuracy: this.clampAttribute(dataobj.kick_accuracy, -3),
+            speed: this.clampAttribute(dataobj.speed, -7),
+            acceleration: this.clampAttribute(dataobj.acceleration, -7),
           }
           const resultP = this.playerAttrRepo.create({
             player: { id: player.id },
@@ -1461,7 +1409,7 @@ export class playerService {
           })
           await this.playerAttrRepo.save(resultP)
 
-          const cleanedResultP = Object.keys(convertedDataP).reduce((acc, key) => {
+          const cleanedResultP = Object.keys(resultP).reduce((acc, key) => {
             if (resultP[key] !== null && resultP[key] !== undefined) {
               acc[key] = resultP[key];
             }
@@ -1471,7 +1419,6 @@ export class playerService {
           return {
             message: `Conversion of ${positionCode} Successful`,
             result: cleanedResultP,
-
             overallRating: ovr,
             height: height,
             homeTown: homeTown,
@@ -1479,37 +1426,35 @@ export class playerService {
             jerseyNumber: jerseyNumber,
             draft_round: player.projectedReason,
             draftFolder: draftFolderName
-
           }
+
         case POSTION_CODE.FullBack:
-
           dataobj = rawData as FullBackDto
-
           const convertedDataFB = {
             age: calculatedAge,
-            speed: dataobj.speed + 5,
-            acceleration: dataobj.acceleration - 4,
-            agility: dataobj.agility + 3,
-            stamina: dataobj.stamina - 1,
-            change_of_direction: dataobj.change_of_direction + 1,
-            lead_block: dataobj.lead_block - 8,
-            run_block: dataobj.run_block - 12,
-            pass_block: dataobj.pass_block - 15,
-            pass_block_power: dataobj.pass_block_power - 6,
-            run_block_power: dataobj.run_block_power - 1,
-            pass_block_finesse: dataobj.pass_block_finesse - 8,
-            run_block_finesse: dataobj.run_block_finesse - 4,
-            carrying: dataobj.carrying - 7,
-            catching: dataobj.catching - 1,
-            catch_in_traffic: dataobj.catch_in_traffic + 19,
-            short_route_running: dataobj.short_route_running - 10,
-            medium_route_running: dataobj.medium_route_running - 10,
-            injury: dataobj.injury - 1,
-            strength: dataobj.strength + 4,
-            impact_block: dataobj.impact_blocking - 4,
-            stiff_arm: dataobj.stiff_arm + 8,
-            trucking: dataobj.trucking - 1,
-            awareness: dataobj.awareness - 3,
+            speed: this.clampAttribute(dataobj.speed, 5),
+            acceleration: this.clampAttribute(dataobj.acceleration, -4),
+            agility: this.clampAttribute(dataobj.agility, 3),
+            stamina: this.clampAttribute(dataobj.stamina, -1),
+            change_of_direction: this.clampAttribute(dataobj.change_of_direction, 1),
+            lead_block: this.clampAttribute(dataobj.lead_block, -8),
+            run_block: this.clampAttribute(dataobj.run_block, -12),
+            pass_block: this.clampAttribute(dataobj.pass_block, -15),
+            pass_block_power: this.clampAttribute(dataobj.pass_block_power, -6),
+            run_block_power: this.clampAttribute(dataobj.run_block_power, -1),
+            pass_block_finesse: this.clampAttribute(dataobj.pass_block_finesse, -8),
+            run_block_finesse: this.clampAttribute(dataobj.run_block_finesse, -4),
+            carrying: this.clampAttribute(dataobj.carrying, -7),
+            catching: this.clampAttribute(dataobj.catching, -1),
+            catch_in_traffic: this.clampAttribute(dataobj.catch_in_traffic, 19),
+            short_route_running: this.clampAttribute(dataobj.short_route_running, -10),
+            medium_route_running: this.clampAttribute(dataobj.medium_route_running, -10),
+            injury: this.clampAttribute(dataobj.injury, -1),
+            strength: this.clampAttribute(dataobj.strength, 4),
+            impact_block: this.clampAttribute(dataobj.impact_blocking, -4),
+            stiff_arm: this.clampAttribute(dataobj.stiff_arm, 8),
+            trucking: this.clampAttribute(dataobj.trucking, -1),
+            awareness: this.clampAttribute(dataobj.awareness, -3),
           }
           const ResultFB = this.playerAttrRepo.create({
             player: { id: player.id },
@@ -1533,13 +1478,14 @@ export class playerService {
             medium_route_running: convertedDataFB.medium_route_running,
             injury: convertedDataFB.injury,
             strength: convertedDataFB.strength,
+            impact_block: convertedDataFB.impact_block,
             stiff_arm: convertedDataFB.stiff_arm,
             trucking: convertedDataFB.trucking,
             awareness: convertedDataFB.awareness,
           })
           await this.playerAttrRepo.save(ResultFB)
 
-          const cleanedResultFB = Object.keys(convertedDataFB).reduce((acc, key) => {
+          const cleanedResultFB = Object.keys(ResultFB).reduce((acc, key) => {
             if (ResultFB[key] !== null && ResultFB[key] !== undefined) {
               acc[key] = ResultFB[key];
             }
@@ -1556,11 +1502,10 @@ export class playerService {
             jerseyNumber: jerseyNumber,
             draft_round: player.projectedReason,
             draftFolder: draftFolderName
-
           }
+
         default:
           throw new Error('Invalid Position Code');
-
       }
     }
     catch (error) {
