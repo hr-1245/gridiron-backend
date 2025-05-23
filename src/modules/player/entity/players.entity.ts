@@ -4,10 +4,10 @@ import { COLLAGE_AGE_ENUM, playerStatusEnum } from 'src/types/enums/roles';
 import { baseEntity } from 'src/entities/base.entity';
 import { userEntity } from 'src/modules/user/entity/userEntity';
 import { playerDraftFolderEntity } from './player-draft-folder.entity';
-import { Min, Max } from 'class-validator';
 
 @Entity({ name: 'player' })
 export class PlayerEntity extends baseEntity {
+
     @Column({ nullable: false })
     name: string;
 
@@ -16,8 +16,6 @@ export class PlayerEntity extends baseEntity {
     user: userEntity;
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
     overallRating: number;
 
     @Column({ nullable: true })
@@ -30,12 +28,9 @@ export class PlayerEntity extends baseEntity {
     height: string | null
 
     @Column({ nullable: true, type: 'int' })
-    @Min(0)
     weight: number | null
 
     @Column({ nullable: true })
-    @Min(1)
-    @Max(7)
     projectedReason?: string;
 
     @Column({ nullable: true })
@@ -57,313 +52,202 @@ export class PlayerEntity extends baseEntity {
     @ManyToOne(() => playerDraftFolderEntity, folder => folder.players, { nullable: true })
     @JoinColumn()
     draftFolder: playerDraftFolderEntity
+
 }
+
 
 @Entity({ name: 'player_attributes' })
 export class PlayerAttributesEntity extends baseEntity {
+
     @Column({ nullable: true })
-    @Min(18)
-    @Max(24)
     age: number
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    speed: number;
+    speed: number; // 'SPD'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    strength: number;
+    strength: number; // 'STR'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    agility: number;
+    agility: number; // 'AGI'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    acceleration: number;
+    acceleration: number; // 'ACC'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    awareness: number;
+    awareness: number; // 'AWR'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    stamina: number;
+    stamina: number; // 'STA'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    injury: number;
+    injury: number; // 'INJ'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    toughness: number;
+    toughness: number; // 'TGH'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    throw_power: number;
+    throw_power: number; // 'THP'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    throw_accuracy_short: number;
+    throw_accuracy_short: number; // 'THP'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    throw_accuracy_mid: number;
+    throw_accuracy_mid: number; // 'THP'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    throw_accuracy_deep: number;
+    throw_accuracy_deep: number; // 'THP'
+
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    short_accuracy: number;
+    short_accuracy: number; // 'SAC'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    medium_accuracy: number;
+    medium_accuracy: number; // 'MAC'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    deep_accuracy: number;
+    deep_accuracy: number; // 'DAC'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    throw_on_the_run: number;
+    throw_on_the_run: number; // 'RUN'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    throw_under_pressure: number;
+    throw_under_pressure: number; // 'TUP'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    break_sack: number;
+    break_sack: number; // 'BSK'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    play_action: number;
+    play_action: number; // 'PAC'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    break_tackle: number;
+    break_tackle: number; // 'BTK'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    trucking: number;
+    trucking: number; // 'TRK'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    change_of_direction: number;
+    change_of_direction: number; // 'COD'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    ball_carrier_vision: number;
+    ball_carrier_vision: number; // 'BCV'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    stiff_arm: number;
+    stiff_arm: number; // 'SFA'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    spin_move: number;
+    spin_move: number; // 'SPM'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    kick_power: number;
+    kick_power: number; // 'SPM'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    kick_accuracy: number;
+    kick_accuracy: number; // 'SPM'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    juke_move: number;
+    juke_move: number; // 'JKM'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    carrying: number;
+    carrying: number; // 'CAR'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    catching: number;
+    catching: number; // 'CTH'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    short_route_running: number;
+    short_route_running: number; // 'SRR'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    short_throw_acceleration: number;
+    short_throw_acceleration: number
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    medium_throw_acceleration: number;
+    medium_throw_acceleration: number
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    deep_throw_acceleration: number;
+    deep_throw_acceleration: number
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    medium_route_running: number;
+    medium_route_running: number; // 'MRR'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    deep_route_running: number;
+    deep_route_running: number; // 'DRR'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    catch_in_traffic: number;
+    catch_in_traffic: number; // 'CIT'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    spectacular_catch: number;
+    spectacular_catch: number; // 'SPC'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    release: number;
+    release: number; // 'RLS'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    jumping: number;
+    jumping: number; // 'JMP'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    return: number;
+    return: number; // 'RET'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    pass_block: number;
+    pass_block: number; // 'PBK'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    pass_block_power: number;
+    pass_block_power: number; // 'PBP'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    pass_block_finesse: number;
+    pass_block_finesse: number; // 'PBF'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    run_block: number;
+    run_block: number; // 'RBK'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    run_block_power: number;
+    run_block_power: number; // 'RBP'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    run_block_finesse: number;
+    run_block_finesse: number; // 'RBF'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    lead_block: number;
+    lead_block: number; // 'LBK'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    impact_block: number;
+    impact_block: number; // 'IBL'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    tackling: number;
+    tackling: number; // 'TAK'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    hit_power: number;
+    hit_power: number; // 'POW'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    power_moves: number;
+    power_moves: number; // 'PMV'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    finesse_moves: number;
+    finesse_moves: number; // 'FMV'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    block_shedding: number;
+    block_shedding: number; // 'BSH'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    pursuit: number;
+    pursuit: number; // 'PUR'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    play_recognition: number;
+    play_recognition: number; // 'PRC'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    man_coverage: number;
+    man_coverage: number; // 'MCV'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    zone_coverage: number;
+    zone_coverage: number; // 'ZCV'
 
     @Column({ nullable: true })
-    @Min(0)
-    @Max(99)
-    press: number;
+    press: number; // 'PRS'
+
+    @Column({ nullable: true })
+    draft_round: number
 
     @ManyToOne(() => PlayerEntity, player => player.attributes, { nullable: true, onDelete: 'CASCADE' })
     player: PlayerEntity;
 }
+
+
 
 @Entity({ name: 'player_image' })
 export class PlayerImageEntity extends baseEntity {
@@ -374,8 +258,10 @@ export class PlayerImageEntity extends baseEntity {
     player: PlayerEntity;
 }
 
+
 @Entity({ name: 'position_attribute_mapping' })
 export class PositionAttributeMappingEntity extends baseEntity {
+
     @Column()
     attributeKey: string;
 
