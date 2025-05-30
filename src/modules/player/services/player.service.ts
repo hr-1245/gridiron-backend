@@ -133,21 +133,32 @@ export class playerService {
           position: { id: positionId },
           playerClass: obj.player_class as COLLAGE_AGE_ENUM,
           overallRating: ovr,
-          height: height,
-          homeTown: homeTown,
-          weight: weight,
+          height,
+          homeTown,
+          weight,
           projectedReason: String(draft_round),
           jerseyNumber: jerseyNumber as unknown as string,
           draftFolder: draftFolder ? { id: draftFolder.id } : undefined
         });
-
         player = await this.playerRepo.save(newPlayer);
       } else {
+        let updated = false;
+
         if (draftFolder && !player.draftFolder) {
           player.draftFolder = { id: draftFolder.id } as any;
+          updated = true;
+        }
+
+        if (player.overallRating !== ovr) {
+          player.overallRating = ovr;
+          updated = true;
+        }
+
+        if (updated) {
           await this.playerRepo.save(player);
         }
       }
+
 
       let dataobj: ConverstionDataDto;
       const randomAge = Math.floor(Math.random() * 2) + 17;

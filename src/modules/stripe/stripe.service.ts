@@ -416,6 +416,9 @@ export class StripeService {
   // -------------------- Handle Stripe Webhook --------------------
   async handleStripeWebhook(req: Request): Promise<{ message: string }> {
     const sig = req.headers['stripe-signature'];
+
+    console.log('Stripe Signature Header:', sig);           // <-- Add this
+    console.log('Webhook Secret:', this.webhookSecret);
     if (!sig || !this.webhookSecret) {
       throw new BadRequestException('Webhook secret or signature missing');
     }
