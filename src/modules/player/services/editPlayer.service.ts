@@ -148,7 +148,7 @@ export class editPlayerService {
             ...dataobj.deep_route_running && ({ deep_route_running: this.calculateAttribute(dataobj.deep_route_running, -6, draft_round) }),
             ...dataobj.stamina && ({ stamina: this.calculateAttribute(dataobj.stamina, -1) }),
             ...dataobj.injury && ({ injury: this.calculateAttribute(dataobj.injury, -1) }),
-            ...draft_round && ({
+            ...DR && ({
               draft_round,
               awareness: this.calculateAttribute(dataobj.awareness || player.attributes[0].awareness, -4, draft_round),
               break_tackle: this.calculateAttribute(dataobj.break_tackle || player.attributes[0].break_tackle, -2, draft_round),
@@ -203,7 +203,7 @@ export class editPlayerService {
             ...dataobj.juke_move && ({ juke_move: this.calculateAttribute(dataobj.juke_move, -10, draft_round) }),
             ...dataobj.stamina && ({ stamina: this.calculateAttribute(dataobj.stamina, -2) }),
             ...dataobj.injury && ({ injury: this.calculateAttribute(dataobj.injury, -1) }),
-            ...draft_round && ({
+            ...DR && ({
               draft_round,
               awareness: this.calculateAttribute(dataobj.awareness || player.attributes[0].awareness, -10, draft_round),
               throw_accuracy_short: this.calculateAttribute(dataobj.throw_accuracy_short || player.attributes[0].throw_accuracy_short, -7, draft_round),
@@ -254,7 +254,7 @@ export class editPlayerService {
             ...dataobj.stamina && ({ stamina: this.calculateAttribute(dataobj.stamina, -2) }),
             ...dataobj.return && ({ return: this.calculateAttribute(dataobj.return, -1) }),
             ...dataobj.injury && ({ injury: this.calculateAttribute(dataobj.injury, -1) }),
-            ...draft_round && ({
+            ...DR && ({
               draft_round,
               awareness: this.calculateAttribute(dataobj.awareness || player.attributes[0].awareness, -11, draft_round),
               break_tackle: this.calculateAttribute(dataobj.break_tackle || player.attributes[0].break_tackle, -7, draft_round),
@@ -305,7 +305,7 @@ export class editPlayerService {
             ...dataobj.stamina && ({ stamina: this.calculateAttribute(dataobj.stamina, -1) }),
             ...dataobj.return && ({ return: this.calculateAttribute(dataobj.return, -1) }),
             ...dataobj.injury && ({ injury: this.calculateAttribute(dataobj.injury, -1) }),
-            ...draft_round && ({
+            ...DR && ({
               draft_round,
               awareness: this.calculateAttribute(dataobj.awareness || player.attributes[0].awareness, -15, draft_round),
               break_tackle: this.calculateAttribute(dataobj.break_tackle || player.attributes[0].break_tackle, -3, draft_round),
@@ -346,7 +346,7 @@ export class editPlayerService {
             ...dataobj.play_recognition && ({ play_recognition: this.calculateAttribute(dataobj.play_recognition, -18, draft_round) }),
             ...dataobj.stamina && ({ stamina: this.calculateAttribute(dataobj.stamina, -3) }),
             ...dataobj.injury && ({ injury: this.calculateAttribute(dataobj.injury, -2) }),
-            ...draft_round && ({
+            ...DR && ({
               draft_round,
               awareness: this.calculateAttribute(dataobj.awareness || player.attributes[0].awareness, -13, draft_round),
               tackling: this.calculateAttribute(dataobj.tackling || player.attributes[0].tackling, -11, draft_round),
@@ -383,7 +383,7 @@ export class editPlayerService {
             ...dataobj.return && ({ return: this.calculateAttribute(dataobj.return, 0) }),
             ...dataobj.stamina && ({ stamina: this.calculateAttribute(dataobj.stamina, -1) }),
             ...dataobj.injury && ({ injury: this.calculateAttribute(dataobj.injury, -1) }),
-            ...draft_round && ({
+            ...DR && ({
               draft_round,
               catching: this.calculateAttribute(dataobj.catching || player.attributes[0].catching, -19, draft_round),
               awareness: this.calculateAttribute(dataobj.awareness || player.attributes[0].awareness, -7, draft_round),
@@ -421,7 +421,7 @@ export class editPlayerService {
             ...dataobj.press && ({ press: this.calculateAttribute(dataobj.press, -6, draft_round) }),
             ...dataobj.stamina && ({ stamina: this.calculateAttribute(dataobj.stamina, -1) }),
             ...dataobj.injury && ({ injury: this.calculateAttribute(dataobj.injury, -1) }),
-            ...draft_round && ({
+            ...DR && ({
               draft_round,
               catching: this.calculateAttribute(dataobj.catching || player.attributes[0].catching, -22, draft_round),
               awareness: this.calculateAttribute(dataobj.awareness || player.attributes[0].awareness, -8, draft_round),
@@ -456,7 +456,7 @@ export class editPlayerService {
             ...dataobj.run_block_finesse && { run_block_finesse: this.calculateAttribute(dataobj.run_block_finesse, -16, draft_round) },
             ...dataobj.stamina && { stamina: this.calculateAttribute(dataobj.stamina, -1) },
             ...dataobj.injury && { injury: this.calculateAttribute(dataobj.injury, -1) },
-            ...draft_round && {
+            ...DR && {
               draft_round,
               awareness: this.calculateAttribute(dataobj.awareness || player.attributes[0].awareness, -9, draft_round),
               lead_block: this.calculateAttribute(dataobj.lead_block || player.attributes[0].lead_block, -8, draft_round),
@@ -491,7 +491,7 @@ export class editPlayerService {
             ...dataobj.run_block_finesse && { run_block_finesse: this.calculateAttribute(dataobj.run_block_finesse, -16, draft_round) },
             ...dataobj.stamina && { stamina: this.calculateAttribute(dataobj.stamina, -1) },
             ...dataobj.injury && { injury: this.calculateAttribute(dataobj.injury, -1) },
-            ...draft_round && {
+            ...DR && {
               draft_round,
               awareness: this.calculateAttribute(dataobj.awareness || player.attributes[0].awareness, -9, draft_round),
               lead_block: this.calculateAttribute(dataobj.lead_block || player.attributes[0].lead_block, -8, draft_round),
@@ -527,7 +527,7 @@ export class editPlayerService {
             ...dataobj.run_block_finesse && { run_block_finesse: this.calculateAttribute(dataobj.run_block_finesse, -5, draft_round) },
             ...dataobj.stamina && { stamina: this.calculateAttribute(dataobj.stamina, -1) },
             ...dataobj.injury && { injury: this.calculateAttribute(dataobj.injury, -1) },
-            ...draft_round && {
+            ...DR && {
               draft_round,
               awareness: this.calculateAttribute(dataobj.awareness || player.attributes[0].awareness, -10, draft_round),
               lead_block: this.calculateAttribute(dataobj.lead_block || player.attributes[0].lead_block, -5, draft_round),
@@ -562,7 +562,7 @@ export class editPlayerService {
             ...dataobj.run_block_finesse && { run_block_finesse: this.calculateAttribute(dataobj.run_block_finesse, -14, draft_round) },
             ...dataobj.stamina && { stamina: this.calculateAttribute(dataobj.stamina, -1) },
             ...dataobj.injury && { injury: this.calculateAttribute(dataobj.injury, -1) },
-            ...draft_round && {
+            ...DR && {
               draft_round,
               awareness: this.calculateAttribute(dataobj.awareness || player.attributes[0].awareness, -8, draft_round),
               lead_block: this.calculateAttribute(dataobj.lead_block || player.attributes[0].lead_block, -9, draft_round),
@@ -596,7 +596,7 @@ export class editPlayerService {
             ...dataobj.play_recognition && { play_recognition: this.calculateAttribute(dataobj.play_recognition, -24, draft_round) },
             ...dataobj.stamina && { stamina: this.calculateAttribute(dataobj.stamina, -1) },
             ...dataobj.injury && { injury: this.calculateAttribute(dataobj.injury, -1) },
-            ...draft_round && {
+            ...DR && {
               draft_round,
               awareness: this.calculateAttribute(dataobj.awareness || player.attributes[0].awareness, -15, draft_round),
               tackling: this.calculateAttribute(dataobj.tackling || player.attributes[0].tackling, -13, draft_round),
@@ -629,7 +629,7 @@ export class editPlayerService {
             ...dataobj.play_recognition && { play_recognition: this.calculateAttribute(dataobj.play_recognition, -24, draft_round) },
             ...dataobj.stamina && { stamina: this.calculateAttribute(dataobj.stamina, -1) },
             ...dataobj.injury && { injury: this.calculateAttribute(dataobj.injury, -1) },
-            ...draft_round && {
+            ...DR && {
               draft_round,
               awareness: this.calculateAttribute(dataobj.awareness || player.attributes[0].awareness, -15, draft_round),
               tackling: this.calculateAttribute(dataobj.tackling || player.attributes[0].tackling, -13, draft_round),
@@ -665,7 +665,7 @@ export class editPlayerService {
             ...dataobj.play_recognition && { play_recognition: this.calculateAttribute(dataobj.play_recognition, -24, draft_round) },
             ...dataobj.stamina && { stamina: this.calculateAttribute(dataobj.stamina, -1) },
             ...dataobj.injury && { injury: this.calculateAttribute(dataobj.injury, -1) },
-            ...draft_round && {
+            ...DR && {
               draft_round,
               awareness: this.calculateAttribute(dataobj.awareness || player.attributes[0].awareness, -15, draft_round),
               tackling: this.calculateAttribute(dataobj.tackling || player.attributes[0].tackling, -13, draft_round),
@@ -698,7 +698,7 @@ export class editPlayerService {
             ...dataobj.play_recognition && { play_recognition: this.calculateAttribute(dataobj.play_recognition, -24, draft_round) },
             ...dataobj.stamina && { stamina: this.calculateAttribute(dataobj.stamina, -1) },
             ...dataobj.injury && { injury: this.calculateAttribute(dataobj.injury, -1) },
-            ...draft_round && {
+            ...DR && {
               draft_round,
               awareness: this.calculateAttribute(dataobj.awareness || player.attributes[0].awareness, -15, draft_round),
               tackling: this.calculateAttribute(dataobj.tackling || player.attributes[0].tackling, -13, draft_round),
@@ -735,7 +735,7 @@ export class editPlayerService {
             ...dataobj.zone_coverage && { zone_coverage: this.calculateAttribute(dataobj.zone_coverage, -22, draft_round) },
             ...dataobj.stamina && { stamina: this.calculateAttribute(dataobj.stamina, -1) },
             ...dataobj.injury && { injury: this.calculateAttribute(dataobj.injury, -1) },
-            ...draft_round && {
+            ...DR && {
               draft_round,
               awareness: this.calculateAttribute(dataobj.awareness || player.attributes[0].awareness, -9, draft_round),
               tackling: this.calculateAttribute(dataobj.tackling || player.attributes[0].tackling, -7, draft_round),
@@ -778,7 +778,7 @@ export class editPlayerService {
             ...dataobj.zone_coverage && { zone_coverage: this.calculateAttribute(dataobj.zone_coverage, -22, draft_round) },
             ...dataobj.stamina && { stamina: this.calculateAttribute(dataobj.stamina, -1) },
             ...dataobj.injury && { injury: this.calculateAttribute(dataobj.injury, -1) },
-            ...draft_round && {
+            ...DR && {
               draft_round,
               awareness: this.calculateAttribute(dataobj.awareness || player.attributes[0].awareness, -9, draft_round),
               tackling: this.calculateAttribute(dataobj.tackling || player.attributes[0].tackling, -7, draft_round),
@@ -818,7 +818,7 @@ export class editPlayerService {
             ...dataobj.zone_coverage && { zone_coverage: this.calculateAttribute(dataobj.zone_coverage, -22, draft_round) },
             ...dataobj.stamina && { stamina: this.calculateAttribute(dataobj.stamina, -1) },
             ...dataobj.injury && { injury: this.calculateAttribute(dataobj.injury, -1) },
-            ...draft_round && {
+            ...DR && {
               draft_round,
               awareness: this.calculateAttribute(dataobj.awareness || player.attributes[0].awareness, -9, draft_round),
               tackling: this.calculateAttribute(dataobj.tackling || player.attributes[0].tackling, -7, draft_round),
