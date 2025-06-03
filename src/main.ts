@@ -8,16 +8,24 @@ import { ExpressAdapter } from '@bull-board/express';
 import { createBullBoard } from '@bull-board/api';
 import { BullAdapter } from '@bull-board/api/bullAdapter';
 import { Queue } from 'bull';
+import * as bodyParser from 'body-parser';
+
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+app.use('/stripe/webhook', bodyParser.raw({ type: 'application/json' }));
+  app.use((req, res, next) => {
+    console.log('Incoming headers:', req.headers);
+    next();
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
     }),
-   );
- 
+  );
+
   // Basic authentication middleware
   // app.use(
   //   basicAuth({
