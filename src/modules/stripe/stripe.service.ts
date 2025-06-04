@@ -149,7 +149,6 @@ export class StripeService {
         items: [{ price: priceId }],
         default_payment_method: user.paymentMethodId,
         expand: ['latest_invoice.payment_intent'],
-        payment_behavior: 'default_incomplete',
         collection_method: 'charge_automatically',
       };
 
