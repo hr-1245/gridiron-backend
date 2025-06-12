@@ -47,7 +47,7 @@ export class userPlayerCardsController {
     status: HttpStatus.NOT_FOUND,
     description: 'Player card not found or unauthorized access',
   })
-  @Delete('folder/:id')
+  @Delete('players/:id')
   async deletePlayerCard(
     @Param('id', ParseIntPipe) id: number,
     @User() user: userjwtInterface,
@@ -55,22 +55,22 @@ export class userPlayerCardsController {
     return this.playerDataService.deletePlayerCard(id, user.id);
   }
 
-  @ApiOperation({ summary: 'Delete a draft folder by ID for the authenticated user' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Draft folder deleted successfully',
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Draft folder not found or unauthorized access',
-  })
-  @Delete(':id')
-  async deleteDraftFolder(
-    @Param('id', ParseIntPipe) id: number,
-    @User() user: userjwtInterface,
-  ) {
-    return this.playerDataService.deleteDraftFolder(id, user.id);
-  }
+  // @ApiOperation({ summary: 'Delete a draft folder by ID for the authenticated user' })
+  // @ApiResponse({
+  //   status: HttpStatus.OK,
+  //   description: 'Draft folder deleted successfully',
+  // })
+  // @ApiResponse({
+  //   status: HttpStatus.NOT_FOUND,
+  //   description: 'Draft folder not found or unauthorized access',
+  // })
+  // @Delete('deletePlayer/:id')
+  // async deleteDraftFolder(
+  //   @Param('id', ParseIntPipe) id: number,
+  //   @User() user: userjwtInterface,
+  // ) {
+  //   return this.playerDataService.deleteDraftFolder(id, user.id);
+  // }
   @Get('draft-folders')
   @UseGuards(userjwtGuard)
   @ApiOperation({ summary: 'Get all draft folders for user, with optional filters' })
@@ -108,12 +108,11 @@ export class userPlayerCardsController {
   async getDraftFolderById(@Param('id', ParseIntPipe) id: number, @User() user: userjwtInterface,) {
     return this.playerDataService.getDraftFolderById(id, user);
   }
-
   @Post('upload/profile-picture')
   @ApiOperation({ summary: 'Upload Profile Picture' })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'File uploaded successfully',
+    description: 'File uploaded and profile updated successfully',
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
@@ -132,19 +131,20 @@ export class userPlayerCardsController {
     },
   })
   @UseInterceptors(FileInterceptor('file'))
-  async uploadfile(@UploadedFile() file: Express.Multer.File) {
-    const result = await this.cloudinaryService.uploadFile(file);
-
-    const { public_id, format, url, secure_url } = result;
+  async uploadfile(
+    @UploadedFile() file: Express.Multer.File,
+    @User() user: userjwtInterface,
+  ) {
+    const updatedUser = await this.cloudinaryService.uploadAndSaveProfilePicture(user.id, file);
 
     return {
-      message: 'Profile Photo Uploaded Sucessfully',
-      public_id,
-      format,
-      url,
-      secure_url
+      message: 'Profile photo uploaded and user updated successfully',
+      profile_picture_url: updatedUser.profile_picture_url,
+      userId: updatedUser.id,
+      email: updatedUser.email,
     };
   }
+
   @Get('players/:id')
   @ApiOperation({ summary: 'Get player by ID' })
   @ApiResponse({

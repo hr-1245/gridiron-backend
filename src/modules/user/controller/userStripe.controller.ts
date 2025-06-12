@@ -178,12 +178,15 @@ export class userController {
     schema: {
       type: 'object',
       properties: {
-        message: { type: 'string', example: 'Webhook received' }
-      }
-    }
+        message: { type: 'string', example: 'Webhook received' },
+      },
+    },
   })
-  @ApiResponse({ status: 400, description: 'Bad request - Webhook secret or signature missing or verification failed' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - Webhook secret or signature missing or verification failed',
+  })
   async stripeWebhook(@Req() req: Request) {
-    return await this.stripeService.handleStripeWebhook(req);
+    return this.stripeService.handleStripeWebhook(req); 
   }
 }

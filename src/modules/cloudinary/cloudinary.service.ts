@@ -1,9 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { UploadApiErrorResponse, UploadApiResponse, v2 } from 'cloudinary';
 import * as streamifier from 'streamifier';
+import { Repository } from 'typeorm';
+import { userEntity } from '../user/entity/userEntity';
 
 @Injectable()
 export class CloudinaryService {
+  constructor(
+    @InjectRepository(userEntity)
+    private readonly UserEntity: Repository<userEntity>
+  ) { }
   private readonly logger = new Logger(CloudinaryService.name);
 
   async uploadFile(file: Express.Multer.File): Promise<UploadApiResponse> {
@@ -34,6 +41,21 @@ export class CloudinaryService {
       streamifier.createReadStream(file.buffer).pipe(uploadStream);
     });
   }
+  async uploadAndSaveProfilePicture(userId: number, file: Express.Multer.File): Promise<userEntity> {
+    const uploadResult = await this.uploadFile(file);
+
+    const user = await this.UserEntity.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    user.profile_picture_url = uploadResult.secure_url;
+    await this.UserEntity.save(user);
+
+    this.logger.log(`Updated profile picture for user ${user.email}`);
+    return user;
+  }
+
 
   async deleteFile(publicId: string): Promise<void> {
     return new Promise((resolve, reject) => {

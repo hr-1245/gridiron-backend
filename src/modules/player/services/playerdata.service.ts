@@ -40,39 +40,31 @@ export class PlayerDataService {
     limit: number = 10,
     searchValue?: string,
     positionCode?: string,
-  ): Promise<PaginatedPlayers> {
+  ) {
     try {
-      const whereConditions: any = {
-        user: { id: userId },
-        isActive: playerStatusEnum.ISACTIVE,
-        attributes: { id: Not(IsNull()) }, 
-      };
+      const query = this.playerRepo.createQueryBuilder('player')
+        .leftJoinAndSelect('player.attributes', 'attributes')
+        .leftJoinAndSelect('player.position', 'position')
+        .where('player.userId = :userId', { userId })
+        .andWhere('player.isActive = :isActive', { isActive: playerStatusEnum.ISACTIVE })
+        .andWhere('attributes.id IS NOT NULL');
 
       if (searchValue) {
+        query.andWhere(
+          '(LOWER(player.name) LIKE :search OR LOWER(position.name) LIKE :search OR LOWER(position.code) LIKE :search)',
+          { search: `%${searchValue.toLowerCase()}%` }
+        );
       }
 
       if (positionCode) {
-        whereConditions.position = { code: positionCode };
+        query.andWhere('position.code = :positionCode', { positionCode });
       }
 
-      const [players, totalCount] = await this.playerRepo.findAndCount({
-        where: whereConditions,
-        relations: ['attributes', 'position'],
-        order: { createdAt: 'DESC' },
-        skip: (page - 1) * limit,
-        take: limit,
-      });
-
-      let filteredPlayers = players;
-      if (searchValue) {
-        const search = searchValue.toLowerCase();
-        filteredPlayers = players.filter(
-          (player) =>
-            player.name?.toLowerCase().includes(search) ||
-            player.position?.name?.toLowerCase().includes(search) ||
-            player.position?.code?.toLowerCase().includes(search)
-        );
-      }
+      const [players, totalCount] = await query
+        .orderBy('player.createdAt', 'DESC')
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getManyAndCount();
 
       const totalPages = Math.ceil(totalCount / limit);
 
@@ -82,26 +74,23 @@ export class PlayerDataService {
         positionSummaryMap[`${code.toLowerCase()}Count`] = 0;
       }
 
-      for (const player of filteredPlayers) {
+      for (const player of players) {
         if (player.position?.code) {
           const key = `${player.position.code.toLowerCase()}Count`;
           positionSummaryMap[key]++;
         }
       }
 
-      const cleanedPlayers = filteredPlayers.map((player) => ({
+      const cleanedPlayers = players.map((player) => ({
         ...this.removeNulls(player),
         position: player.position ? this.removeNulls(player.position) : null,
         attributes: player.attributes?.map(attr => this.removeNulls(attr)) || [],
       }));
 
-      const message =
-        filteredPlayers.length === 0
-          ? 'No converted players found'
-          : 'Players retrieved successfully';
-
       return {
-        message,
+        message: cleanedPlayers.length === 0
+          ? 'No converted players found'
+          : 'Players retrieved successfully',
         data: cleanedPlayers,
         totalCount,
         totalPages,
@@ -109,13 +98,14 @@ export class PlayerDataService {
       };
     } catch (error) {
       console.error(error);
-      throw new Error('Error retrieving converted players');
     }
   }
 
 
 
+
   //--------------Delete a Player Card ---------------
+
   async deletePlayerCard(playerId: number, userId: number): Promise<{ message: string }> {
     try {
       const player = await this.playerRepo.findOne({
@@ -123,7 +113,7 @@ export class PlayerDataService {
       });
 
       if (!player) {
-        throw new Error('Player not found');
+        throw new NotFoundException('Player not found');
       }
 
       player.isActive = playerStatusEnum.INACTIVE;
@@ -133,31 +123,31 @@ export class PlayerDataService {
         message: 'Player card has been successfully removed',
       };
     } catch (error) {
-      throw new InternalServerErrorException('Player not Found');
+      throw error;
     }
   }
 
-  async deleteDraftFolder(draftId: number, userId: number) {
-    const folder = await this.playerDraftRepo.findOne({
-      where: {
-        id: draftId,
-        user: { id: userId },
-      },
-      relations: ['players'],
-    });
+  // async deleteDraftFolder(draftId: number, userId: number) {
+  //   const folder = await this.playerDraftRepo.findOne({
+  //     where: {
+  //       id: draftId,
+  //       user: { id: userId },
+  //     },
+  //     relations: ['players'],
+  //   });
 
-    if (!folder) {
-      throw new NotFoundException('Draft Folder Not Found');
-    }
+  //   if (!folder) {
+  //     throw new NotFoundException('Draft Folder Not Found');
+  //   }
 
-    if (folder.players && folder.players.length > 0) {
-      await this.playerRepo.remove(folder.players);
-    }
+  //   if (folder.players && folder.players.length > 0) {
+  //     await this.playerRepo.remove(folder.players);
+  //   }
 
-    await this.playerDraftRepo.remove(folder);
+  //   await this.playerDraftRepo.remove(folder);
 
-    return { message: 'Draft folder and associated players deleted successfully' };
-  }
+  //   return { message: 'Draft folder and associated players deleted successfully' };
+  // }
 
   async getUserDraftFolders(
     userId: number,

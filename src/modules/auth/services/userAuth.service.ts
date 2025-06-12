@@ -81,10 +81,8 @@ export class userAuthService {
       isVerified: true,
     });
 
-    // Create a Stripe customer
     const stripeCustomer = await this.stripe.customers.create({ email });
 
-    // Assign the Stripe Customer ID to the user
     user.stripeCustomerId = stripeCustomer.id;
 
 
@@ -103,7 +101,6 @@ export class userAuthService {
       await manager.save(otpRecord);
     });
 
-    // Fetch the user with the plan
     const userWithPlan = await this.repo.findOne({
       where: { id: user.id },
       relations: { subscription: true },
@@ -116,7 +113,6 @@ export class userAuthService {
       });
     }
 
-    // Generate auth token
     const accessToken = this.jwtService.generateAuthToken({
       email: user.email,
       id: user.id,
