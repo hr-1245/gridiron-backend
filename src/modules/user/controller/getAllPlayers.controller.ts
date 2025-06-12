@@ -108,12 +108,11 @@ export class userPlayerCardsController {
   async getDraftFolderById(@Param('id', ParseIntPipe) id: number, @User() user: userjwtInterface,) {
     return this.playerDataService.getDraftFolderById(id, user);
   }
-
   @Post('upload/profile-picture')
   @ApiOperation({ summary: 'Upload Profile Picture' })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'File uploaded successfully',
+    description: 'File uploaded and profile updated successfully',
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
@@ -132,19 +131,20 @@ export class userPlayerCardsController {
     },
   })
   @UseInterceptors(FileInterceptor('file'))
-  async uploadfile(@UploadedFile() file: Express.Multer.File) {
-    const result = await this.cloudinaryService.uploadFile(file);
-
-    const { public_id, format, url, secure_url } = result;
+  async uploadfile(
+    @UploadedFile() file: Express.Multer.File,
+    @User() user: userjwtInterface,
+  ) {
+    const updatedUser = await this.cloudinaryService.uploadAndSaveProfilePicture(user.id, file);
 
     return {
-      message: 'Profile Photo Uploaded Sucessfully',
-      public_id,
-      format,
-      url,
-      secure_url
+      message: 'Profile photo uploaded and user updated successfully',
+      profile_picture_url: updatedUser.profile_picture_url,
+      userId: updatedUser.id,
+      email: updatedUser.email,
     };
   }
+
   @Get('players/:id')
   @ApiOperation({ summary: 'Get player by ID' })
   @ApiResponse({

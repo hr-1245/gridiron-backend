@@ -19,6 +19,9 @@ export class userEntity extends baseEntity {
   @Column()
   password: string;
 
+  @Column({ nullable: true })
+  profile_picture_url: string
+
   @Column({ type: 'enum', enum: rolesEnum, default: rolesEnum.USER })
   role: rolesEnum;
 
