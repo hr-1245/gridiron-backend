@@ -114,6 +114,7 @@ export class StripeService {
   }
 
   // -------------------- Create Subscription (With Discount Support) --------------------
+  // -------------------- Create Subscription (With Discount Support) --------------------
   async createSubscription(userId: number, subscribeDto: SubscribeDto): Promise<{
     message: string;
     subscriptionId: string;
@@ -148,6 +149,7 @@ export class StripeService {
         items: [{ price: priceId }],
         default_payment_method: user.paymentMethodId,
         expand: ['latest_invoice.payment_intent'],
+        collection_method: 'charge_automatically',
       };
 
       let discountInfo: { percentage: number; name: string } | null = null;
@@ -167,14 +169,61 @@ export class StripeService {
 
       const subscription = await this.stripe.subscriptions.create(subscriptionParams);
 
+      // Check the payment status of the latest invoice
+      const latestInvoice = subscription.latest_invoice as Stripe.Invoice;
+
+      if (latestInvoice && latestInvoice.payment_intent) {
+        const paymentIntent = latestInvoice.payment_intent as Stripe.PaymentIntent;
+
+        // Handle different payment statuses
+        switch (paymentIntent.status) {
+          case 'succeeded':
+            // Payment successful - proceed normally
+            break;
+
+          case 'requires_payment_method':
+          case 'requires_confirmation':
+            // Payment failed - cancel the subscription and throw error
+            await this.stripe.subscriptions.cancel(subscription.id);
+            throw new BadRequestException('Payment failed: Insufficient funds or invalid payment method. Please check your payment details.');
+
+          case 'processing':
+            // Payment is processing - we'll handle this in webhook
+            break;
+
+          default:
+            // Any other status - cancel subscription and throw error
+            await this.stripe.subscriptions.cancel(subscription.id);
+            throw new BadRequestException(`Payment failed with status: ${paymentIntent.status}. Please try again with a valid payment method.`);
+        }
+      } else if (latestInvoice && latestInvoice.status === 'open') {
+        // Invoice is unpaid
+        await this.stripe.subscriptions.cancel(subscription.id);
+        throw new BadRequestException('Payment failed: Unable to process payment. Please check your payment method and try again.');
+      }
+
+      // If we reach here, payment was successful or is processing
       const validUntil = subscription.current_period_end
         ? new Date(subscription.current_period_end * 1000)
         : null;
 
+      // Determine the correct subscription status based on payment
+      let subscriptionStatus: paymentStatus;
+      if (latestInvoice?.payment_intent) {
+        const paymentIntent = latestInvoice.payment_intent as Stripe.PaymentIntent;
+        subscriptionStatus = paymentIntent.status === 'succeeded'
+          ? paymentStatus.SUCCEEDED
+          : paymentStatus.PENDING;
+      } else {
+        subscriptionStatus = subscription.status === 'active'
+          ? paymentStatus.SUCCEEDED
+          : paymentStatus.PENDING;
+      }
+
       const newPlan = this.planRepo.create({
         stripeSubscriptionId: subscription.id,
         planType: subscriptionEnum.REGULAR,
-        subscriptionStatus: subscription.status === 'active' ? paymentStatus.SUCCEEDED : paymentStatus.PENDING,
+        subscriptionStatus: subscriptionStatus,
         validUntil: validUntil as any,
         user: user,
         name,
@@ -186,7 +235,8 @@ export class StripeService {
 
       await this.planRepo.save(newPlan);
 
-      if (validUntil) {
+      // Only send congratulation email if payment was successful
+      if (subscriptionStatus === paymentStatus.SUCCEEDED && validUntil) {
         const discountApplied = activeDiscount ? {
           percentage: activeDiscount.percentage,
           name: activeDiscount.name || `${activeDiscount.percentage}% Discount`
@@ -199,9 +249,10 @@ export class StripeService {
           discountApplied
         );
       }
+
       const successMessage = activeDiscount
-        ? `Subscribed to Regular Plan successfully with ${activeDiscount.percentage}% discount`
-        : 'Subscribed to Regular Plan successfully';
+        ? `Subscribed to Regular Plan successfully with ${activeDiscount.percentage}% discount${subscriptionStatus === paymentStatus.PENDING ? ' (Payment processing)' : ''}`
+        : `Subscribed to Regular Plan successfully${subscriptionStatus === paymentStatus.PENDING ? ' (Payment processing)' : ''}`;
 
       return {
         message: successMessage,
@@ -216,7 +267,31 @@ export class StripeService {
         })
       };
     } catch (error: any) {
+      // Handle specific Stripe errors
+      if (error.type === 'StripeCardError') {
+        switch (error.code) {
+          case 'insufficient_funds':
+            throw new BadRequestException('Payment failed: Insufficient funds on your card. Please add funds or use a different payment method.');
+          case 'card_declined':
+            throw new BadRequestException('Payment failed: Your card was declined. Please contact your bank or use a different payment method.');
+          case 'expired_card':
+            throw new BadRequestException('Payment failed: Your card has expired. Please update your payment method.');
+          case 'incorrect_cvc':
+            throw new BadRequestException('Payment failed: Incorrect CVC code. Please check your card details.');
+          case 'processing_error':
+            throw new BadRequestException('Payment failed: A processing error occurred. Please try again.');
+          default:
+            throw new BadRequestException(`Payment failed: ${error.message}`);
+        }
+      }
+
       this.logger.error(`Failed to create subscription: ${error.message}`, error.stack);
+
+      // If it's already a BadRequestException, re-throw it
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
       throw new InternalServerErrorException('Failed to create subscription: ' + error.message);
     }
   }
