@@ -54,18 +54,16 @@ export class editPlayerService {
       homeTown,
       jerseyNumber,
       player_class,
-      draftFolderName
+      draftFolderName,
+      college
     } = dto;
-    console.log(DR)
     const player = await this.playerRepo.findOne({
       where: { id: playerId, user: { id: userId } },
       relations: ['draftFolder', 'attributes', 'position']
     });
-    console.log(player)
     if (!player) throw new NotFoundException("Player not found");
 
     let draft_round = DR ? DR : Number(player.projectedReason);
-    console.log(draft_round)
     let latestAttr = player.attributes?.[player.attributes.length - 1];
     if (!latestAttr) {
       throw new BadRequestException("Player has no attributes to edit");
@@ -74,6 +72,7 @@ export class editPlayerService {
     if (height !== undefined) player.height = height;
     if (weight !== undefined) player.weight = weight;
     if (homeTown !== undefined) player.homeTown = homeTown;
+    if (college !== undefined) player.college = college;
     if (jerseyNumber !== undefined) player.jerseyNumber = jerseyNumber.toString();
     if (player_class !== undefined) player.playerClass = player_class as COLLAGE_AGE_ENUM;
 
@@ -926,6 +925,7 @@ export class editPlayerService {
           height: player.height,
           weight: player.weight,
           homeTown: player.homeTown,
+          college: player.college,
           jerseyNumber: player.jerseyNumber,
           player_class: player.playerClass,
           draftFolderName: player.draftFolder?.name

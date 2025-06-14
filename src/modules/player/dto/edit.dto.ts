@@ -27,6 +27,9 @@ export class EditDto {
   @ApiProperty() @IsString() @IsOptional()
   jerseyNumber: number
 
+  @ApiProperty() @IsString() @IsOptional()
+  college: string
+
   @ApiProperty()
   @IsString()
   @IsOptional()
