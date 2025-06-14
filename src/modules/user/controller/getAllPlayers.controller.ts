@@ -1,9 +1,10 @@
-import { Controller, Get, Query, UseGuards, ParseIntPipe, Delete, Param, HttpStatus, UseInterceptors, Post, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, ParseIntPipe, Delete, Param, HttpStatus, UseInterceptors, Post, UploadedFile, Put, Body } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiQuery, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { CloudinaryService } from 'src/modules/cloudinary/cloudinary.service';
 import { userjwtInterface } from 'src/modules/jwt/interface/jwt.interface';
 import { GetDraftFoldersQueryDto } from 'src/modules/player/dto/draft-folder.dto';
+import { UpdateProfileDto } from 'src/modules/player/dto/update-profile.dto';
 import { PlayerDataService } from 'src/modules/player/services/playerdata.service';
 import { userjwtGuard } from 'src/providers/guards/user-guard/user.guard';
 import { User } from 'src/utils/user.decorator';
@@ -173,5 +174,15 @@ export class userPlayerCardsController {
   async getPlayerById(@Param('id', ParseIntPipe) id: number) {
     return this.playerDataService.getPlayerById(id);
   }
-
+  @Put('update-profile')
+  @ApiOperation({ summary: 'Update user profile' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Profile updated successfully' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'User not found' })
+  @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'Failed to update profile' })
+  async updateProfile(
+    @Body() body: UpdateProfileDto,
+    @User() user: userjwtInterface,
+  ) {
+    return this.playerDataService.UpdateProfile(body, user);
+  }
 }
