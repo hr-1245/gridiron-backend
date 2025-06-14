@@ -7,6 +7,8 @@ import { playerDraftFolderEntity } from '../entity/player-draft-folder.entity';
 import { PlayerPositionEntity } from '../entity/player-position.entity';
 import { playerStatusEnum, POSTION_CODE } from 'src/types/enums/roles';
 import { userjwtInterface } from 'src/modules/jwt/interface/jwt.interface';
+import { UpdateProfileDto } from '../dto/update-profile.dto';
+import { userEntity } from 'src/modules/user/entity/userEntity';
 
 
 
@@ -20,6 +22,9 @@ export class PlayerDataService {
 
     @InjectRepository(PlayerPositionEntity)
     private readonly playerPosRepo: Repository<PlayerPositionEntity>,
+
+    @InjectRepository(userEntity)
+    private readonly UserPosRepo: Repository<userEntity>,
   ) { }
 
   private removeNulls<T extends Record<string, any>>(obj: T): Partial<T> {
@@ -234,6 +239,28 @@ export class PlayerDataService {
       return draftFolder;
     } catch (error) {
       throw new InternalServerErrorException('Draft folder not found');
+    }
+  }
+
+  async UpdateProfile(data: UpdateProfileDto, user: userjwtInterface): Promise<{ message: string }> {
+    try {
+      const existingUser = await this.UserPosRepo.findOne({ where: { id: user.id } });
+
+      if (!existingUser) {
+        throw new NotFoundException('User not found');
+      }
+
+      if (data.fullName) {
+        existingUser.fullName = data.fullName;
+      }
+
+      await this.UserPosRepo.save(existingUser);
+
+      return {
+        message: 'Profile updated successfully',
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(error.message || 'Failed to update profile');
     }
   }
 }

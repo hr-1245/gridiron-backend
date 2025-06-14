@@ -22,7 +22,7 @@ import { OpenAI } from 'openai';
 
 import { All_Middle_LinebackersDTO, CornerBackDto, DefensiveTackleDto, FullBackDto, KickerDto, Left_Outside_linebacker_above_245_lbsDTO, LeftEndDTO, LeftGaurdDto, LeftOutside_linebacker_below_245lbsDTO, LeftTackleDto, PunterDto, QuarterBackDto, Right_Outside_linebacker_above_245lbsDTO, RightEndDTO, RightGaurdDto, RightOutside_linebacker_below_245lbsDTO, RightTackleDto, RunningBackDto, SafetyDto, TightEndDto, WideReceiverDto } from '../dto/convert-manually.dto';
 
-import { areNamesEquivalent, extractDraftRound, findBestNameMatch, normalizeClassString, parseHeightString, parseWeightString } from 'src/utils/helpers/helpers';
+import { areNamesEquivalent, extractDraftRound, findBestNameMatch, normalizeClassString, normalizeCollegeName, parseHeightString, parseWeightString } from 'src/utils/helpers/helpers';
 import { playerDraftFolderEntity } from '../entity/player-draft-folder.entity';
 
 @Injectable()
@@ -745,7 +745,8 @@ export class PlayerOcrService {
           {
             role: 'system',
             content: `Extract ONLY the player bio information visible in the image. 
-          Return ONLY as JSON with these exact keys: NAME, POS, OVR, CLASS, HEIGHT, WEIGHT, HOMETOWN, REASON, JERSEY_NUMBER, isPlayerBioScreen. 
+          Return ONLY as JSON with these exact keys: NAME, POS, OVR, CLASS, HEIGHT, WEIGHT, HOMETOWN, REASON, JERSEY_NUMBER, COLLEGE, isPlayerBioScreen. 
+          1- EXTRACT FULL COLLEGE NAME (forexample: Kansas JAYHAWKS)
           JERSEY_NUMBER should be extracted from the POSITION field if it contains a value like "#19". 
           Set isPlayerBioScreen to true ONLY if this appears to be a "PLAYERS LEAVING" or roster bio screen showing full player details, not an attributes/ratings screen. 
           An attributes/ratings screen typically shows detailed skill ratings, while a bio screen shows personal information like hometown.
@@ -777,6 +778,8 @@ export class PlayerOcrService {
       throw new InternalServerErrorException('Failed to extract structured data.');
     }
   }
+
+
 
   private async identifyImageType(file: Express.Multer.File): Promise<{
     type: 'PLAYERS LEAVING' | 'Ratings';
@@ -1072,7 +1075,7 @@ export class PlayerOcrService {
     userId: number,
     draftFolderName?: string
   ): Promise<any> {
-    const { NAME, POS, OVR, CLASS, HEIGHT, WEIGHT, HOMETOWN, REASON, JERSEY_NUMBER } = bioImage.data;
+    const { NAME, POS, OVR, CLASS, HEIGHT, WEIGHT, HOMETOWN, REASON, JERSEY_NUMBER, COLLEGE } = bioImage.data;
 
     if (!NAME || !POS) {
       throw new BadRequestException(`Invalid player bio data: Missing required fields (Name: ${NAME}, Position: ${POS})`);
@@ -1142,6 +1145,7 @@ export class PlayerOcrService {
         playerClass: playerClass as any,
         projectedReason: draftRound !== null ? draftRound.toString() : undefined,
         jerseyNumber: jerseyNumber as any,
+        college: COLLEGE ? normalizeCollegeName(COLLEGE) : undefined,
         user: { id: userId } as any,
         position: { id: position.id } as any,
       };
@@ -1227,6 +1231,7 @@ export class PlayerOcrService {
           height: HEIGHT,
           weight: WEIGHT,
           homeTown: HOMETOWN,
+          college: COLLEGE || null,
           draftProjection: REASON,
           jersey_Number: jerseyNumber,
           imageUrl: uploadResult.secure_url,
