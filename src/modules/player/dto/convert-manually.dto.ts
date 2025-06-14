@@ -39,6 +39,9 @@ export class ConversionDto {
   player_class: string
 
   @ApiProperty() @IsString() @IsOptional()
+  college: string
+
+  @ApiProperty() @IsString() @IsOptional()
   jerseyNumber: number
 
   @ApiProperty()

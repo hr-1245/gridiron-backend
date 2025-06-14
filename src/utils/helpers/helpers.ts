@@ -98,3 +98,10 @@ export function areNamesEquivalent(name1: string, name2: string): boolean {
   }
   return false;
 }
+export function normalizeCollegeName(rawCollege: string): string {
+  if (!rawCollege) return '';
+  return rawCollege
+    .replace(/\b(UNIVERSITY|COLLEGE|INSTITUTE|U OF|U)\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
