@@ -206,7 +206,6 @@ export class PlayerDataService {
         images: true,
       },
     });
-
     if (!player) {
       throw new NotFoundException('Player not found');
     }
