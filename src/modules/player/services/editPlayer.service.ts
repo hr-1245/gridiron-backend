@@ -5,7 +5,7 @@ import { EditDto } from "../dto/edit.dto";
 import { PlayerEntity, PlayerAttributesEntity } from "../entity/players.entity";
 import { playerDraftFolderEntity } from "../entity/player-draft-folder.entity";
 import { POSTION_CODE, CollageAgeMapping, COLLAGE_AGE_ENUM } from "src/types/enums/roles";
-import { All_Middle_LinebackersDTO, CornerBackDto, DefensiveTackleDto, FullBackDto, KickerDto, Left_Outside_linebacker_above_245_lbsDTO, LeftEndDTO, LeftGaurdDto, LeftOutside_linebacker_below_245lbsDTO, LeftTackleDto, PunterDto, QuarterBackDto, Right_Outside_linebacker_above_245lbsDTO, RightEndDTO, RightGaurdDto, RightOutside_linebacker_below_245lbsDTO, RightTackleDto, RunningBackDto, SafetyDto, TightEndDto, WideReceiverDto } from "../dto/convert-manually.dto";
+import { All_Middle_LinebackersDTO, CornerBackDto, DefensiveTackleDto, FullBackDto, KickerDto, Left_Outside_linebacker_above_245_lbsDTO, LeftEndDTO, LeftGaurdDto, LeftOutside_linebacker_below_245lbsDTO, LeftTackleDto, OffensiveLineDto, PunterDto, QuarterBackDto, Right_Outside_linebacker_above_245lbsDTO, RightEndDTO, RightGaurdDto, RightOutside_linebacker_below_245lbsDTO, RightTackleDto, RunningBackDto, SafetyDto, TightEndDto, WideReceiverDto } from "../dto/convert-manually.dto";
 
 @Injectable()
 export class editPlayerService {
@@ -439,6 +439,39 @@ export class editPlayerService {
         // Left Guard
         case POSTION_CODE.LeftGuard: {
           const dataobj = rawData as LeftGaurdDto;
+          convertedAttributes = {
+            ...convertedAttributes,
+            ...dataobj.speed && { speed: this.calculateAttribute(dataobj.speed, 0) },
+            ...dataobj.acceleration && { acceleration: this.calculateAttribute(dataobj.acceleration, -3) },
+            ...dataobj.awareness && { awareness: this.calculateAttribute(dataobj.awareness, -9, draft_round) },
+            ...dataobj.agility && { agility: this.calculateAttribute(dataobj.agility, -12) },
+            ...dataobj.lead_block && { lead_block: this.calculateAttribute(dataobj.lead_block, -8, draft_round) },
+            ...dataobj.impact_blocking && { impact_block: this.calculateAttribute(dataobj.impact_blocking, -3, draft_round) },
+            ...dataobj.run_blocking && { run_block: this.calculateAttribute(dataobj.run_blocking, -16, draft_round) },
+            ...dataobj.pass_blocking && { pass_block: this.calculateAttribute(dataobj.pass_blocking, -12, draft_round) },
+            ...dataobj.pass_block_power && { pass_block_power: this.calculateAttribute(dataobj.pass_block_power, -15, draft_round) },
+            ...dataobj.pass_block_finesse && { pass_block_finesse: this.calculateAttribute(dataobj.pass_block_finesse, -16, draft_round) },
+            ...dataobj.run_block_power && { run_block_power: this.calculateAttribute(dataobj.run_block_power, -16, draft_round) },
+            ...dataobj.run_block_finesse && { run_block_finesse: this.calculateAttribute(dataobj.run_block_finesse, -16, draft_round) },
+            ...dataobj.stamina && { stamina: this.calculateAttribute(dataobj.stamina, -1) },
+            ...dataobj.injury && { injury: this.calculateAttribute(dataobj.injury, -1) },
+            ...DR && {
+              draft_round,
+              awareness: this.calculateAttribute(dataobj.awareness || player.attributes[0].awareness, -9, draft_round),
+              lead_block: this.calculateAttribute(dataobj.lead_block || player.attributes[0].lead_block, -8, draft_round),
+              impact_block: this.calculateAttribute(dataobj.impact_blocking || player.attributes[0].impact_block, -3, draft_round),
+              run_block: this.calculateAttribute(dataobj.run_blocking || player.attributes[0].run_block, -16, draft_round),
+              pass_block: this.calculateAttribute(dataobj.pass_blocking || player.attributes[0].pass_block, -12, draft_round),
+              pass_block_power: this.calculateAttribute(dataobj.pass_block_power || player.attributes[0].pass_block_power, -15, draft_round),
+              pass_block_finesse: this.calculateAttribute(dataobj.pass_block_finesse || player.attributes[0].pass_block_finesse, -16, draft_round),
+              run_block_power: this.calculateAttribute(dataobj.run_block_power || player.attributes[0].run_block_power, -16, draft_round),
+              run_block_finesse: this.calculateAttribute(dataobj.run_block_finesse || player.attributes[0].run_block_finesse, -16, draft_round),
+            }
+          };
+          break;
+        }
+        case POSTION_CODE.OffensiveLine: {
+          const dataobj = rawData as OffensiveLineDto;
           convertedAttributes = {
             ...convertedAttributes,
             ...dataobj.speed && { speed: this.calculateAttribute(dataobj.speed, 0) },
