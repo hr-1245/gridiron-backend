@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { All_Middle_LinebackersDTO, ConversionDto, ConverstionDataDto, CornerBackDto, DefensiveTackleDto, FullBackDto, KickerDto, Left_Outside_linebacker_above_245_lbsDTO, LeftEndDTO, LeftGaurdDto, LeftOutside_linebacker_below_245lbsDTO, LeftTackleDto, PunterDto, QuarterBackDto, Right_Outside_linebacker_above_245lbsDTO, RightEndDTO, RightGaurdDto, RightOutside_linebacker_below_245lbsDTO, RightTackleDto, RunningBackDto, SafetyDto, TightEndDto, WideReceiverDto } from "../dto/convert-manually.dto"
+import { All_Middle_LinebackersDTO, ConversionDto, ConverstionDataDto, CornerBackDto, DefensiveTackleDto, FullBackDto, KickerDto, Left_Outside_linebacker_above_245_lbsDTO, LeftEndDTO, LeftGaurdDto, LeftOutside_linebacker_below_245lbsDTO, LeftTackleDto, OffensiveLineDto, PunterDto, QuarterBackDto, Right_Outside_linebacker_above_245lbsDTO, RightEndDTO, RightGaurdDto, RightOutside_linebacker_below_245lbsDTO, RightTackleDto, RunningBackDto, SafetyDto, TightEndDto, WideReceiverDto } from "../dto/convert-manually.dto"
 import { COLLAGE_AGE_ENUM, POSTION_CODE, CollageAgeMapping } from "src/types/enums/roles";
 import { PlayerPositionEntity } from "../entity/player-position.entity";
 import { PlayerAttributesEntity, PlayerEntity } from "../entity/players.entity";
@@ -669,6 +669,65 @@ export class playerService {
           return {
             message: `Conversion of ${positionCode} Successful`,
             result: cleanedResultLG,
+            overallRating: ovr,
+            height: height,
+            homeTown: homeTown,
+            college: college,
+            weight: weight,
+            jerseyNumber: jerseyNumber,
+            draft_round: player.projectedReason,
+            draftFolder: draftFolderName
+          }
+        case POSTION_CODE.OffensiveLine:
+          dataobj = rawData as OffensiveLineDto
+          const convertedDataOL = {
+            age: calculatedAge,
+            speed: this.clampAttribute(dataobj.speed, 0),
+            acceleartion: this.clampAttribute(dataobj.acceleration, -3),
+            awareness: this.clampAttribute(dataobj.awareness, -9, draft_round),
+            agility: this.clampAttribute(dataobj.agility, -12),
+            lead_block: this.clampAttribute(dataobj.lead_block, -8, draft_round),
+            impact_block: this.clampAttribute(dataobj.impact_blocking, -3, draft_round),
+            run_block: this.clampAttribute(dataobj.run_blocking, -16, draft_round),
+            pass_block: this.clampAttribute(dataobj.pass_blocking, -12, draft_round),
+            pass_block_power: this.clampAttribute(dataobj.pass_block_power, -15, draft_round),
+            pass_block_finesse: this.clampAttribute(dataobj.pass_block_finesse, -16, draft_round),
+            run_block_power: this.clampAttribute(dataobj.run_block_power, -16, draft_round),
+            run_block_finesse: this.clampAttribute(dataobj.run_block_finesse, -16, draft_round),
+            stamina: this.clampAttribute(dataobj.stamina, -1),
+            injury: this.clampAttribute(dataobj.injury, -1)
+          }
+          const resultOL = this.playerAttrRepo.create({
+            player: { id: player.id },
+            age: calculatedAge,
+            speed: convertedDataOL.speed,
+            acceleration: convertedDataOL.acceleartion,
+            awareness: convertedDataOL.awareness,
+            agility: convertedDataOL.agility,
+            lead_block: convertedDataOL.lead_block,
+            impact_block: convertedDataOL.impact_block,
+            run_block: convertedDataOL.run_block,
+            pass_block: convertedDataOL.pass_block,
+            pass_block_power: convertedDataOL.pass_block_power,
+            pass_block_finesse: convertedDataOL.pass_block_finesse,
+            run_block_power: convertedDataOL.run_block_power,
+            run_block_finesse: convertedDataOL.run_block_finesse,
+            stamina: convertedDataOL.stamina,
+            injury: convertedDataOL.injury
+          });
+
+          await this.playerAttrRepo.save(resultOL);
+
+          const cleanedResultOL = Object.keys(resultOL).reduce((acc, key) => {
+            if (resultOL[key] !== null && resultOL[key] !== undefined) {
+              acc[key] = resultOL[key];
+            }
+            return acc;
+          }, {});
+
+          return {
+            message: `Conversion of ${positionCode} Successful`,
+            result: cleanedResultOL,
             overallRating: ovr,
             height: height,
             homeTown: homeTown,
