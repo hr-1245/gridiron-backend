@@ -589,7 +589,7 @@ export class editPlayerService {
             ...dataobj.impact_block && { impact_block: this.calculateAttribute(dataobj.impact_block, -6, draft_round) },
             ...dataobj.run_block && { run_block: this.calculateAttribute(dataobj.run_block, -15, draft_round) },
             ...dataobj.pass_block && { pass_block: this.calculateAttribute(dataobj.pass_block, -13, draft_round) },
-            ...dataobj.pass_block_power && { pass_block: this.calculateAttribute(dataobj.pass_block, -15, draft_round) },
+            ...dataobj.pass_block_power && { pass_block: this.calculateAttribute(dataobj.pass_block_power, -15, draft_round) },
             ...dataobj.pass_block_finesse && { pass_block_finesse: this.calculateAttribute(dataobj.pass_block_finesse, -14, draft_round) },
             ...dataobj.run_block_power && { run_block_power: this.calculateAttribute(dataobj.run_block_power, -18, draft_round) },
             ...dataobj.run_block_finesse && { run_block_finesse: this.calculateAttribute(dataobj.run_block_finesse, -14, draft_round) },
