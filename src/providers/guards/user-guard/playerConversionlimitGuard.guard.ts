@@ -30,7 +30,7 @@ export class userOcrConversionLimitGuard extends AuthGuard('jwt-user') {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
     if (!user) throw new UnauthorizedException();
-
+debugger
     const userWithSubscription = await this.userRepo.findOne({
       where: { id: user.id },
       relations: ['subscription'],

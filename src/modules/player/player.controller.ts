@@ -6,6 +6,7 @@ import {
   BadRequestException,
   Body,
   Get,
+  Put,
   UseGuards,
   InternalServerErrorException,
   NotFoundException,
@@ -27,7 +28,7 @@ import { PlayerOcrService } from './services/playerocr.service';
 import { playerService } from './services/player.service';
 import { ConversionDto } from './dto/convert-manually.dto';
 import { User } from 'src/utils/user.decorator';
-import { userjwtInterface } from '../jwt/interface/jwt.interface';
+import { UpdatePositionDto, userjwtInterface } from '../jwt/interface/jwt.interface';
 import { userjwtGuard } from 'src/providers/guards/user-guard/user.guard';
 import { userManualConversionLimitGuard } from 'src/providers/guards/user-guard/playerManualConversionLimit.guard';
 import { userOcrConversionLimitGuard } from 'src/providers/guards/user-guard/playerConversionlimitGuard.guard';
@@ -48,6 +49,7 @@ export class PlayerOcrController {
     private readonly playeService: playerService,
 
     private readonly editPlayerService: editPlayerService,
+    private readonly playerService: playerService,
 
   ) { }
 
@@ -62,8 +64,18 @@ export class PlayerOcrController {
   async getPositionDropDown() {
     return this.playeService.getAllPositionDropDown();
   }
-
-
+  
+  @Put('update')
+  @UseGuards(userjwtGuard)
+  @ApiResponse({ status: 200, description: 'Position updated successfully' })
+  async updatePosition(@Body() updatePositionDto: UpdatePositionDto) {
+    return this.playerService.updatePosition(updatePositionDto);
+  }
+  @Delete(':id')
+  @UseGuards(userjwtGuard)
+  async deletePosition(@Param('id') id: number) {
+    return this.playerService.deletePosition(id);
+  }
   @Get("dropdown/draft-folders")
   @UseGuards(userjwtGuard)
   @ApiResponse({

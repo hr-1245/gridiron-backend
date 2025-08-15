@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { HttpException, HttpStatus, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { All_Middle_LinebackersDTO, ConversionDto, ConverstionDataDto, CornerBackDto, DefensiveTackleDto, FullBackDto, KickerDto, Left_Outside_linebacker_above_245_lbsDTO, LeftEndDTO, LeftGaurdDto, LeftOutside_linebacker_below_245lbsDTO, LeftTackleDto, OffensiveLineDto, PunterDto, QuarterBackDto, Right_Outside_linebacker_above_245lbsDTO, RightEndDTO, RightGaurdDto, RightOutside_linebacker_below_245lbsDTO, RightTackleDto, RunningBackDto, SafetyDto, TightEndDto, WideReceiverDto } from "../dto/convert-manually.dto"
@@ -6,7 +6,7 @@ import { COLLAGE_AGE_ENUM, POSTION_CODE, CollageAgeMapping } from "src/types/enu
 import { PlayerPositionEntity } from "../entity/player-position.entity";
 import { PlayerAttributesEntity, PlayerEntity } from "../entity/players.entity";
 import { playerDraftFolderEntity } from "../entity/player-draft-folder.entity";
-import { userjwtInterface } from "src/modules/jwt/interface/jwt.interface";
+import { UpdatePositionDto, userjwtInterface } from "src/modules/jwt/interface/jwt.interface";
 
 @Injectable()
 export class playerService {
@@ -48,6 +48,66 @@ export class playerService {
       data: cleanedData
     };
   }
+  async updatePosition(updateDto: UpdatePositionDto): Promise<any> {
+  const { positionId, code, name } = updateDto;
+
+  // Find existing position
+  const position = await this.playerPositionRepo.findOne({
+    where: { id: positionId },
+  });
+
+  if (!position) {
+    return { message: 'Position not found', statusCode: 404 };
+  }
+
+  // Update fields
+  position.code = code;
+  position.name = name;
+
+  await this.playerPositionRepo.save(position);
+
+  return {
+    message: 'Position updated successfully',
+    data: {
+      positionId: position.id,
+      code: position.code,
+      name: position.name,
+    },
+  };
+}
+async deletePosition(id: number): Promise<any> {
+  const position = await this.playerPositionRepo.findOne({ where: { id } });
+
+  if (!position) {
+    return { message: 'Position not found', statusCode: 404 };
+  }
+
+  try {
+    // 1️⃣ Delete related attribute mappings
+    await this.playerAttrRepo
+      .createQueryBuilder()
+      .delete()
+      .where("position_id = :id", { id })
+      .execute();
+
+    // 2️⃣ Delete the position itself
+    await this.playerPositionRepo.delete(id);
+
+    return { message: 'Position deleted successfully', positionId: id };
+  } catch (err) {
+    console.error('Delete failed:', err);
+    throw new HttpException(
+      'Failed to delete position. Check related data.',
+      HttpStatus.INTERNAL_SERVER_ERROR,
+    );
+  }
+}
+
+
+
+
+
+
   async getDraftFolderDropdown(user: userjwtInterface) {
     try {
       const draftFolders = await this.playerFolderepo.find({
@@ -63,6 +123,7 @@ export class playerService {
       console.log(error)
     }
   }
+  
   async conversionLogic(obj: ConversionDto, userId: number): Promise<any> {
     try {
       const {

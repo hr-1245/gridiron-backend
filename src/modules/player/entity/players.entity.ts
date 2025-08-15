@@ -39,10 +39,12 @@ export class PlayerEntity extends baseEntity {
   @Column({ nullable: true })
   college: string;
 
-  @ManyToOne(() => PlayerPositionEntity, position => position.players, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn()
-  position: PlayerPositionEntity;
-
+  // @ManyToOne(() => PlayerPositionEntity, position => position.players, { nullable: true, onDelete: 'SET NULL' })
+  // @JoinColumn()
+  // position: PlayerPositionEntity;
+@ManyToOne(() => PlayerPositionEntity, position => position.players, { nullable: true, onDelete: 'SET NULL' })
+@JoinColumn()
+position: PlayerPositionEntity;
   @Column({ type: 'enum', enum: playerStatusEnum, default: playerStatusEnum.ISACTIVE })
   isActive: playerStatusEnum;
 
